@@ -53,65 +53,66 @@ See [client.py example file](https://gitlab.com/demsking/oremi-sds/blob/main/cli
 
 ### Initialization
 
-When a client connects to the server, it must send an initial JSON initiation
-message with the following structure within 5 seconds or else the connection
-will be closed with code `1002` and reason `Init Timeout`:
+1. When a client connects to the server, it must send an initial JSON
+  initiation message with the following structure within 5 seconds or else
+  the connection will be closed with code `1002` and reason `Init Timeout`:
 
-**Init Message Schema**
+  **Init Message Schema**
 
-```json
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
-  "properties": {
-    "type": {
-      "type": "string",
-      "enum": ["init"],
-      "description": "The type of the message, should be 'init'."
-    },
-    "num_channels": {
-      "type": "integer",
-      "description": "The number of audio channels for the audio stream."
-    },
-    "samplerate": {
-      "type": "integer",
-      "description": "The sample rate of the audio stream."
-    },
-    "blocksize": {
-      "type": "integer",
-      "description": "The block size of audio data sent in each WebSocket message."
-    },
-    "language": {
-      "type": "string",
-      "enum": ["fr", "en"],
-      "description": "The language used for the detection, should be 'fr' (French) or 'en' (English)."
-    },
-    "features": {
-      "type": "array",
-      "items": {
+  ```json
+  {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+      "type": {
         "type": "string",
-        "enum": ["wakeword-detector", "sound-detector"]
+        "enum": ["init"],
+        "description": "The type of the message, should be 'init'."
       },
-      "minItems": 1,
-      "description": "The list of features to enable, should include 'wakeword-detector' and/or 'sound-detector'."
-    }
-  },
-  "required": ["type", "num_channels", "samplerate", "blocksize", "language", "features"],
-  "description": "JSON Schema for the message structure used during the initialization process."
-}
-```
+      "num_channels": {
+        "type": "integer",
+        "description": "The number of audio channels for the audio stream."
+      },
+      "samplerate": {
+        "type": "integer",
+        "description": "The sample rate of the audio stream."
+      },
+      "blocksize": {
+        "type": "integer",
+        "description": "The block size of audio data sent in each WebSocket message."
+      },
+      "language": {
+        "type": "string",
+        "enum": ["fr", "en"],
+        "description": "The language used for the detection, should be 'fr' (French) or 'en' (English)."
+      },
+      "features": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": ["wakeword-detector", "sound-detector"]
+        },
+        "minItems": 1,
+        "description": "The list of features to enable, should include 'wakeword-detector' and/or 'sound-detector'."
+      }
+    },
+    "required": ["type", "num_channels", "samplerate", "blocksize", "language", "features"],
+    "description": "JSON Schema for the message structure used during the initialization process."
+  }
+  ```
 
-The server responds with:
+2. The server responds with:
 
-```json
-{
-  "type": "init",
-  "server": "Oremi Sound Detector Server/1.0.0"
-}
-```
+  ```json
+  {
+    "type": "init",
+    "server": "Oremi Sound Detector Server/1.0.0"
+  }
+  ```
 
-> If the client doesn't send the initialization message within 5 seconds, the
-  server will close the connection with code `1002` and reason "Init Timeout".
+**Note:** If the client doesn't send the initialization message within 5
+seconds, the server will close the connection with code `1002` and reason
+`Init Timeout`.
 
 ### Sound Detection
 
