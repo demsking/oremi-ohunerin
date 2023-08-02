@@ -8,7 +8,7 @@ import secrets
 import websockets.exceptions
 import websockets.legacy.server
 
-from .detector import Consumer, Detector
+from .detector import DetectorConsumer, DetectorEngine
 from .models import Config, WakewordSetting
 from .trace import Trace
 from .vars import APP_DISPLAY_NAME, APP_NAME, ENCODING, __version__
@@ -100,10 +100,9 @@ async def main():
   logger.info(f'Using model {args.model}')
   logger.info(f'Using config {args.config}')
 
-  clients = {}
   config: Config = {}
   server_header = f'{APP_DISPLAY_NAME}/{__version__}'
-  detector = Detector(
+  detector = DetectorEngine(
     model = args.model,
     score_threshold = args.threshold,
     num_threads = args.num_threads,
@@ -118,16 +117,16 @@ async def main():
       config[language] = WakewordSetting.model_validate(locale_config)
 
   async def start(
-    websocket: websockets.legacy.server.WebSocketServerProtocol,
+    ws: websockets.legacy.server.WebSocketServerProtocol,
     setting: WakewordSetting,
     num_channels: int,
   ):
     wakeword_engine = WakewordEngine(setting, logger)
-    consumer = Consumer(
+    consumer = DetectorConsumer(
       detector,
       num_channels = num_channels,
       wakeword_engine = wakeword_engine,
-      on_sound_detect = lambda sound: websocket.send(json.dumps(sound)),
+      on_sound_detect = lambda sound: ws.send(json.dumps(sound)),
       logger = logger,
     )
 
@@ -137,25 +136,33 @@ async def main():
         "server": server_header,
       }
 
-      await websocket.send(json.dumps(event))
-      logger.info(f'New client: {websocket.request_headers["User-Agent"]}')
+      await ws.send(json.dumps(event))
+      logger.info(f'New client: {ws.request_headers["User-Agent"]}')
 
       consumer.start_utt()
-      async for message in websocket:
+      async for message in ws:
         await consumer.process_raw(message)
     except Exception as error:
-      websocket.close(code = 1001, reason = str(error))
-      logger.error(error)
+      error_message = f'Invalid message: {error}'
+      await ws.close(code = 1003, reason = error_message)
+      logger.error(error_message)
     finally:
       consumer.end_utt()
 
 
-  async def handler(websocket: websockets.legacy.server.WebSocketServerProtocol):
+  async def handler(ws: websockets.legacy.server.WebSocketServerProtocol):
+    loop = asyncio.get_running_loop()
+    init_timeout_timer_handler = loop.call_later(
+      5,
+      lambda: loop.create_task(ws.close(code = 1002, reason = 'Init Timeout'), name = 'Init Timeout Task'),
+    )
+
     try:
-      message = await websocket.recv()
+      message = await ws.recv()
+      init_timeout_timer_handler.cancel()
       event = json.loads(message)
 
-      assert event["type"] == "init", "Invalid init message"
+      assert event["type"] == "init", f"Invalid init message: {event}"
       assert isinstance(event["num_channels"], int), "Missing mandatory 'num_channels' field"
       assert isinstance(event["language"], str), "Missing mandatory 'language' field"
       assert event["language"] in config, f"Unsupported language '{event['language']}'"
@@ -163,9 +170,16 @@ async def main():
       language = event["language"]
       wakeword_setting = config[language]
 
-      await start(websocket, wakeword_setting, event['num_channels'])
+      await start(ws, wakeword_setting, event['num_channels'])
     except websockets.exceptions.ConnectionClosedOK as error:
-      logger.warn(error)
+      logger.error(error)
+    except AssertionError as error:
+      logger.error(error)
+      await ws.close(code = 1002, reason = str(error))
+    except Exception as error:
+      error_message = f'Unexpected error: {error}'
+      logger.error(error_message)
+      await ws.close(code = 4000, reason = error_message)
 
 
   async def listen(host: str, port: int):

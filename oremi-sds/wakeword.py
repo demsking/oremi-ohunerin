@@ -80,30 +80,33 @@ class WakewordEngine:
     """Ends the current utterance for the wake word detection."""
     self.decoder.end_utt()
 
-  def process_raw(self, chunk: bytes) -> bool:
+  def process_raw(self, chunk: bytes) -> float:
     """
-    Processes a chunk of audio data to detect a wakeword.
+    Process a chunk of raw audio data for wakeword detection and return the confidence score.
 
-    This function takes a chunk of audio data as input, processes it using the
-    decoder, and then checks if a wakeword or a discriminant wakeword is detected.
+    This function takes a chunk of raw audio data as input, processes it using the decoder for wakeword
+    detection, and returns the confidence score for the detected wakeword.
 
     Args:
-      chunk (bytes): The chunk of audio data as bytes.
+      chunk (bytes): The chunk of raw audio data as bytes.
 
     Returns:
-      bool: True if a wakeword is detected, False otherwise.
+      float: The confidence score for the detected wakeword. Returns 0.0 if no wakeword is detected.
 
     Notes:
-      A discriminant wakeword refers to a wakeword that is similar to the actual
-      wakeword but should be ignored. When a discriminant wakeword is detected,
-      it is logged as a warning, and the processing starts again.
+      The `self.is_discriminant()` method is used to check if the detected wakeword is discriminant
+      (similar but should be ignored). If a discriminant wakeword is detected, a warning message
+      is logged, and the function returns False.
+
+      The decoder is reset (`self.decoder.end_utt()` and `self.decoder.start_utt()`) after each
+      processed chunk to prepare it for the next audio chunk.
     """
     self.decoder.process_raw(chunk, False, False)
 
     hypothesis = self.decoder.hyp()
 
     if hypothesis is None:
-      return False
+      return 0.0
 
     is_discriminant = self.is_discriminant(hypothesis.hypstr)
 
@@ -111,8 +114,7 @@ class WakewordEngine:
     self.decoder.start_utt()
 
     if is_discriminant:
-      self.logger.warn(f'Discriminant wakeword detected: {hypothesis.hypstr}')
-    else:
-      self.logger.debug(f'Wakeword detected: {hypothesis.hypstr}')
+      self.logger.warning(f'Discriminant wakeword detected: {hypothesis.hypstr}')
+      return False
 
-    return not is_discriminant
+    return hypothesis.score

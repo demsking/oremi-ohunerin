@@ -15,7 +15,7 @@ class DetectedSound(TypedDict):
   time: str
 
 
-class Detector:
+class DetectorEngine:
   def __init__(self, model: str, *, score_threshold: float = 0.1, num_threads: int = -1, logger: Trace):
     if (score_threshold < 0) or (score_threshold > 1.0):
       raise ValueError('Score threshold must be between (inclusive) 0 and 1.')
@@ -61,10 +61,10 @@ class Detector:
     self.tensor_audio = self.classifier.create_input_tensor_audio()
 
 
-class Consumer:
+class DetectorConsumer:
   def __init__(
     self,
-    detector: Detector,
+    detector: DetectorEngine,
     *,
     logger: Trace,
     num_channels: int,
@@ -116,13 +116,13 @@ class Consumer:
     self._wakeword_engine.end_utt()
 
   async def process_raw(self, chunk: bytes):
-    is_wakeword = self._wakeword_engine.process_raw(chunk)
+    wakeword_confidence_score = self._wakeword_engine.process_raw(chunk)
 
-    if is_wakeword:
+    if wakeword_confidence_score > 0.0:
       await self._on_sound_detect({
         'type': 'sound',
         'sound': 'wakeword',
-        'score': 1.0,
+        'score': wakeword_confidence_score,
         'time': datetime.datetime.now().isoformat(),
       })
 

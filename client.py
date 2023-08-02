@@ -18,37 +18,37 @@ def parse_arguments():
 
   parser.add_argument(
     "--host",
-    type=str,
-    default="localhost",
-    help="Host address to connect to (default: localhost)."
+    type = str,
+    default = "localhost",
+    help = "Host address to connect to (default: localhost)."
   )
 
   parser.add_argument(
     "-p", "--port",
-    type=int,
-    default=5023,
-    help="Port number to connect to (default: 5023)."
+    type = int,
+    default = 5023,
+    help = "Port number to connect to (default: 5023)."
   )
 
   parser.add_argument(
     "-s", "--sample-rate",
-    type=int,
-    default=16000,
-    help="Sample rate for audio recording. Determines the number of audio samples captured per second during recording."
+    type = int,
+    default = 16000,
+    help = "Sample rate for audio recording. Determines the number of audio samples captured per second during recording."
   )
 
   parser.add_argument(
     "-l", "--chunk-length",
-    type=int,
-    default=4000,
-    help="Length of audio chunks for recording. Specifies the number of samples in each audio chunk during recording."
+    type = int,
+    default = 4000,
+    help = "Length of audio chunks for recording. Specifies the number of samples in each audio chunk during recording."
   )
 
   parser.add_argument(
     "-d", "--device-index",
-    type=int,
-    default=8,
-    help="Index of the audio device to be used for recording audio."
+    type = int,
+    default = -1,
+    help = "Index of the audio device to be used for recording audio."
   )
 
   return parser.parse_args()
@@ -63,7 +63,7 @@ async def client():
     dtype = 'int16',
     samplerate = args.sample_rate,
     blocksize = args.chunk_length,
-    device = args.device_index,
+    device = args.device_index if args.device_index > -1 else None,
     callback = lambda indata, frames, time, status: loop.call_soon_threadsafe(audio_queue.put_nowait, bytes(indata)),
   )
 
