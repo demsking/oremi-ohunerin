@@ -25,6 +25,9 @@ pkgs.mkShell {
     pkgs.python310Packages.pre-commit-hooks
     pkgs.stdenv.cc.cc.lib
 
+    # main dependencies
+    pkgs.libusb1
+
     # dependencies for the test client
     pkgs.portaudio
 
@@ -55,6 +58,7 @@ pkgs.mkShell {
     # Python
     export PATH="${pkgs.ruff}/bin:$PATH"
     export LD_LIBRARY_PATH=${envDir}/lib:$LD_LIBRARY_PATH
+    export LD_LIBRARY_PATH=${pkgs.libusb1}/lib:$LD_LIBRARY_PATH
     export LD_LIBRARY_PATH=${pkgs.portaudio}/lib:$LD_LIBRARY_PATH
     export LD_LIBRARY_PATH=${pkgs.stdenv.cc.cc.lib}/lib:$LD_LIBRARY_PATH
     export PIP_PREFIX=${envDir}

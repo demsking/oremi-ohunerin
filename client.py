@@ -53,7 +53,7 @@ def parse_arguments():
   )
 
   parser.add_argument(
-    '-l', '--chunk-length',
+    '-b', '--block-size',
     type = int,
     default = 4000,
     help = 'Length of audio chunks for recording. Specifies the number of samples in each audio chunk during recording.'
@@ -77,20 +77,23 @@ async def client():
   stream = sd.RawInputStream(
     dtype = 'int16',
     samplerate = args.sample_rate,
-    blocksize = args.chunk_length,
+    blocksize = args.block_size,
     device = args.device_index if args.device_index > -1 else None,
     callback = lambda indata, frames, time, status: loop.call_soon_threadsafe(audio_queue.put_nowait, bytes(indata)),
   )
 
   async with websockets.legacy.client.connect(uri, user_agent_header = 'Oremi Sound Detector Client/1.0.0') as websocket:
     loop = asyncio.get_running_loop()
-    loop.add_signal_handler(signal.SIGTERM, loop.create_task, websocket.close())
+    loop.add_signal_handler(signal.SIGINT, lambda: loop.create_task(websocket.close(), name = 'SIGINT Signal Task'))
+    loop.add_signal_handler(signal.SIGTERM, lambda: loop.create_task(websocket.close(), name = 'SIGTERM Signal Task'))
 
     print('Sending init message')
     await websocket.send(json.dumps({
       'type': 'init',
-      'num_channels': stream.channels,
       'language': 'fr',
+      'num_channels': stream.channels,
+      'samplerate': args.sample_rate,
+      'blocksize': args.block_size,
     }))
 
     init_message_response = await websocket.recv()
@@ -98,8 +101,13 @@ async def client():
 
     async def listen():
       print('Listening...')
-      async for message in websocket:
-        print('>>>', message)
+      try:
+        async for message in websocket:
+          print('>>>', message)
+      except asyncio.CancelledError:
+        print('Recording cancelled')
+      finally:
+        await websocket.close()
 
     async def recording():
       print('Recording...')
@@ -108,32 +116,36 @@ async def client():
           try:
             data = await audio_queue.get()
             await websocket.send(data)
+          except websockets.exceptions.ConnectionClosedOK:
+            print('Connection closed')
+            break
           except websockets.exceptions.ConnectionClosedError as error:
             print(error)
             break
           except sd.PortAudioError as error:
             print(error)
             break
-        print('Stream closed.')
+      print('Stream closed.')
 
-    def handle_listening_task_done(task: asyncio.Task | asyncio.Future):
-      if task.exception() is not None:
-        print(task)
-
-    def handle_info_task_done(task: asyncio.Task | asyncio.Future):
-      if task.exception() is not None:
-        print(task)
+    def handle_task_done(task: asyncio.Task):
+      if task.done():
+        print(f'{task.get_name()} done')
+      elif task.cancelled():
+        print(f'{task.get_name()} cancelled')
+      else:
+        try:
+          if task.exception() is not None:
+            print(task)
+        except (asyncio.CancelledError, asyncio.InvalidStateError) as error:
+          print(error)
 
     listening_task = loop.create_task(listen(), name = 'Listening Task')
     recording_task = loop.create_task(recording(), name = 'Recording Task')
 
-    listening_task.add_done_callback(handle_listening_task_done)
-    recording_task.add_done_callback(handle_info_task_done)
+    listening_task.add_done_callback(handle_task_done)
+    recording_task.add_done_callback(handle_task_done)
 
     await asyncio.wait([listening_task, recording_task])
 
 
-try:
-  asyncio.run(client())
-except KeyboardInterrupt:
-  pass
+asyncio.run(client())
