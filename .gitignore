@@ -1,0 +1,9 @@
+venv/
+htmlcov/
+dist/
+__pycache__/
+.ruff_cache/
+*.egg-info/
+.directory
+.coverage
+*.tflite

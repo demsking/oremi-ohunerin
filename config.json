@@ -1,0 +1,20 @@
+{
+  "fr": {
+    "model": "wakeword/fr/cmusphinx-fr-ptm-8khz-5.2",
+    "dictionary": "wakeword/fr/pronounciation-dictionary.dict",
+    "wakewords": [
+      { "word": "orémi", "phones": ["oo rr ei mm ii"] }
+    ],
+    "discriminants": [
+      { "word": "rémi", "phones": ["rr ei mm ii"] }
+    ]
+  },
+  "en": {
+    "model": "wakeword/en/acoustic-model",
+    "dictionary": "wakeword/fr/pronounciation-dictionary.dict",
+    "wakewords": [
+      { "word": "oremi", "phones": ["AO R EY M E"] }
+    ],
+    "discriminants": []
+  }
+}

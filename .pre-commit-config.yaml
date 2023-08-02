@@ -1,0 +1,43 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: trailing-whitespace
+      - id: check-added-large-files
+      - id: check-ast
+      - id: check-case-conflict
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-yaml
+      - id: check-toml
+      - id: debug-statements
+      - id: detect-private-key
+      - id: double-quote-string-fixer
+      - id: name-tests-test
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: v0.0.282
+    hooks:
+      - id: ruff
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.10.1
+    hooks:
+      - id: pyupgrade
+        args: [--py38-plus]
+  - repo: https://github.com/mrtazz/checkmake.git
+    rev: 0.2.2
+    hooks:
+      - id: checkmake
+  - repo: local
+    hooks:
+      - id: pylint
+        name: pylint
+        entry: pylint
+        language: system
+        types: [python]
+        args:
+          - "-rn" # Only display messages
+          - "--errors-only"
+          - "--ignore-paths=typings"
+          - "--ignore-patterns=.*_test\\.py"

@@ -1,0 +1,6 @@
+.git/
+.github/
+.directory
+.dockerignore
+dockerfile
+docker-compose.yaml
