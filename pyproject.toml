@@ -24,7 +24,10 @@ classifiers = [
   "Programming Language :: Python :: 3.10",
 ]
 
-include = []
+include = [
+  "config.json",
+  "models"
+]
 
 packages = [
   { include = "oremi-sds" },

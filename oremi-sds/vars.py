@@ -1,17 +1,30 @@
+# Copyright 2023 Sébastien Demanou. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+
 from .version import __version__
 
 __all__ = [
   'APP_NAME',
   'APP_ID',
   'APP_DISPLAY_NAME',
+  'ENCODING',
   '__version__',
 ]
 
 APP_NAME = 'oremi-sds'
 APP_ID = f'sebastien.demanou.{APP_NAME}'
 APP_DISPLAY_NAME = 'Oremi Sound Detector Server'
-
-APP_AUTHOR_NAME = 'Sébastien Demanou'
-APP_CREATION_YEAR = 2023
 
 ENCODING = 'utf-8'

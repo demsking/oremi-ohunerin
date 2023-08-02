@@ -1,4 +1,6 @@
-.PHONY: all clean build-images publish-images resources
+SRC_FILES := $(wildcard *.json *.toml oremi-sds/*.py)
+
+.PHONY: all clean build-images publish-images test
 
 # Start the development environment using tmuxinator
 env:
@@ -47,7 +49,7 @@ update:
 	poetry update
 	pre-commit autoupdate
 
-dist: pyproject.toml
+dist: $(SRC_FILES)
 	rm -rf dist/
 	poetry build
 	twine check dist/*

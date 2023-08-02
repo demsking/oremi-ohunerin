@@ -1,3 +1,18 @@
+# Copyright 2023 Sébastien Demanou. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+
 import argparse
 import asyncio
 import json
@@ -7,8 +22,8 @@ import platform
 import websockets.exceptions
 import websockets.legacy.server
 
-from .detector import DetectedSound, DetectorConsumer, DetectorEngine, create_detected_sound_message
-from .models import Config, WakewordSetting
+from .detector import DetectorConsumer, DetectorEngine
+from .models import Config, create_detected_sound_object, InitMessage, WakewordSetting
 from .trace import Trace
 from .vars import APP_DISPLAY_NAME, APP_NAME, ENCODING, __version__
 from .wakeword import WakewordEngine
@@ -118,15 +133,22 @@ async def main():
   async def start(
     ws: websockets.legacy.server.WebSocketServerProtocol,
     setting: WakewordSetting,
-    num_channels: int,
+    config: InitMessage,
   ):
-    async def send_detected_sound(sound: DetectedSound):
-      await ws.send(json.dumps(sound))
+    async def send_detected_sound(sound_name: str, score: float):
+      sound = create_detected_sound_object(sound_name, score)
+      message = json.dumps(sound)
+      await ws.send(message)
 
-    wakeword_engine = WakewordEngine(setting, logger)
+    wakeword_engine = WakewordEngine(
+      setting = setting,
+      on_sound_detect = send_detected_sound,
+      logger = logger,
+    )
+
     consumer = DetectorConsumer(
       detector,
-      num_channels = num_channels,
+      num_channels = config.num_channels,
       on_sound_detect = send_detected_sound,
       logger = logger,
     )
@@ -140,44 +162,40 @@ async def main():
       await ws.send(json.dumps(event))
       logger.info(f'New client: {ws.request_headers["User-Agent"]}')
 
-      wakeword_engine.start_utt()
-      async for chunk in ws:
-        wakeword_confidence_score = wakeword_engine.process_raw(chunk)
+      if 'wakeword-detector' in config.features:
+        wakeword_engine.start_utt()
 
-        if wakeword_confidence_score > 0.0:
-          consumer.reset_buffer()
-          await send_detected_sound(create_detected_sound_message('wakeword', wakeword_confidence_score))
-        else:
+      async for chunk in ws:
+        if 'wakeword-detector' in config.features:
+          wakeword_detected = await wakeword_engine.process_raw(chunk)
+          if wakeword_detected:
+            consumer.reset_buffer()
+            continue
+        if 'sound-detector' in config.features:
           await consumer.process_raw(chunk)
     except Exception as error:
       error_message = f'Invalid message: {error}'
       await ws.close(code = 1003, reason = error_message)
       logger.error(error_message)
     finally:
-      wakeword_engine.end_utt()
+      if 'wakeword-detector' in config.features:
+        wakeword_engine.end_utt()
 
 
   async def handler(ws: websockets.legacy.server.WebSocketServerProtocol):
     loop = asyncio.get_running_loop()
-    init_timeout_timer_handler = loop.call_later(
-      5,
-      lambda: loop.create_task(ws.close(code = 1002, reason = 'Init Timeout'), name = 'Init Timeout Task'),
-    )
+    init_timeout_timer_handler = loop.call_later(5, lambda: loop.create_task(
+      ws.close(code = 1002, reason = 'Init Timeout'),
+      name = 'Init Timeout Task',
+    ))
 
     try:
       message = await ws.recv()
       init_timeout_timer_handler.cancel()
-      event = json.loads(message)
+      event = InitMessage.model_validate_json(message)
+      wakeword_setting = config[event.language]
 
-      assert event['type'] == 'init', f'Invalid init message: {event}'
-      assert isinstance(event['num_channels'], int), "Missing mandatory 'num_channels' field"
-      assert isinstance(event['language'], str), "Missing mandatory 'language' field"
-      assert event['language'] in config, f"Unsupported language '{event['language']}'"
-
-      language = event['language']
-      wakeword_setting = config[language]
-
-      await start(ws, wakeword_setting, event['num_channels'])
+      await start(ws, wakeword_setting, event)
     except websockets.exceptions.ConnectionClosedOK as error:
       logger.error(error)
     except AssertionError as error:
