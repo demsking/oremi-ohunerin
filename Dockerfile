@@ -1,16 +1,30 @@
-FROM alpine:3.18.2
+FROM alpine:3.17
 
-ENV SNAPCAST_PORT=1704
-ENV SNAPCAST_DEVICE=default
+ARG VERSION
 
-RUN apk add --no-cache --upgrade snapcast alsa-utils
+LABEL Author="Sébastien Demanou <demsking@gmail.com>"
+LABEL Repository="https://gitlab.com/demsking/oremi-sds"
+
+ENV THRESHOLD=0.2
+ENV NUM_THREADS=-1
+
+RUN apk add --no-cache --upgrade python3 py3-pip \
+  && pip3 install --upgrade pip \
+  && rm -rf /var/cache/apk/*
 
 RUN addgroup -S oremi \
-  && adduser -S oremi -u 1000 -G oremi audio
+  && adduser -S oremi -u 1000 -G oremi \
+  && mkdir /var/oremi-sds \
+  && chown -R oremi:oremi /var/oremi-sds
+
+RUN pip install oremi_sds==$VERSION
+
+COPY image/entrypoint.sh /var/oremi-sds/entrypoint.sh
 
 USER oremi
-WORKDIR /home/oremi
+# RUN pip install oremi-sds
 
-COPY image/entrypoint.sh /oremi/entrypoint.sh
+EXPOSE 5023
 
-ENTRYPOINT ["/oremi/entrypoint.sh"]
+
+ENTRYPOINT ["/var/oremi/entrypoint.sh"]

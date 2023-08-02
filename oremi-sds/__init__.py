@@ -19,6 +19,7 @@ import json
 import logging
 import platform
 
+import pydantic
 import websockets.exceptions
 import websockets.legacy.server
 
@@ -190,7 +191,7 @@ async def main():
         if 'sound-detector' in config.features:
           await consumer.process_raw(chunk)
     except Exception as error:
-      error_message = f'Invalid message: {error}'
+      error_message = f'Invalid Message: {error}'
       await websocket.close(code = 1003, reason = error_message)
       logger.error(error_message)
     finally:
@@ -212,13 +213,14 @@ async def main():
       wakeword_setting = config[event.language]
 
       await start(websocket, wakeword_setting, event)
+    except (ValueError, pydantic.ValidationError):
+      error_message = f'Invalid Init Message: {message}'
+      logger.error(error_message)
+      await websocket.close(code = 1003, reason = error_message)
     except websockets.exceptions.ConnectionClosedOK as error:
       logger.error(error)
-    except AssertionError as error:
-      logger.error(error)
-      await websocket.close(code = 1002, reason = str(error))
     except Exception as error:
-      error_message = f'Unexpected error: {error}'
+      error_message = f'Unexpected Error: {error}'
       logger.error(error_message)
       await websocket.close(code = 4000, reason = error_message)
 
