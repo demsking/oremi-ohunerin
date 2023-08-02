@@ -69,5 +69,8 @@ pkgs.mkShell {
 
     virtualenv `basename ${envDir}`
     source ${envDir}/bin/activate
+
+    # Install pre-commit hooks
+    pre-commit install -f
   '';
 }

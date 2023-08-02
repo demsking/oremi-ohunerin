@@ -14,48 +14,48 @@ def parse_arguments():
   Returns:
       argparse.Namespace: The parsed command-line arguments.
   """
-  parser = argparse.ArgumentParser(description="Audio Recorder")
+  parser = argparse.ArgumentParser(description='Audio Recorder')
 
   parser.add_argument(
-    "--host",
+    '--host',
     type = str,
-    default = "localhost",
-    help = "Host address to connect to (default: localhost)."
+    default = 'localhost',
+    help = 'Host address to connect to (default: localhost).'
   )
 
   parser.add_argument(
-    "-p", "--port",
+    '-p', '--port',
     type = int,
     default = 5023,
-    help = "Port number to connect to (default: 5023)."
+    help = 'Port number to connect to (default: 5023).'
   )
 
   parser.add_argument(
-    "-s", "--sample-rate",
+    '-s', '--sample-rate',
     type = int,
     default = 16000,
-    help = "Sample rate for audio recording. Determines the number of audio samples captured per second during recording."
+    help = 'Sample rate for audio recording. Determines the number of audio samples captured per second during recording.'
   )
 
   parser.add_argument(
-    "-l", "--chunk-length",
+    '-l', '--chunk-length',
     type = int,
     default = 4000,
-    help = "Length of audio chunks for recording. Specifies the number of samples in each audio chunk during recording."
+    help = 'Length of audio chunks for recording. Specifies the number of samples in each audio chunk during recording.'
   )
 
   parser.add_argument(
-    "-d", "--device-index",
+    '-d', '--device-index',
     type = int,
     default = -1,
-    help = "Index of the audio device to be used for recording audio."
+    help = 'Index of the audio device to be used for recording audio.'
   )
 
   return parser.parse_args()
 
 
 async def client():
-  uri = "ws://localhost:5023"
+  uri = 'ws://localhost:5023'
 
   audio_queue = asyncio.Queue[bytes]()
   args = parse_arguments()
@@ -116,6 +116,7 @@ async def client():
     recording_task.add_done_callback(handle_info_task_done)
 
     await asyncio.wait([listening_task, recording_task])
+
 
 try:
   asyncio.run(client())

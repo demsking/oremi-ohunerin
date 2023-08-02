@@ -5,7 +5,6 @@ from tflite_support.task import audio, core, processor
 
 from .audio import to_ndarray
 from .trace import Trace
-from .wakeword import WakewordEngine
 
 
 class DetectedSound(TypedDict):
@@ -13,6 +12,15 @@ class DetectedSound(TypedDict):
   sound: str
   score: float
   time: str
+
+
+def create_detected_sound_message(sound_name: str, score: float) -> DetectedSound:
+  return {
+    'type': 'sound',
+    'sound': 'wakeword',
+    'score': score,
+    'time': datetime.datetime.now().isoformat(),
+  }
 
 
 class DetectorEngine:
@@ -68,12 +76,10 @@ class DetectorConsumer:
     *,
     logger: Trace,
     num_channels: int,
-    wakeword_engine: WakewordEngine,
     on_sound_detect: Callable[[DetectedSound], Coroutine],
   ) -> None:
     self._logger = logger
     self._detector = detector
-    self._wakeword_engine = wakeword_engine
     self._on_sound_detect = on_sound_detect
     self._num_channels = num_channels
 
@@ -81,16 +87,8 @@ class DetectorConsumer:
     self._buffer = bytearray(15600)
     self._buffer_index = 0
 
-  def _reset_buffer(self):
+  def reset_buffer(self):
     self._buffer_index = 0
-
-  async def _handle_input_data(self, data: bytes):
-    for byte in data:
-      self._buffer[self._buffer_index] = byte
-      self._buffer_index += 1
-      if self._buffer_index == len(self._buffer):
-        await self.classify_audio(bytes(self._buffer))
-        self._reset_buffer()
 
   async def classify_audio(self, chunk: bytes):
     audio_array = to_ndarray(chunk, self._num_channels)
@@ -98,34 +96,15 @@ class DetectorConsumer:
     result = self._detector.classifier.classify(self._detector.tensor_audio)
 
     if len(result.classifications) > 0 and len(result.classifications[0].categories) > 0:
-      time = datetime.datetime.now().isoformat()
       sound = result.classifications[0].categories[0]
 
-      self._logger.info(f'Sound {sound.category_name} detected with score {sound.score:.2f}')
-      await self._on_sound_detect({
-        'type': 'sound',
-        'sound': sound.category_name.lower(),
-        'score': sound.score,
-        'time': time,
-      })
-
-  def start_utt(self) -> None:
-    self._wakeword_engine.start_utt()
-
-  def end_utt(self) -> None:
-    self._wakeword_engine.end_utt()
+      self._logger.debug(f'Sound {sound.category_name} detected with score {sound.score:.2f}')
+      await self._on_sound_detect(create_detected_sound_message(sound.category_name.lower(), sound.score))
 
   async def process_raw(self, chunk: bytes):
-    wakeword_confidence_score = self._wakeword_engine.process_raw(chunk)
-
-    if wakeword_confidence_score > 0.0:
-      await self._on_sound_detect({
-        'type': 'sound',
-        'sound': 'wakeword',
-        'score': wakeword_confidence_score,
-        'time': datetime.datetime.now().isoformat(),
-      })
-
-      self._reset_buffer()
-    else:
-      await self._handle_input_data(chunk)
+    for byte in chunk:
+      self._buffer[self._buffer_index] = byte
+      self._buffer_index += 1
+      if self._buffer_index == len(self._buffer):
+        await self.classify_audio(bytes(self._buffer))
+        self.reset_buffer()

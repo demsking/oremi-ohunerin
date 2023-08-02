@@ -3,12 +3,11 @@ import asyncio
 import json
 import logging
 import platform
-import secrets
 
 import websockets.exceptions
 import websockets.legacy.server
 
-from .detector import DetectorConsumer, DetectorEngine
+from .detector import DetectedSound, DetectorConsumer, DetectorEngine, create_detected_sound_message
 from .models import Config, WakewordSetting
 from .trace import Trace
 from .vars import APP_DISPLAY_NAME, APP_NAME, ENCODING, __version__
@@ -121,33 +120,41 @@ async def main():
     setting: WakewordSetting,
     num_channels: int,
   ):
+    async def send_detected_sound(sound: DetectedSound):
+      await ws.send(json.dumps(sound))
+
     wakeword_engine = WakewordEngine(setting, logger)
     consumer = DetectorConsumer(
       detector,
       num_channels = num_channels,
-      wakeword_engine = wakeword_engine,
-      on_sound_detect = lambda sound: ws.send(json.dumps(sound)),
+      on_sound_detect = send_detected_sound,
       logger = logger,
     )
 
     try:
       event = {
-        "type": "init",
-        "server": server_header,
+        'type': 'init',
+        'server': server_header,
       }
 
       await ws.send(json.dumps(event))
       logger.info(f'New client: {ws.request_headers["User-Agent"]}')
 
-      consumer.start_utt()
-      async for message in ws:
-        await consumer.process_raw(message)
+      wakeword_engine.start_utt()
+      async for chunk in ws:
+        wakeword_confidence_score = wakeword_engine.process_raw(chunk)
+
+        if wakeword_confidence_score > 0.0:
+          consumer.reset_buffer()
+          await send_detected_sound(create_detected_sound_message('wakeword', wakeword_confidence_score))
+        else:
+          await consumer.process_raw(chunk)
     except Exception as error:
       error_message = f'Invalid message: {error}'
       await ws.close(code = 1003, reason = error_message)
       logger.error(error_message)
     finally:
-      consumer.end_utt()
+      wakeword_engine.end_utt()
 
 
   async def handler(ws: websockets.legacy.server.WebSocketServerProtocol):
@@ -162,12 +169,12 @@ async def main():
       init_timeout_timer_handler.cancel()
       event = json.loads(message)
 
-      assert event["type"] == "init", f"Invalid init message: {event}"
-      assert isinstance(event["num_channels"], int), "Missing mandatory 'num_channels' field"
-      assert isinstance(event["language"], str), "Missing mandatory 'language' field"
-      assert event["language"] in config, f"Unsupported language '{event['language']}'"
+      assert event['type'] == 'init', f'Invalid init message: {event}'
+      assert isinstance(event['num_channels'], int), "Missing mandatory 'num_channels' field"
+      assert isinstance(event['language'], str), "Missing mandatory 'language' field"
+      assert event['language'] in config, f"Unsupported language '{event['language']}'"
 
-      language = event["language"]
+      language = event['language']
       wakeword_setting = config[language]
 
       await start(ws, wakeword_setting, event['num_channels'])
