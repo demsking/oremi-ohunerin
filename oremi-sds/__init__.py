@@ -145,15 +145,16 @@ async def main():
       config[language] = WakewordSetting.model_validate(locale_config)
 
   async def start(
-    ws: websockets.legacy.server.WebSocketServerProtocol,
+    websocket: websockets.legacy.server.WebSocketServerProtocol,
     setting: WakewordSetting,
     config: InitMessage,
   ):
     async def send_detected_sound(sound_name: str, score: float):
       sound = create_detected_sound_object(sound_name, score)
       message = json.dumps(sound)
-      await ws.send(message)
+      await websocket.send(message)
 
+    started = False
     wakeword_engine = WakewordEngine(
       setting = setting,
       on_sound_detect = send_detected_sound,
@@ -173,13 +174,14 @@ async def main():
         'server': server_header,
       }
 
-      await ws.send(json.dumps(event))
-      logger.info(f'New client: {ws.request_headers["User-Agent"]}')
+      await websocket.send(json.dumps(event))
+      logger.info(f'New client: {websocket.request_headers["User-Agent"]}')
 
       if 'wakeword-detector' in config.features:
         wakeword_engine.start_utt()
 
-      async for chunk in ws:
+      started = True
+      async for chunk in websocket:
         if 'wakeword-detector' in config.features:
           wakeword_detected = await wakeword_engine.process_raw(chunk)
           if wakeword_detected:
@@ -189,36 +191,36 @@ async def main():
           await consumer.process_raw(chunk)
     except Exception as error:
       error_message = f'Invalid message: {error}'
-      await ws.close(code = 1003, reason = error_message)
+      await websocket.close(code = 1003, reason = error_message)
       logger.error(error_message)
     finally:
-      if 'wakeword-detector' in config.features:
+      if started and 'wakeword-detector' in config.features:
         wakeword_engine.end_utt()
 
 
-  async def handler(ws: websockets.legacy.server.WebSocketServerProtocol):
+  async def handler(websocket: websockets.legacy.server.WebSocketServerProtocol):
     loop = asyncio.get_running_loop()
     init_timeout_timer_handler = loop.call_later(5, lambda: loop.create_task(
-      ws.close(code = 1002, reason = 'Init Timeout'),
+      websocket.close(code = 1002, reason = 'Init Timeout'),
       name = 'Init Timeout Task',
     ))
 
     try:
-      message = await ws.recv()
+      message = await websocket.recv()
       init_timeout_timer_handler.cancel()
       event = InitMessage.model_validate_json(message)
       wakeword_setting = config[event.language]
 
-      await start(ws, wakeword_setting, event)
+      await start(websocket, wakeword_setting, event)
     except websockets.exceptions.ConnectionClosedOK as error:
       logger.error(error)
     except AssertionError as error:
       logger.error(error)
-      await ws.close(code = 1002, reason = str(error))
+      await websocket.close(code = 1002, reason = str(error))
     except Exception as error:
       error_message = f'Unexpected error: {error}'
       logger.error(error_message)
-      await ws.close(code = 4000, reason = error_message)
+      await websocket.close(code = 4000, reason = error_message)
 
 
   async def listen(host: str, port: int):

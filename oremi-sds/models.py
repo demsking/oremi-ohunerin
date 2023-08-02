@@ -23,7 +23,7 @@ class DetectedSound(TypedDict):
   type: Literal['sound']
   sound: str
   score: float
-  time: str
+  datetime: str
 
 
 def create_detected_sound_object(sound_name: str, score: float) -> DetectedSound:
@@ -31,13 +31,15 @@ def create_detected_sound_object(sound_name: str, score: float) -> DetectedSound
     'type': 'sound',
     'sound': sound_name,
     'score': score,
-    'time': datetime.datetime.now().isoformat(),
+    'datetime': datetime.datetime.now().isoformat(),
   }
 
 
 class InitMessage(BaseModel):
   type: Literal['init']
   num_channels: int
+  samplerate: int
+  blocksize: int
   language: Literal['fr', 'en']
   features: list[Literal['wakeword-detector', 'sound-detector']] = Field(min_items = 1, default_factory = lambda: [
     'wakeword-detector',
