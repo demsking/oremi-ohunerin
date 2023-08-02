@@ -5,10 +5,10 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry]
 name = "oremi-sds"
 version = "1.0.0.dev1"
-description = "Personal Assistant"
-keywords = ["assistant", "nlp", "nlu", "conversational"]
+description = "Oremi Sound Detector Server"
+keywords = ["sound", "detector"]
 authors = ["Sébastien Demanou <demsking@gmail.com>"]
-license = "MIT"
+license = "Apache 2.0"
 readme = "README.md"
 repository = "https://gitlab.com/demsking/oremi-sds"
 documentation = "https://gitlab.com/demsking/oremi-sds/-/blob/main/README.md"
@@ -17,9 +17,7 @@ classifiers = [
   "Environment :: Console",
   "Intended Audience :: End Users/Desktop",
   "Topic :: Software Development :: Libraries :: Python Modules",
-  "Topic :: Software Development :: Localization",
-  "License :: OSI Approved :: MIT License",
-  "Natural Language :: French",
+  "License :: OSI Approved :: Apache 2.0",
   "Operating System :: POSIX :: Linux",
   "Programming Language :: Python :: 3.10",
 ]
@@ -34,7 +32,7 @@ packages = [
 ]
 
 [tool.poetry.scripts]
-oremi = 'oremi-sds:listen'
+oremi = 'oremi-sds:main'
 
 [tool.poetry.urls]
 "Say Thanks!" = "https://www.buymeacoffee.com/demsking"
@@ -47,14 +45,11 @@ pocketsphinx = "^5.0.0"
 toml = "^0.10.2"
 numpy = "^1.20"
 coloredlogs = "^15.0.1"
-paho-mqtt = "^1.6.1"
 tflite-runtime-nightly = "^2.14.0.dev20230619"
 tflite-support = {url = "https://github.com/Gulianrdgd/tflite-support/releases/download/3.10.0/tflite_support-3.10.0-cp310-cp310-linux_x86_64.whl"}
 websockets = "^11.0.3"
 pydantic = "^2.1.1"
 scipy = "^1.11.1"
-tensorflow-addons = "^0.21.0"
-tensorflow = "^2.5.0rc1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.3.1"

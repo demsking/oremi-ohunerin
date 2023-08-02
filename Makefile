@@ -7,7 +7,7 @@ env:
 	tmuxinator
 
 clean:
-	rm -rf dist/ models/
+	rm -rf dist/ models/*.tflite
 
 models/lite-model_yamnet_classification_tflite_1.tflite:
 	mkdir -p models/
@@ -19,7 +19,7 @@ install: models/lite-model_yamnet_classification_tflite_1.tflite
 	poetry install
 
 start: models/lite-model_yamnet_classification_tflite_1.tflite
-	python -m oremi-sds --verbose -m $<
+	python -m oremi-sds --verbose --model $<
 
 client:
 	python client.py
