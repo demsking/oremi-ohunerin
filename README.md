@@ -7,13 +7,13 @@ events, including wake words and a predefined list of songs, for the Oremi
 Personal Assistant.
 
 The server listens on port `5023` for incoming connections from clients, which
-can continuously stream audio data. Once connected, clients can send audio data
-in `bytes`, and the server will process it in real-time, detecting sounds and
-sending JSON messages back to the client when a sound is recognized.
+can continuously stream audio data. Once connected, clients can send audio
+data in `bytes`, and the server will process it in real-time, detecting sounds
+and sending JSON messages back to the client when a sound is recognized.
 
-The program detects the wake word and also a list of sounds including Shout,
-Bellows, Children shouting, Laughter, Baby laughter, Crying, sobbing, Baby cry,
-infant cry, Whistling, Wheeze, Snoring, Cough, Sneeze, Burping, and Hiccup.
+OSDS detects the Oremi wake word including sounds: Shout, Bellows, Children
+shouting, Laughter, Baby laughter, Crying, sobbing, Baby cry, infant cry,
+Whistling, Wheeze, Snoring, Cough, Sneeze, Burping, and Hiccup.
 
 ## Install
 
@@ -55,7 +55,7 @@ See [client.py example file](https://gitlab.com/demsking/oremi-sds/blob/main/cli
 
 1. When a client connects to the server, it must send an initial JSON
   initiation message with the following structure within 5 seconds or else
-  the connection will be closed with code `1002` and reason `Init Timeout`:
+  the connection will be closed with code `1002` and reason `Init Timeout`.
 
   **Init Message Schema**
 
@@ -120,7 +120,7 @@ seconds, the server will close the connection with code `1002` and reason
   stream in bytes.
 
 2. The server processes the audio stream in real-time and sends a JSON message
-  when it detects a sound with the following structure:
+  when it detects a sound with the following schema:
 
   ```json
   {
