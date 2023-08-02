@@ -53,51 +53,18 @@ See [client.py example file](https://gitlab.com/demsking/oremi-sds/blob/main/cli
 
 ### Initialization
 
-1. When a client connects to the server, it must send an initial JSON
-  initiation message with the following structure within 5 seconds or else
-  the connection will be closed with code `1002` and reason `Init Timeout`.
-
-  **Init Message Schema**
+1. When a client connects to the server, it must send an initial
+  [JSON initiation message](https://gitlab.com/demsking/oremi-sds/blob/main/schemas/InitMessage.json)
+  within 5 seconds or else the connection will be closed with code `1002` and
+  reason `Init Timeout`.
 
   ```json
   {
-    "$schema": "http://json-schema.org/draft-07/schema#",
-    "type": "object",
-    "properties": {
-      "type": {
-        "type": "string",
-        "enum": ["init"],
-        "description": "The type of the message, should be 'init'."
-      },
-      "num_channels": {
-        "type": "integer",
-        "description": "The number of audio channels for the audio stream."
-      },
-      "samplerate": {
-        "type": "integer",
-        "description": "The sample rate of the audio stream."
-      },
-      "blocksize": {
-        "type": "integer",
-        "description": "The block size of audio data sent in each WebSocket message."
-      },
-      "language": {
-        "type": "string",
-        "enum": ["fr", "en"],
-        "description": "The language used for the detection, should be 'fr' (French) or 'en' (English)."
-      },
-      "features": {
-        "type": "array",
-        "items": {
-          "type": "string",
-          "enum": ["wakeword-detector", "sound-detector"]
-        },
-        "minItems": 1,
-        "description": "The list of features to enable, should include 'wakeword-detector' and/or 'sound-detector'."
-      }
-    },
-    "required": ["type", "num_channels", "samplerate", "blocksize", "language", "features"],
-    "description": "JSON Schema for the message structure used during the initialization process."
+    "type": "init",
+    "language": "fr",
+    "samplerate": 16000,
+    "num_channel": 1,
+    "blocksize": 4000
   }
   ```
 
@@ -119,38 +86,9 @@ seconds, the server will close the connection with code `1002` and reason
 1. Once the session is initialized, the client can continuously send audio
   stream in bytes.
 
-2. The server processes the audio stream in real-time and sends a JSON message
-  when it detects a sound with the following schema:
-
-  ```json
-  {
-    "$schema": "http://json-schema.org/draft-07/schema#",
-    "type": "object",
-    "properties": {
-      "type": {
-        "type": "string",
-        "enum": ["sound"],
-        "description": "The type of the message, should be 'sound'."
-      },
-      "sound": {
-        "type": "string",
-        "enum": ["wakeword", "shout", "bellows", "children shouting", "laughter", "baby laughter", "crying", "sobbing", "baby cry", "infant cry", "whistling", "wheeze", "snoring", "cough", "sneeze", "burping", "hiccup"],
-        "description": "The detected sound type."
-      },
-      "score": {
-        "type": "number",
-        "description": "The score indicating the confidence level of the detected sound."
-      },
-      "datetime": {
-        "type": "string",
-        "format": "date-time",
-        "description": "The timestamp of when the sound was detected."
-      }
-    },
-    "required": ["type", "sound", "score", "datetime"],
-    "description": "JSON Schema for the message structure when a sound is detected."
-  }
-  ```
+2. The server processes the audio stream in real-time and sends a
+  [JSON message](https://gitlab.com/demsking/oremi-sds/blob/main/schemas/DetectedSoundSchema.json)
+  when it detects a sound:
 
   **Example for wakeword**
 

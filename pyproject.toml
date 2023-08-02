@@ -24,7 +24,8 @@ classifiers = [
 
 include = [
   "config.json",
-  "models"
+  "models",
+  "schemas"
 ]
 
 packages = [
