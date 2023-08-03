@@ -101,6 +101,7 @@ Please see the [Makefile](Makefile) for the full list of targets.
 
 - [CMU Sphinx Models](https://sourceforge.net/projects/cmusphinx/files/Acoustic%20and%20Language%20Models/)
 - [Building a phonetic dictionary](https://cmusphinx.github.io/wiki/tutorialdict)
+- [WebSocket Status Codes](https://datatracker.ietf.org/doc/html/rfc6455#section-7.4.1)
 
 ## Contribute
 

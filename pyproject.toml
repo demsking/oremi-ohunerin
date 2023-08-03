@@ -33,7 +33,7 @@ packages = [
 ]
 
 [tool.poetry.scripts]
-oremi-sds = 'oremi-sds:main'
+oremi-sds = 'oremi_sds:main'
 
 [tool.poetry.urls]
 "Say Thanks!" = "https://www.buymeacoffee.com/demsking"
