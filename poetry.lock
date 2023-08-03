@@ -870,23 +870,12 @@ numpy = ">=1.21.2"
 
 [[package]]
 name = "tflite-support"
-version = "0.4.4"
+version = "3.10.0"
 description = "TFLite Support is a toolkit that helps users to develop ML and deploy TFLite models onto mobile devices."
 optional = false
 python-versions = "*"
 files = [
-    {file = "tflite_support-0.4.4-cp310-cp310-macosx_10_11_x86_64.whl", hash = "sha256:ac8552a94903c4bead7192c972a4c654faa8559cd8e6520955ea4028182ea61b"},
-    {file = "tflite_support-0.4.4-cp310-cp310-manylinux2014_x86_64.whl", hash = "sha256:1d26983d0d55b79d03906bf2dac09491582096cfb83654246ea64de9a063e1d7"},
-    {file = "tflite_support-0.4.4-cp311-cp311-macosx_10_11_x86_64.whl", hash = "sha256:1eeb718f51011ea907852ca809d2320cd85c09f726a1b7b1d16387acd04d33c1"},
-    {file = "tflite_support-0.4.4-cp311-cp311-manylinux2014_x86_64.whl", hash = "sha256:eb6bffda7532bd0e0c95c69a4a3f1276e0434891b8139c21b71db40c713ccc98"},
-    {file = "tflite_support-0.4.4-cp37-cp37m-manylinux2014_aarch64.whl", hash = "sha256:d30a6c3b7acf8963680b878d13cfd5b79cadda11ef1a00ef7394dd053c296843"},
-    {file = "tflite_support-0.4.4-cp37-cp37m-manylinux2014_armv7l.whl", hash = "sha256:4ad07438edd057ac1adeb87852f8b2d8c7942c683d2653de5781e18826cfb1db"},
-    {file = "tflite_support-0.4.4-cp38-cp38-manylinux2014_aarch64.whl", hash = "sha256:99135c1b81d28758927fbd7ce14de2f804a6fd2620a6be367302aa1dee8bd7fe"},
-    {file = "tflite_support-0.4.4-cp38-cp38-manylinux2014_armv7l.whl", hash = "sha256:d1c2a7c377f4dc36dcd0e5bad1af23c8c4b7f557aaeb0d919da67b81e2f875c3"},
-    {file = "tflite_support-0.4.4-cp39-cp39-macosx_10_11_x86_64.whl", hash = "sha256:3e35dd0e1c51645369c1d32fbe2a6e4b7e33e87c609401a7cb9d518d1455f6ff"},
-    {file = "tflite_support-0.4.4-cp39-cp39-manylinux2014_aarch64.whl", hash = "sha256:84733b485d53aca2fd52ad557382e809cd3e51061e56dfebc45c9bb96d688ccf"},
-    {file = "tflite_support-0.4.4-cp39-cp39-manylinux2014_armv7l.whl", hash = "sha256:e5af5dd23efbc93d9c0f0e9cd5ce8d001846403ac11be41e06476e727e555298"},
-    {file = "tflite_support-0.4.4-cp39-cp39-manylinux2014_x86_64.whl", hash = "sha256:a49e0840aa879f72bf32e3d1e5fb3e68701701b73bd2ca0ef5077f2a976e8a30"},
+    {file = "tflite_support-3.10.0-cp310-cp310-linux_x86_64.whl", hash = "sha256:ac1f9eb422e7853fef71d1deb8ebf19bacfa0696c12e04c2cb9a6d19705ccb71"},
 ]
 
 [package.dependencies]
@@ -896,6 +885,10 @@ numpy = ">=1.20.0"
 protobuf = ">=3.18.0,<4"
 pybind11 = ">=2.6.0"
 sounddevice = ">=0.4.4"
+
+[package.source]
+type = "url"
+url = "https://github.com/Gulianrdgd/tflite-support/releases/download/3.10.0/tflite_support-3.10.0-cp310-cp310-linux_x86_64.whl"
 
 [[package]]
 name = "tokenize-rt"
@@ -1118,4 +1111,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.11"
-content-hash = "0e1403d36944932e00e19a5baa4658e3429ce82d83899e7df46945fa9c1a239b"
+content-hash = "a4191b30e78d3ea95e5bc733a5157520342daf9f6414369ff48de9e47fe40b8c"
