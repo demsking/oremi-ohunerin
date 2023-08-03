@@ -49,7 +49,19 @@ https://storage.googleapis.com/download.tensorflow.org/models/tflite/task_librar
 
 ## Protocol
 
-See [client.py example file](https://gitlab.com/demsking/oremi-sds/blob/main/client.py).
+Oremi Sound Detector Server operates using a WebSocket-based protocol for
+real-time sound detection. The protocol involves an initialization step where
+the client provides essential details such as the number of audio channels,
+sample rate, block size, language, and features to enable. Once the session is
+initialized, the client can continuously stream audio data to the server. The
+server processes the audio in real-time and sends JSON messages back to the
+client when it detects specific sounds, such as wake words or predefined
+songs.
+
+The section outlines the message structures, initialization process, sound
+detection mechanism, and possible connection closure codes. Developers can use
+this protocol documentation as a reference to interact with the server and
+build their applications accordingly.
 
 ### Initialization
 
@@ -64,7 +76,8 @@ See [client.py example file](https://gitlab.com/demsking/oremi-sds/blob/main/cli
     "language": "fr",
     "samplerate": 16000,
     "num_channel": 1,
-    "blocksize": 4000
+    "blocksize": 4000,
+    "features": ["wakeword-detector", "sound-detector"]
   }
   ```
 
@@ -87,7 +100,7 @@ seconds, the server will close the connection with code `1002` and reason
   stream in bytes.
 
 2. The server processes the audio stream in real-time and sends a
-  [JSON message](https://gitlab.com/demsking/oremi-sds/blob/main/schemas/DetectedSoundSchema.json)
+  [JSON sound message](https://gitlab.com/demsking/oremi-sds/blob/main/schemas/DetectedSoundSchema.json)
   when it detects a sound:
 
   **Example for wakeword**
@@ -116,12 +129,20 @@ seconds, the server will close the connection with code `1002` and reason
 
 Possible connection closure codes:
 
-| Code | Reason                                 |
-|------|----------------------------------------|
-| 1000 | Normal closure                         |
-| 1002 | Init Timeout                           |
-| 1003 | Invalid Message                        |
-| 4000 | Unexpected Error                       |
+- `1000`: Indicates a normal closure, meaning that the purpose for which the connection was established has been fulfilled.
+- `1002`: Init Timeout
+- `1003`: Invalid Message
+- `4000`: Unexpected Error
+
+### Example Implementation
+
+See [client.py example file](https://gitlab.com/demsking/oremi-sds/blob/main/client.py).
+
+For an example of how to implement a client for the "Oremi Sound Detector
+Server," you can refer to the [client.py file](https://gitlab.com/demsking/oremi-sds/blob/main/client.py)
+in the GitLab repository. The example demonstrates how to connect to the
+server, send audio data, and handle the JSON messages received from the
+server.
 
 ## Contribute
 
