@@ -78,31 +78,34 @@ build their applications accordingly.
 
 ### Initialization
 
-1. When a client connects to the server, it must send an initial
+**1. Client**
 
+When a client connects to the server, it must send an initial
 [JSON initiation message](https://gitlab.com/demsking/oremi-sds/blob/main/schemas/InitMessage.json)
-  within 5 seconds or else the connection will be closed with code `1002` and
-  reason `Init Timeout`.
+within 5 seconds or else the connection will be closed with code `1002` and
+reason `Init Timeout`.
 
 ```json
-  {
-    "type": "init",
-    "language": "fr",
-    "samplerate": 16000,
-    "num_channel": 1,
-    "blocksize": 4000,
-    "features": ["wakeword-detector", "sound-detector"]
-  }
-  ```
+{
+  "type": "init",
+  "language": "fr",
+  "samplerate": 16000,
+  "num_channel": 1,
+  "blocksize": 4000,
+  "features": ["wakeword-detector", "sound-detector"]
+}
+```
 
-2. The server responds with:
+**2. Server**
+
+The server responds with:
 
 ```json
-  {
-    "type": "init",
-    "server": "Oremi Sound Detector Server/1.0.0"
-  }
-  ```
+{
+  "type": "init",
+  "server": "Oremi Sound Detector Server/1.0.0"
+}
+```
 
 **Note:** If the client doesn't send the initialization message within 5
 seconds, the server will close the connection with code `1002` and reason
@@ -110,36 +113,38 @@ seconds, the server will close the connection with code `1002` and reason
 
 ### Sound Detection
 
-1. Once the session is initialized, the client can continuously send audio
+**1. Client**
 
+Once the session is initialized, the client can continuously send audio
 stream in bytes.
 
-2. The server processes the audio stream in real-time and sends a
+**2. Server**
 
+The server processes the audio stream in real-time and sends a
 [JSON sound message](https://gitlab.com/demsking/oremi-sds/blob/main/schemas/DetectedSoundSchema.json)
-  when it detects a sound:
+when it detects a sound:
 
 **Example for wakeword**
 
 ```json
-  {
-    "type": "sound",
-    "sound": "wakeword",
-    "score": 1.0,
-    "datetime": "2023-08-02T20:33:22.805154"
-  }
-  ```
+{
+  "type": "sound",
+  "sound": "wakeword",
+  "score": 1.0,
+  "datetime": "2023-08-02T20:33:22.805154"
+}
+```
 
 **Example for cough**
 
 ```json
-  {
-    "type": "sound",
-    "sound": "cough",
-    "score": 0.4140625,
-    "datetime": "2023-08-02T20:41:05.058204"
-  }
-  ```
+{
+  "type": "sound",
+  "sound": "cough",
+  "score": 0.4140625,
+  "datetime": "2023-08-02T20:41:05.058204"
+}
+```
 
 ### Connection Closure Codes
 
