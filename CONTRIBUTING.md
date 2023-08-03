@@ -52,20 +52,7 @@ Therefore:
    echo '{ allowUnfree = true; }' >> ~/.config/nixpkgs/config.nix
    ```
 
-5. **Install TensorRT**
-
-   To use the TensorRT derivation, you must join the NVIDIA Developer Program and
-   download the 8.5.3.1 Linux x86_64 TAR package for CUDA 11.8 from
-   https://developer.nvidia.com/nvidia-tensorrt-download.
-
-   Once you have downloaded the file, add it to the store with the following
-   command, and try building this derivation again.
-
-   ```sh
-   nix-store --add-fixed sha256 TensorRT-8.5.3.1.Linux.x86_64-gnu.cuda-11.8.cudnn8.6.tar.gz
-   ```
-
-6. **Install dependencies**
+5. **Install dependencies**
 
    At the top-level of your project run:
 
@@ -76,7 +63,7 @@ Therefore:
    The next time your launch your terminal and enter the top-level of your
    project, `direnv` will check for changes.
 
-7. **Start environment**
+6. **Start environment**
 
    ```sh
    make env
@@ -85,62 +72,35 @@ Therefore:
    This will starts a preconfigured Tmux session.
    Please see the [.tmuxinator.yml](.tmuxinator.yml) file.
 
-**Nvidia setup**
-
-- [How to install the NVIDIA drivers on Ubuntu 21.04](https://linuxconfig.org/how-to-install-the-nvidia-drivers-on-ubuntu-21-04)
-- [Install the NVIDIA Container Toolkit](https://docs.nvidia.com/ai-enterprise/deployment-guide-bare-metal/0.1.0/docker.html#enabling-the-docker-repository-and-installing-the-nvidia-container-toolkit)
-
-**Ubuntu Nvidia Setup**
-
-```sh
-# Automatically install missing drivers
-sudo ubuntu-drivers autoinstall
-
-# Install Nvidia Docker Runtime
-sudo apt install nvidia-docker2
-
-# Reboot
-sudo reboot
-```
-
-> Note: I realized that I couldn't use the Nvidia graphics card after installing
-the `nvidia-modprobe` package. But once uninstalled and the system restart
-everything was normal again.
-
 **Makefile targets**
 
 | Target            | Description                                                            |
 |-------------------|------------------------------------------------------------------------|
 | env               | Start the development environment using tmuxinator.                    |
-| start             | Start both server and test client.                                     |
+| clean             | Clean up build artifacts and temporary files.                          |
+| install           | Install dependencies and download the TensorFlow Lite model.           |
+| start             | Start the sound detector server with the downloaded model.             |
+| client            | Start the test client.                                                 |
 | lint              | Run linting checks on the codebase using pre-commit.                   |
 | fix               | Automatically fix any linting issues found by ruff.                    |
 | test              | Run tests using pytest.                                                |
+| update-snapshots  | Update snapshots for tests using pytest.                               |
 | coverage          | Generate a coverage report for the codebase using pytest.              |
 | coverage-html     | Generate an HTML coverage report for the codebase using pytest.        |
 | outdated          | Show outdated dependencies using poetry.                               |
-| clean             | Clean up build artifacts and temporary files.                          |
+| update            | Update project dependencies using poetry and pre-commit.               |
 | dist              | Build a distribution of the project using poetry and twine.            |
 | publish           | Publish a distribution of the project to TestPyPI using twine.         |
-| update-locale     | Update locale files for the Flutter app.                               |
-| update-snapshots  | Update snapshots for tests using pytest.                               |
+| build-image       | Build a Docker image with the project.                                 |
+| publish-image     | Publish the Docker image.                                              |
 
 
 Please see the [Makefile](Makefile) for the full list of targets.
 
 ## Documentation
 
-**PocketSphinx**
-
+- [CMU Sphinx Models](https://sourceforge.net/projects/cmusphinx/files/Acoustic%20and%20Language%20Models/)
 - [Building a phonetic dictionary](https://cmusphinx.github.io/wiki/tutorialdict)
-
-**GPU Documentations**
-
-- [How to install the NVIDIA drivers on Ubuntu 21.04](https://linuxconfig.org/how-to-install-the-nvidia-drivers-on-ubuntu-21-04)
-- [Installing CUDA, tensorflow, torch for R & Python on Ubuntu 20.04](https://heads0rtai1s.github.io/2021/02/25/gpu-setup-r-python-ubuntu/)
-- [NixOS supports using NVIDIA GPUs](https://nixos.wiki/wiki/CUDA)
-- [KDE Plasma/Wayland/Nvidia](https://community.kde.org/Plasma/Wayland/Nvidia)
-- [Install the NVIDIA Container Toolkit](https://docs.nvidia.com/ai-enterprise/deployment-guide-bare-metal/0.1.0/docker.html#enabling-the-docker-repository-and-installing-the-nvidia-container-toolkit)
 
 ## Contribute
 

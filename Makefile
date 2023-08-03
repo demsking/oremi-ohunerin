@@ -60,3 +60,5 @@ publish: dist
 
 build-image: dist
 	docker build . --progress plain --build-arg VERSION=$(APP_VERSION) -t demsking/oremi-sds
+
+publish-image: build-image

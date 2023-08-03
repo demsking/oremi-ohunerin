@@ -123,6 +123,24 @@ Possible connection closure codes:
 | 1003 | Invalid Message                        |
 | 4000 | Unexpected Error                       |
 
+## Contribute
+
+Please follow [CONTRIBUTING.md](https://gitlab.com/demsking/oremi-sds/blob/main/CONTRIBUTING.md).
+
+## Versioning
+
+Given a version number `MAJOR.MINOR.PATCH`, increment the:
+
+- `MAJOR` version when you make incompatible API changes,
+- `MINOR` version when you add functionality in a backwards-compatible manner,
+  and
+- `PATCH` version when you make backwards-compatible bug fixes.
+
+Additional labels for pre-release and build metadata are available as extensions
+to the `MAJOR.MINOR.PATCH` format.
+
+See [SemVer.org](https://semver.org/) for more details.
+
 ## License
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use
