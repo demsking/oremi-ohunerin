@@ -1,5 +1,6 @@
 # Oremi Sound Detector Server
 
+[![pypi version](https://badge.fury.io/py/oremi-sds.svg)](https://pypi.org/project/oremi-sds/)
 [![Buy me a beer](https://img.shields.io/badge/Buy%20me-a%20beer-1f425f.svg)](https://www.buymeacoffee.com/demsking)
 
 Oremi Sound Detector Server is a WebSocket server designed to detect sound
