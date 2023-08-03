@@ -21,6 +21,12 @@ repos:
     hooks:
       - id: poetry-check
       - id: poetry-lock
+  - repo: https://github.com/python-jsonschema/check-jsonschema
+    rev: 0.23.3
+    hooks:
+      - id: check-gitlab-ci
+      - id: check-metaschema
+        files: ^schemas/.*\.json$
   - repo: https://github.com/charliermarsh/ruff-pre-commit
     rev: v0.0.282
     hooks:

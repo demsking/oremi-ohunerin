@@ -13,6 +13,7 @@ pkgs.mkShell {
     pkgs.poetry
     pkgs.gnumake
     pkgs.checkmake
+    pkgs.check-jsonschema
     pkgs.pre-commit
     pkgs.docker-compose
     pkgs.tmuxinator
