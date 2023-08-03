@@ -7,6 +7,7 @@ in
 pkgs.mkShell {
   nativeBuildInputs = [
     # devtools
+    pkgs.git
     pkgs.tmux
     pkgs.ruff
     pkgs.gitmux
