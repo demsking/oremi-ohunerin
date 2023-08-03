@@ -30,10 +30,9 @@
         "type": "string",
         "enum": ["wakeword-detector", "sound-detector"]
       },
-      "minItems": 1,
-      "description": "The list of features to enable, should include 'wakeword-detector' and/or 'sound-detector'."
+      "description": "The list of features to enable, should include 'wakeword-detector' and/or 'sound-detector'. Default value is ['wakeword-detector', 'sound-detector']."
     }
   },
-  "required": ["type", "num_channels", "samplerate", "blocksize", "language", "features"],
+  "required": ["type", "num_channels", "samplerate", "blocksize", "language"],
   "description": "JSON Schema for the message structure used during the initialization process."
 }
