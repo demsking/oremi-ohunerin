@@ -17,7 +17,7 @@ RUN addgroup -S oremi \
   && mkdir /var/oremi-sds \
   && chown -R oremi:oremi /var/oremi-sds
 
-RUN pip install --index-url https://test.pypi.org/simple Oremi-SDS==$VERSION
+RUN pip install Oremi-SDS==$VERSION
 
 COPY image/entrypoint.sh /var/oremi-sds/entrypoint.sh
 

@@ -56,9 +56,12 @@ dist: $(SRC_FILES)
 	twine check dist/*
 
 publish: dist
-	twine upload -r testpypi dist/*
+	twine upload dist/*
 
-image:
-	docker build . --progress plain --build-arg VERSION=$(APP_VERSION) -t demsking/oremi-sds
+image: publish
+	docker build . --build-arg VERSION=$(APP_VERSION) -t demsking/oremi-sds:$(APP_VERSION)
+	docker build . --build-arg VERSION=$(APP_VERSION) -t demsking/oremi-sds:latest
 
 publish-image: image
+	docker publish demsking/oremi-sds:$(APP_VERSION)
+	docker publish demsking/oremi-sds:latest
