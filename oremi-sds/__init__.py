@@ -55,20 +55,6 @@ def parse_arguments():
 
   # Define command-line arguments
   parser.add_argument(
-    '--host',
-    type = str,
-    default = '127.0.0.1',
-    help = 'Host address to connect to (default: 127.0.0.1).'
-  )
-
-  parser.add_argument(
-    '-p', '--port',
-    type = int,
-    default = 5023,
-    help = 'Port number to connect to (default: 5023).'
-  )
-
-  parser.add_argument(
     '-m', '--model',
     type = str,
     required = True,
@@ -78,8 +64,8 @@ def parse_arguments():
   parser.add_argument(
     '-t', '--threshold',
     type=float,
-    default = 0.2,
-    help = 'Detection threshold for filtering predictions (default: 0.2).'
+    default = 0.1,
+    help = 'Detection threshold for filtering predictions (default: 0.1).'
   )
 
   parser.add_argument(
@@ -94,6 +80,20 @@ def parse_arguments():
     type = str,
     default = 'config.json',
     help = 'Path to the configuration file (default: config.json).'
+  )
+
+  parser.add_argument(
+    '--host',
+    type = str,
+    default = '127.0.0.1',
+    help = 'Host address to connect to (default: 127.0.0.1).'
+  )
+
+  parser.add_argument(
+    '-p', '--port',
+    type = int,
+    default = 5023,
+    help = 'Port number to connect to (default: 5023).'
   )
 
   parser.add_argument(

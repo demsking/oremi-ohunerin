@@ -31,7 +31,7 @@ cry, Whistling, Wheeze, Snoring, Cough, Sneeze, Burping, and Hiccup.
 ## Install
 
 ```sh
-pip install Oremi_SDS
+pip install Oremi-SDS
 ```
 
 ## Usage
@@ -43,16 +43,16 @@ Oremi Sound Detector Server
 
 options:
   -h, --help            show this help message and exit
-  --host HOST           Host address to connect to (default: 127.0.0.1).
-  -p PORT, --port PORT  Port number to connect to (default: 5023).
   -m MODEL, --model MODEL
                         Path to the TensorFlow Lite model filename (required).
   -t THRESHOLD, --threshold THRESHOLD
-                        Detection threshold for filtering predictions (default: 0.2).
+                        Detection threshold for filtering predictions (default: 0.1).
   -n NUM_THREADS, --num-threads NUM_THREADS
                         Number of threads for TensorFlow Lite interpreter (default: -1, auto-select).
   -c CONFIG, --config CONFIG
                         Path to the configuration file (default: config.json).
+  --host HOST           Host address to connect to (default: 127.0.0.1).
+  -p PORT, --port PORT  Port number to connect to (default: 5023).
   --verbose             Enable verbose logging.
   -v, --version         Show the version of the application.
 ```
