@@ -11,14 +11,27 @@ can continuously stream audio data. Once connected, clients can send audio
 data in `bytes`, and the server will process it in real-time, detecting sounds
 and sending JSON messages back to the client when a sound is recognized.
 
-OSDS detects the Oremi wake word including sounds: Shout, Bellows, Children
-shouting, Laughter, Baby laughter, Crying, sobbing, Baby cry, infant cry,
-Whistling, Wheeze, Snoring, Cough, Sneeze, Burping, and Hiccup.
+Oremi SDS detects the Oremi wake word including sounds: Shout, Bellows,
+Children shouting, Laughter, Baby laughter, Crying, sobbing, Baby cry, infant
+cry, Whistling, Wheeze, Snoring, Cough, Sneeze, Burping, and Hiccup.
+
+## Table of Contents
+
+- [Install](#install)
+- [Usage](#usage)
+- [Protocol](#protocol)
+  * [Initialization](#initialization)
+  * [Sound Detection](#sound-detection)
+  * [Connection Closure Codes](#connection-closure-codes)
+  * [Example Implementation](#example-implementation)
+- [Contribute](#contribute)
+- [Versioning](#versioning)
+- [License](#license)
 
 ## Install
 
 ```sh
-pip install oremi_sds
+pip install Oremi_SDS
 ```
 
 ## Usage
@@ -66,11 +79,12 @@ build their applications accordingly.
 ### Initialization
 
 1. When a client connects to the server, it must send an initial
-  [JSON initiation message](https://gitlab.com/demsking/oremi-sds/blob/main/schemas/InitMessage.json)
+
+[JSON initiation message](https://gitlab.com/demsking/oremi-sds/blob/main/schemas/InitMessage.json)
   within 5 seconds or else the connection will be closed with code `1002` and
   reason `Init Timeout`.
 
-  ```json
+```json
   {
     "type": "init",
     "language": "fr",
@@ -83,7 +97,7 @@ build their applications accordingly.
 
 2. The server responds with:
 
-  ```json
+```json
   {
     "type": "init",
     "server": "Oremi Sound Detector Server/1.0.0"
@@ -97,15 +111,17 @@ seconds, the server will close the connection with code `1002` and reason
 ### Sound Detection
 
 1. Once the session is initialized, the client can continuously send audio
-  stream in bytes.
+
+stream in bytes.
 
 2. The server processes the audio stream in real-time and sends a
-  [JSON sound message](https://gitlab.com/demsking/oremi-sds/blob/main/schemas/DetectedSoundSchema.json)
+
+[JSON sound message](https://gitlab.com/demsking/oremi-sds/blob/main/schemas/DetectedSoundSchema.json)
   when it detects a sound:
 
-  **Example for wakeword**
+**Example for wakeword**
 
-  ```json
+```json
   {
     "type": "sound",
     "sound": "wakeword",
@@ -114,9 +130,9 @@ seconds, the server will close the connection with code `1002` and reason
   }
   ```
 
-  **Example for cough**
+**Example for cough**
 
-  ```json
+```json
   {
     "type": "sound",
     "sound": "cough",
@@ -136,11 +152,10 @@ Possible connection closure codes:
 
 ### Example Implementation
 
-See [client.py example file](https://gitlab.com/demsking/oremi-sds/blob/main/client.py).
-
 For an example of how to implement a client for the "Oremi Sound Detector
 Server," you can refer to the [client.py file](https://gitlab.com/demsking/oremi-sds/blob/main/client.py)
-in the GitLab repository. The example demonstrates how to connect to the
+in the GitLab repository.
+The example demonstrates how to connect to the
 server, send audio data, and handle the JSON messages received from the
 server.
 

@@ -10,6 +10,8 @@ pkgs.mkShell {
     pkgs.tmux
     pkgs.ruff
     pkgs.gitmux
+    pkgs.which
+    pkgs.nodejs
     pkgs.poetry
     pkgs.gnumake
     pkgs.checkmake
@@ -50,6 +52,16 @@ pkgs.mkShell {
 
     virtualenv `basename ${envDir}`
     source ${envDir}/bin/activate
+
+    # Node.js
+    mkdir -p .nix-node
+    export NODE_PATH=$PWD/.nix-node
+    export PATH=$NODE_PATH/bin:$PATH
+    npm config set prefix $NODE_PATH
+
+    if ! which gimtoc &> /dev/null; then
+      npm install -g gimtoc
+    fi
 
     # Install pre-commit hooks
     pre-commit install -f

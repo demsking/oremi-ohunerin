@@ -3,6 +3,7 @@ htmlcov/
 dist/
 __pycache__/
 .ruff_cache/
+.nix-node/
 *.egg-info/
 .directory
 .coverage

@@ -42,6 +42,12 @@ repos:
       - id: checkmake
   - repo: local
     hooks:
+      - id: gimtoc
+        name: gimtoc
+        entry: gimtoc
+        language: node
+        files: README.md
+        args: ["--file", "README.md", "--section", "Table of Contents", "--output", "README.md"]
       - id: pylint
         name: pylint
         entry: pylint
