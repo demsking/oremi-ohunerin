@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "oremi-sds"
-version = "1.0.0.beta1"
+version = "1.0.0.beta2"
 description = "Oremi Sound Detector Server"
 keywords = ["sound", "detector"]
 authors = ["Sébastien Demanou <demsking@gmail.com>"]
