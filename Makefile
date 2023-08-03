@@ -1,7 +1,7 @@
-APP_VERSION := 1.0.0.dev0
+APP_VERSION := $(shell python oremi-sds/version.py)
 SRC_FILES := $(wildcard *.json *.toml oremi-sds/*.py)
 
-.PHONY: all clean build-image publish-image test
+.PHONY: all clean image publish-image test
 
 # Start the development environment using tmuxinator
 env:
@@ -58,7 +58,7 @@ dist: $(SRC_FILES)
 publish: dist
 	twine upload -r testpypi dist/*
 
-build-image: dist
+image:
 	docker build . --progress plain --build-arg VERSION=$(APP_VERSION) -t demsking/oremi-sds
 
-publish-image: build-image
+publish-image: image

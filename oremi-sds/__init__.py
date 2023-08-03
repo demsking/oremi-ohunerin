@@ -63,7 +63,7 @@ def parse_arguments():
 
   parser.add_argument(
     '-t', '--threshold',
-    type=float,
+    type = float,
     default = 0.1,
     help = 'Detection threshold for filtering predictions (default: 0.1).'
   )
@@ -98,14 +98,14 @@ def parse_arguments():
 
   parser.add_argument(
     '--verbose',
-    action='store_true',
+    action = 'store_true',
     help = 'Enable verbose logging.'
   )
 
   parser.add_argument(
     '-v', '--version',
-    action='version',
-    version=f'%(prog)s {__version__}',
+    action = 'version',
+    version = f'%(prog)s {__version__}',
     help = 'Show the version of the application.'
   )
 
