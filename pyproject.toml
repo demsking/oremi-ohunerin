@@ -24,8 +24,8 @@ classifiers = [
 
 include = [
   "config.json",
-  "models",
-  "schemas",
+  "models/**/*",
+  "schemas/**/*",
 ]
 
 packages = [
@@ -50,7 +50,7 @@ websockets = "^11.0.3"
 pydantic = "^2.1.1"
 scipy = "^1.11.1"
 tflite-runtime = "^2.13.0"
-tflite-support = {url = "https://github.com/Gulianrdgd/tflite-support/releases/download/3.10.0/tflite_support-3.10.0-cp310-cp310-linux_x86_64.whl"}
+tflite-support = "^0.4.4"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.3.1"

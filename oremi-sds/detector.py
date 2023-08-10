@@ -69,28 +69,47 @@ class DetectorEngine:
 
 
 class DetectorConsumer:
+  """
+  Consumes audio data from a detector engine and performs sound classification.
+  """
+
   def __init__(
     self,
     detector: DetectorEngine,
     *,
     logger: Trace,
-    num_channels: int,
     on_sound_detect: Callable[[DetectedSound], Coroutine],
   ) -> None:
+    """
+    Initialize the DetectorConsumer.
+
+    Args:
+      detector (DetectorEngine): The audio detector engine.
+      logger (Trace): The logger instance for logging.
+      on_sound_detect (Callable[[DetectedSound], Coroutine]): A coroutine to handle the detected sound events.
+    """
     self._logger = logger
     self._detector = detector
     self._on_sound_detect = on_sound_detect
-    self._num_channels = num_channels
 
     # Initialize the audio classification buffer.
     self._buffer = bytearray(15600)
     self._buffer_index = 0
 
   def reset_buffer(self):
+    """
+    Reset the audio classification buffer index to 0.
+    """
     self._buffer_index = 0
 
-  async def classify_audio(self, chunk: bytes):
-    audio_array = to_ndarray(chunk, self._num_channels)
+  async def _classify_audio(self, chunk: bytes):
+    """
+    Classify audio data and process detected sounds.
+
+    Args:
+      chunk (bytes): The audio chunk in bytes format.
+    """
+    audio_array = to_ndarray(chunk, 1)
     self._detector.tensor_audio.load_from_array(audio_array)
     result = self._detector.classifier.classify(self._detector.tensor_audio)
 
@@ -101,9 +120,15 @@ class DetectorConsumer:
       await self._on_sound_detect(sound.category_name.lower(), sound.score)
 
   async def process_raw(self, chunk: bytes):
+    """
+    Process raw mono audio data and perform sound classification.
+
+    Args:
+      chunk (bytes): The raw mono audio data chunk to process.
+    """
     for byte in chunk:
       self._buffer[self._buffer_index] = byte
       self._buffer_index += 1
       if self._buffer_index == len(self._buffer):
-        await self.classify_audio(bytes(self._buffer))
+        await self._classify_audio(bytes(self._buffer))
         self.reset_buffer()

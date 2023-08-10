@@ -24,10 +24,11 @@ import websockets.legacy.client
 
 
 def parse_arguments():
-  """Parse command-line arguments.
+  """
+  Parse command-line arguments.
 
   Returns:
-      argparse.Namespace: The parsed command-line arguments.
+    argparse.Namespace: The parsed command-line arguments.
   """
   parser = argparse.ArgumentParser(description='Audio Recorder')
 
@@ -35,38 +36,66 @@ def parse_arguments():
     '--host',
     type = str,
     default = 'localhost',
-    help = 'Host address to connect to (default: localhost).'
+    help = 'Host address to connect to (default: localhost).',
   )
 
   parser.add_argument(
     '-p', '--port',
     type = int,
     default = 5023,
-    help = 'Port number to connect to (default: 5023).'
+    help = 'Port number to connect to (default: 5023).',
   )
 
   parser.add_argument(
     '-s', '--sample-rate',
     type = int,
     default = 16000,
-    help = 'Sample rate for audio recording. Determines the number of audio samples captured per second during recording.'
+    help = 'Sample rate for audio recording. Determines the number of audio samples captured per second during recording.',
   )
 
   parser.add_argument(
     '-b', '--block-size',
     type = int,
     default = 4000,
-    help = 'Length of audio chunks for recording. Specifies the number of samples in each audio chunk during recording.'
+    help = 'Length of audio chunks for recording. Specifies the number of samples in each audio chunk during recording.',
   )
 
   parser.add_argument(
-    '-d', '--device-index',
+    '-l', '--list-devices',
+    action = "store_true",
+    help = "List available input devices.",
+  )
+
+  parser.add_argument(
+    '-i', '--device-index',
     type = int,
     default = -1,
-    help = 'Index of the audio device to be used for recording audio.'
+    help = 'Index of the audio device to be used for recording audio.',
+  )
+
+  parser.add_argument(
+    "-d", "--device",
+    type = str,
+    default="",
+    help = "Name of the device (case-insensitive).",
+  )
+
+  parser.add_argument(
+    "-c", "--channels",
+    type = int,
+    default = 1,
+    help = "Number of channels (default: 1).",
   )
 
   return parser.parse_args()
+
+
+def list_input_devices():
+  devices = sd.query_devices()
+  print("Available input devices:")
+  for i, device in enumerate(devices):
+    if device['max_input_channels'] > 0:
+      print(f"{i + 1}. {device['name']} - {device['max_input_channels']} channel(s) - Sample rate: {device['default_samplerate']} Hz")
 
 
 async def client():
@@ -74,11 +103,17 @@ async def client():
 
   audio_queue = asyncio.Queue[bytes]()
   args = parse_arguments()
+
+  if args.list_devices:
+    list_input_devices()
+    return
+
   stream = sd.RawInputStream(
     dtype = 'int16',
     samplerate = args.sample_rate,
     blocksize = args.block_size,
-    device = args.device_index if args.device_index > -1 else None,
+    device = args.device or (args.device_index if args.device_index > -1 else None),
+    channels = args.channels,
     callback = lambda indata, frames, time, status: loop.call_soon_threadsafe(audio_queue.put_nowait, bytes(indata)),
   )
 

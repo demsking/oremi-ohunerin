@@ -23,6 +23,7 @@ import pydantic
 import websockets.exceptions
 import websockets.legacy.server
 
+from .audio import resample_audio, multi_channel_to_mono
 from .detector import DetectorConsumer, DetectorEngine
 from .models import Config, DetectedSound, InitMessage, WakewordSetting, create_detected_sound_object
 from .trace import Trace
@@ -51,7 +52,7 @@ def parse_arguments():
       argparse.Namespace: The parsed command-line arguments.
   """
   # Create the ArgumentParser instance
-  parser = argparse.ArgumentParser(prog=APP_NAME, description=APP_DISPLAY_NAME)
+  parser = argparse.ArgumentParser(prog = APP_NAME, description = APP_DISPLAY_NAME)
 
   # Define command-line arguments
   parser.add_argument(
@@ -164,7 +165,6 @@ async def main():
 
     consumer = DetectorConsumer(
       detector,
-      num_channels = config.num_channels,
       on_sound_detect = send_detected_sound,
       logger = logger,
     )
@@ -183,6 +183,9 @@ async def main():
 
       started = True
       async for chunk in websocket:
+        chunk = resample_audio(chunk, config.samplerate, 16000)
+        if config.num_channels > 1:
+          chunk = multi_channel_to_mono(chunk, config.num_channels)
         if 'wakeword-detector' in config.features:
           wakeword_detected = await wakeword_engine.process_raw(chunk)
           if wakeword_detected:
