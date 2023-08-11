@@ -39,20 +39,13 @@ Therefore:
 
 ## Development Setup
 
-1. [Install Nix Package Manager](https://nixos.org/manual/nix/stable/installation/installing-binary.html)
+1. [Install The Determinate Nix Installer](https://github.com/DeterminateSystems/nix-installer)
 
 2. [Install `direnv` with your OS package manager](https://direnv.net/docs/installation.html#from-system-packages)
 
 3. [Hook it `direnv` into your shell](https://direnv.net/docs/hook.html)
 
-4. **Allow unfree package on Nix config**
-
-   ```sh
-   mkdir -p ~/.config/nixpkgs
-   echo '{ allowUnfree = true; }' >> ~/.config/nixpkgs/config.nix
-   ```
-
-5. **Install dependencies**
+4. **Install dependencies**
 
    At the top-level of your project run:
 
@@ -63,7 +56,7 @@ Therefore:
    The next time your launch your terminal and enter the top-level of your
    project, `direnv` will check for changes.
 
-6. **Start environment**
+5. **Start environment**
 
    ```sh
    make env
