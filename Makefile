@@ -1,7 +1,8 @@
 APP_VERSION := $(shell python oremi-sds/version.py)
-SRC_FILES := $(wildcard *.json *.toml oremi-sds/*.py)
+SRC_FILES := $(wildcard *.json *.toml oremi-sds/*.py models/*/* packages/*.whl)
+TSLITE_FILE := ~/.cache/tensorflow/models/tflite/task_library/audio_classification/rpi/lite-model_yamnet_classification_tflite_1.tflite
 
-.PHONY: all clean image publish-image test
+.PHONY: all clean build image prepare publish-image test
 
 # Start the development environment using tmuxinator
 env:
@@ -10,17 +11,22 @@ env:
 clean:
 	rm -rf dist/ models/*.tflite
 
-models/lite-model_yamnet_classification_tflite_1.tflite:
-	mkdir -p models/
+$(TSLITE_FILE):
+	mkdir -p $(shell dirname $@)
 	curl \
-		-L 'https://storage.googleapis.com/download.tensorflow.org/models/tflite/task_library/audio_classification/rpi/lite-model_yamnet_classification_tflite_1.tflite' \
-		-o $@
+	  -L 'https://storage.googleapis.com/download.tensorflow.org/models/tflite/task_library/audio_classification/rpi/lite-model_yamnet_classification_tflite_1.tflite' \
+	  -o $@
 
-install: models/lite-model_yamnet_classification_tflite_1.tflite
+prepare: $(TSLITE_FILE)
+	mkdir -p dist
+
+install: prepare
 	poetry install
 
-start: models/lite-model_yamnet_classification_tflite_1.tflite
-	python -m oremi-sds --verbose --model $<
+build: dist/oremi-sds
+
+start: $(TSLITE_FILE)
+	python -m oremi-sds --verbose --host 0.0.0.0 --model $<
 
 client:
 	python client.py
@@ -58,9 +64,21 @@ dist: $(SRC_FILES)
 publish: dist
 	twine upload dist/*
 
-image: publish
-	docker build . --build-arg VERSION=$(APP_VERSION) -t demsking/oremi-sds:$(APP_VERSION)
-	docker build . --build-arg VERSION=$(APP_VERSION) -t demsking/oremi-sds:latest
+build/oremi-sds-base.tar.gz: base.nix
+	nix-build --out-link $@ $<
+	docker load < $@
+
+build/oremi-sds-image.tar.gz: image.nix
+	nix-build --out-link $@ $<
+	docker load < $@
+
+# image: publish
+image:
+	docker build . --progress plain --build-arg VERSION=$(APP_VERSION) -t demsking/oremi-sds:$(APP_VERSION)
+
+# image: build/oremi-sds-image.tar.gz
+# 	docker build . --progress plain --build-arg VERSION=$(APP_VERSION) -t demsking/oremi-sds:$(APP_VERSION)
+# 	docker build . --build-arg VERSION=$(APP_VERSION) -t demsking/oremi-sds:latest
 
 publish-image: image
 	docker publish demsking/oremi-sds:$(APP_VERSION)
