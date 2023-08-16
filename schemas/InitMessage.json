@@ -7,18 +7,6 @@
       "enum": ["init"],
       "description": "The type of the message, should be 'init'."
     },
-    "num_channels": {
-      "type": "integer",
-      "description": "The number of audio channels for the audio stream."
-    },
-    "samplerate": {
-      "type": "integer",
-      "description": "The sample rate of the audio stream."
-    },
-    "blocksize": {
-      "type": "integer",
-      "description": "The block size of audio data sent in each WebSocket message."
-    },
     "language": {
       "type": "string",
       "enum": ["fr", "en"],
@@ -28,11 +16,11 @@
       "type": "array",
       "items": {
         "type": "string",
-        "enum": ["wakeword-detector", "sound-detector"]
+        "enum": ["wakeword-detection", "sound-detection"]
       },
-      "description": "The list of features to enable, should include 'wakeword-detector' and/or 'sound-detector'. Default value is ['wakeword-detector', 'sound-detector']."
+      "description": "The list of features to enable, should include 'wakeword-detection' and/or 'sound-detection'. Default value is ['wakeword-detection', 'sound-detection']."
     }
   },
-  "required": ["type", "num_channels", "samplerate", "blocksize", "language"],
+  "required": ["type", "language"],
   "description": "JSON Schema for the message structure used during the initialization process."
 }

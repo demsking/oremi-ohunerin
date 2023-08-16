@@ -1,5 +1,5 @@
 APP_VERSION := $(shell python oremi-sds/version.py)
-SRC_FILES := $(wildcard *.json *.toml oremi-sds/*.py models/*/* packages/*.whl)
+SRC_FILES := $(wildcard *.json *.toml *.lock oremi-sds/*.py models/*/*)
 TSLITE_FILE := ~/.cache/tensorflow/models/tflite/task_library/audio_classification/rpi/lite-model_yamnet_classification_tflite_1.tflite
 
 .PHONY: all clean build image prepare publish-image test
@@ -54,6 +54,7 @@ outdated:
 
 update:
 	poetry update
+	nix flake update
 	pre-commit autoupdate
 
 dist: $(SRC_FILES)

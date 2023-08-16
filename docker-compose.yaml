@@ -1,2 +1,6 @@
 version: '3.8'
-services: {}
+services:
+  server:
+    image: demsking/oremi-sds
+    ports:
+      - 6023:5023

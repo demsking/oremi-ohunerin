@@ -14,83 +14,10 @@
 # ==============================================================================
 
 import numpy as np
-from scipy import signal  # type: ignore
 
 __all__ = [
-  'reduce_noise',
   'to_ndarray',
 ]
-
-
-def reduce_noise(data: np.ndarray, sample_rate: int):
-  """
-  Reduce noise from the data using a high-pass filter.
-
-  Args:
-    data (np.ndarray): The audio data to filter.
-    sample_rate (int): The sample rate of the audio data.
-
-  Returns:
-    np.ndarray: The filtered audio data.
-
-  Raises:
-    ValueError: If the sample rate is not positive.
-  """
-  if sample_rate <= 0:
-    raise ValueError('The sample rate must be positive.')
-
-  numerator_b, denominator_a = signal.butter(10, 2000/(sample_rate/2), btype='highpass')
-  yf = signal.lfilter(numerator_b, denominator_a, data)
-  return yf
-
-
-def resample_audio(audio_data: bytes, original_sample_rate: int, target_sample_rate: int) -> bytes:
-  """
-  Resample audio data from the original sample rate to the target sample rate.
-
-  Args:
-    audio_data (bytes): Audio data in bytes.
-    original_sample_rate (int): The original sample rate of the audio data.
-    target_sample_rate (int): The desired target sample rate.
-
-  Returns:
-    bytes: Resampled audio data in bytes if resampling is performed; otherwise, the original audio data.
-  """
-  if original_sample_rate != target_sample_rate:
-    # Convert bytes to numpy array with dtype int16
-    audio_array = np.frombuffer(audio_data, dtype = np.int16)
-
-    # Calculate the resampling ratio
-    resample_ratio = target_sample_rate / original_sample_rate
-
-    # Perform the resampling
-    resampled_data = signal.resample(audio_array, int(len(audio_array) * resample_ratio))
-
-    # Convert the resampled numpy array back to bytes
-    resampled_bytes = resampled_data.astype(np.int16).tobytes()
-    return resampled_bytes
-  # If the original sample rate matches the target sample rate, return the original audio data.
-  return audio_data
-
-
-def multi_channel_to_mono(data: bytes, num_channels: int) -> bytes:
-  """
-  Converts multi-channel audio data in bytes format to mono audio data.
-
-  Args:
-    data (bytes): The multi-channel audio data in bytes format.
-    num_channels (int): The number of audio channels.
-
-  Returns:
-    bytes: The converted mono audio data in bytes format.
-  """
-  audio_array = np.frombuffer(data, dtype=np.int16)
-  reshaped_audio = audio_array.reshape(-1, num_channels)
-
-  mono_array = np.mean(reshaped_audio, axis=1, dtype=np.int16)
-  mono_bytes = mono_array.tobytes()
-
-  return mono_bytes
 
 
 def to_ndarray(data: bytes, num_channels: int):

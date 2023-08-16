@@ -1,4 +1,4 @@
-# Contributing to Oremi Sound Detector Server
+# Contributing to Oremi Sound Detection Server
 
 ## Before Submitting an Issue
 
@@ -72,7 +72,7 @@ Therefore:
 | env               | Start the development environment using tmuxinator.                    |
 | clean             | Clean up build artifacts and temporary files.                          |
 | install           | Install dependencies and download the TensorFlow Lite model.           |
-| start             | Start the sound detector server with the downloaded model.             |
+| start             | Start the sound detection server with the downloaded model.             |
 | client            | Start the test client.                                                 |
 | lint              | Run linting checks on the codebase using pre-commit.                   |
 | fix               | Automatically fix any linting issues found by ruff.                    |
@@ -98,7 +98,7 @@ Please see the [Makefile](Makefile) for the full list of targets.
 
 ## Contribute
 
-Contributions to Oremi Sound Detector Server are welcome. Here is how you can
+Contributions to Oremi Sound Detection Server are welcome. Here is how you can
 contribute:
 
 1. [Submit bugs or a feature request](https://gitlab.com/demsking/oremi-sds/issues)

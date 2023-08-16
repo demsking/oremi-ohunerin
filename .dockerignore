@@ -1,5 +1,6 @@
 .git/
-.github/
+.gitlab/
+__pycache__/
 .directory
 .dockerignore
 dockerfile

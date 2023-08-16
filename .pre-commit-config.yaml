@@ -17,18 +17,18 @@ repos:
       - id: double-quote-string-fixer
       - id: name-tests-test
   - repo: https://github.com/python-poetry/poetry
-    rev: 1.5.1
+    rev: 1.5.0
     hooks:
       - id: poetry-check
       - id: poetry-lock
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.23.3
+    rev: 0.24.1
     hooks:
       - id: check-gitlab-ci
       - id: check-metaschema
         files: ^schemas/.*\.json$
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.0.282
+    rev: v0.0.284
     hooks:
       - id: ruff
   - repo: https://github.com/asottile/pyupgrade

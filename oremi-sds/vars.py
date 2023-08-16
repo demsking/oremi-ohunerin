@@ -13,7 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 
-from .version import __version__
+from .version import __package_description__, __package_name__, __version__
 
 __all__ = [
   'APP_NAME',
@@ -23,8 +23,8 @@ __all__ = [
   '__version__',
 ]
 
-APP_NAME = 'oremi-sds'
+APP_NAME = __package_name__
 APP_ID = f'sebastien.demanou.{APP_NAME}'
-APP_DISPLAY_NAME = 'Oremi Sound Detector Server'
+APP_DISPLAY_NAME = __package_description__
 
 ENCODING = 'utf-8'

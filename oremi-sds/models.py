@@ -37,13 +37,10 @@ def create_detected_sound_object(sound_name: str, score: float) -> DetectedSound
 
 class InitMessage(BaseModel):
   type: Literal['init']
-  num_channels: int
-  samplerate: int
-  blocksize: int
   language: Literal['fr', 'en']
-  features: list[Literal['wakeword-detector', 'sound-detector']] = Field(min_items = 1, default_factory = lambda: [
-    'wakeword-detector',
-    'sound-detector',
+  features: list[Literal['wakeword-detection', 'sound-detection']] = Field(min_items = 1, default_factory = lambda: [
+    'wakeword-detection',
+    'sound-detection',
   ])
 
 

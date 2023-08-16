@@ -15,15 +15,19 @@
 
 import toml
 
-with open('pyproject.toml') as f:
-  __version__ = toml.load(f)['tool']['poetry']['version']
-
+with open('pyproject.toml', encoding = 'utf-8') as file:
+  package = toml.load(file)['tool']['poetry']
+  __package_name__ = package['name']
+  __package_description__ = package['description']
+  __version__ = package['version']
+  del package
+  del toml
 
 __all__ = [
+  '__package_name__',
+  '__package_description__',
   '__version__',
 ]
-
-del toml
 
 if __name__ == '__main__':
   print(__version__)

@@ -1,9 +1,9 @@
-# Oremi Sound Detector Server
+# Oremi Sound Detection Server
 
 [![pypi version](https://badge.fury.io/py/oremi-sds.svg)](https://pypi.org/project/oremi-sds/)
 [![Buy me a beer](https://img.shields.io/badge/Buy%20me-a%20beer-1f425f.svg)](https://www.buymeacoffee.com/demsking)
 
-Oremi Sound Detector Server is a WebSocket server designed to detect sound
+Oremi Sound Detection Server is a WebSocket server designed to detect sound
 events, including wake words and a predefined list of songs, for the Oremi
 Personal Assistant.
 
@@ -40,7 +40,7 @@ pip install Oremi-SDS
 ```sh
 usage: oremi-sds [-h] [--host HOST] [-p PORT] -m MODEL [-t THRESHOLD] [-n NUM_THREADS] [-c CONFIG] [--verbose] [-v]
 
-Oremi Sound Detector Server
+Oremi Sound Detection Server
 
 options:
   -h, --help            show this help message and exit
@@ -63,7 +63,7 @@ https://storage.googleapis.com/download.tensorflow.org/models/tflite/task_librar
 
 ## Protocol
 
-Oremi Sound Detector Server operates using a WebSocket-based protocol for
+Oremi Sound Detection Server operates using a WebSocket-based protocol for
 real-time sound detection. The protocol involves an initialization step where
 the client provides essential details such as the number of audio channels,
 sample rate, block size, language, and features to enable. Once the session is
@@ -83,17 +83,14 @@ build their applications accordingly.
 
 When a client connects to the server, it must send an initial
 [JSON initiation message](https://gitlab.com/demsking/oremi-sds/blob/main/schemas/InitMessage.json)
-within 5 seconds or else the connection will be closed with code `1002` and
-reason `Init Timeout`.
+**within 5 seconds** or else the connection will be closed with code `1002`
+and reason `Init Timeout`.
 
 ```json
 {
   "type": "init",
   "language": "fr",
-  "samplerate": 16000,
-  "num_channel": 1,
-  "blocksize": 4000,
-  "features": ["wakeword-detector", "sound-detector"]
+  "features": ["wakeword-detection", "sound-detection"]
 }
 ```
 
@@ -104,7 +101,8 @@ The server responds with:
 ```json
 {
   "type": "init",
-  "server": "Oremi Sound Detector Server/1.0.0"
+  "server": "Oremi Sound Detection Server/1.0.0",
+  "status": "ready"
 }
 ```
 
@@ -116,8 +114,8 @@ seconds, the server will close the connection with code `1002` and reason
 
 **1. Client**
 
-Once the session is initialized, the client can continuously send audio
-stream in bytes.
+Once the session is initialized, the client can send a continuous audio stream
+in bytes, with an audio frequency of 16000Hz and a single channel.
 
 **2. Server**
 
@@ -158,12 +156,11 @@ Possible connection closure codes:
 
 ### Example Implementation
 
-For an example of how to implement a client for the "Oremi Sound Detector
+For an example of how to implement a client for the "Oremi Sound Detection
 Server," you can refer to the [client.py file](https://gitlab.com/demsking/oremi-sds/blob/main/client.py)
 in the GitLab repository.
-The example demonstrates how to connect to the
-server, send audio data, and handle the JSON messages received from the
-server.
+The example demonstrates how to connect to the server, send audio data, and
+handle the JSON messages received from the server.
 
 ## Contribute
 

@@ -35,8 +35,8 @@ def parse_arguments():
   parser.add_argument(
     '--host',
     type = str,
-    default = 'localhost',
-    help = 'Host address to connect to (default: localhost).',
+    default = '127.0.0.1',
+    help = 'Host address to connect to (default: 127.0.0.1).',
   )
 
   parser.add_argument(
@@ -47,23 +47,9 @@ def parse_arguments():
   )
 
   parser.add_argument(
-    '-s', '--sample-rate',
-    type = int,
-    default = 16000,
-    help = 'Sample rate for audio recording. Determines the number of audio samples captured per second during recording.',
-  )
-
-  parser.add_argument(
-    '-b', '--block-size',
-    type = int,
-    default = 4000,
-    help = 'Length of audio chunks for recording. Specifies the number of samples in each audio chunk during recording.',
-  )
-
-  parser.add_argument(
-    '-l', '--list-devices',
-    action = "store_true",
-    help = "List available input devices.",
+    '-l', '--language',
+    type = str,
+    default = 'fr',
   )
 
   parser.add_argument(
@@ -74,17 +60,16 @@ def parse_arguments():
   )
 
   parser.add_argument(
-    "-d", "--device",
+    '-d', '--device',
     type = str,
-    default="",
-    help = "Name of the device (case-insensitive).",
+    default = '',
+    help = 'Name of the device.',
   )
 
   parser.add_argument(
-    "-c", "--channels",
-    type = int,
-    default = 1,
-    help = "Number of channels (default: 1).",
+    '--list-devices',
+    action = 'store_true',
+    help = 'List available input devices.',
   )
 
   return parser.parse_args()
@@ -92,17 +77,16 @@ def parse_arguments():
 
 def list_input_devices():
   devices = sd.query_devices()
-  print("Available input devices:")
+  print('Available input devices:')
   for i, device in enumerate(devices):
     if device['max_input_channels'] > 0:
       print(f"{i + 1}. {device['name']} - {device['max_input_channels']} channel(s) - Sample rate: {device['default_samplerate']} Hz")
 
 
 async def client():
-  uri = 'ws://localhost:5023'
-
   audio_queue = asyncio.Queue[bytes]()
   args = parse_arguments()
+  uri = f'ws://{args.host}:{args.port}'
 
   if args.list_devices:
     list_input_devices()
@@ -110,14 +94,14 @@ async def client():
 
   stream = sd.RawInputStream(
     dtype = 'int16',
-    samplerate = args.sample_rate,
-    blocksize = args.block_size,
+    samplerate = 16000,
+    blocksize = 4000,
     device = args.device or (args.device_index if args.device_index > -1 else None),
-    channels = args.channels,
+    channels = 1,
     callback = lambda indata, frames, time, status: loop.call_soon_threadsafe(audio_queue.put_nowait, bytes(indata)),
   )
 
-  async with websockets.legacy.client.connect(uri, user_agent_header = 'Oremi Sound Detector Client/1.0.0') as websocket:
+  async with websockets.legacy.client.connect(uri, user_agent_header = 'sdclient/1.0.0') as websocket:
     loop = asyncio.get_running_loop()
     loop.add_signal_handler(signal.SIGINT, lambda: loop.create_task(websocket.close(), name = 'SIGINT Signal Task'))
     loop.add_signal_handler(signal.SIGTERM, lambda: loop.create_task(websocket.close(), name = 'SIGTERM Signal Task'))
@@ -125,10 +109,7 @@ async def client():
     print('Sending init message')
     await websocket.send(json.dumps({
       'type': 'init',
-      'language': 'fr',
-      'num_channels': stream.channels,
-      'samplerate': args.sample_rate,
-      'blocksize': args.block_size,
+      'language': args.language,
     }))
 
     init_message_response = await websocket.recv()
@@ -138,7 +119,7 @@ async def client():
       print('Listening...')
       try:
         async for message in websocket:
-          print('>>>', message)
+          print('>>>', message) # {"type": "sound", "sound": "snoring", "score": 0.109375, "datetime": "2023-08-16T14:42:46.424809"}
       except asyncio.CancelledError:
         print('Recording cancelled')
       finally:

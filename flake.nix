@@ -25,7 +25,6 @@
               git
               tmux
               ruff
-              hadolint
               gitmux
               which
               nodejs
