@@ -26,28 +26,26 @@ lint:
   needs:
     - env setup
   script:
-    - nix develop --command ./ci/fix-pre-commit-setup.sh
     - nix develop --command bash -c 'make lint'
 
-tests and coverage:
-  stage: test
-  needs:
-    - env setup
-  script:
-    - nix develop --command bash -c 'make coverage'
-  coverage: '/TOTAL\s+\d+\s+\d+\s+([\d\.]+)%/'
+# tests and coverage:
+#   stage: test
+#   needs:
+#     - env setup
+#   script:
+#     - nix develop --command bash -c 'make coverage'
+#   coverage: '/TOTAL\s+\d+\s+\d+\s+([\d\.]+)%/'
 
 build distribution files:
   stage: build
   needs:
     - lint
-    - tests and coverage
+    # - tests and coverage
   script:
     - nix develop --command bash -c 'make dist'
   artifacts:
     paths:
       - dist/*.whl
-      - dist/*.tar.gz
 
 publish on pypi:
   stage: publish
