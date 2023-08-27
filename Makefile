@@ -7,7 +7,7 @@ SSL_CERT_FILE := $(SSL_PATH)/localhost.pem
 
 TSLITE_FILE := ~/.cache/tensorflow/models/yamnet.tflite
 
-.PHONY: all clean build image model publish-image test build/requirements.txt
+.PHONY: all clean build dist image model publish-image test build/requirements.txt
 
 # Start the development environment using tmuxinator
 env:
@@ -17,7 +17,7 @@ clean:
 	rm -rf dist/ models/*.tflite
 
 $(TSLITE_FILE):
-	./scripts/install-model.sh $(shell dirname $@)
+	./scripts/install-model.sh $@
 
 model: $(TSLITE_FILE)
 

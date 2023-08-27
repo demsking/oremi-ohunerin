@@ -16,13 +16,14 @@ services:
     depends_on:
       - discovery
     volumes:
-      - ~/.cache/tensorflow/models/yamnet.tflite:/usr/share/tflite/yamnet.tflite:ro
+      - ~/.cache/tensorflow/models/yamnet.tflite:/var/oremi/models/yamnet.tflite:ro
       - ~/.config/oremi/ssl:/etc/ssl:ro
+      - ./scripts:/oremi/scripts
     ports:
       - 35023:5023
     command: [
       "--verbose",
-      "--model", "/usr/share/tflite/yamnet.tflite",
+      "--model", "/var/oremi/models/yamnet.tflite",
       "--cert-file", "/etc/ssl/localhost.pem",
       "--key-file", "/etc/ssl/localhost-key.pem",
       "--discovery-uri", "wss://discovery:5105",

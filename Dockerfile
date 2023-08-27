@@ -7,26 +7,25 @@ COPY models/wakeword-en /oremi/
 COPY models/wakeword-fr /oremi/
 
 RUN apt-get update \
-  && apt-get install --no-install-recommends -y libusb-1.0-0-dev=2:1.0.26-1 \
+  && apt-get install --no-install-recommends -y \
+        curl=7.88.1-10+deb12u1 \
+        libusb-1.0-0-dev=2:1.0.26-1 \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
-COPY pyproject.toml config.json LICENSE build/requirements.txt /oremi/
+COPY scripts/ /oremi/scripts
+COPY build/requirements.txt /oremi/
 
-RUN pip install --no-cache-dir -r /oremi/requirements.txt
+RUN mkdir -p /var/oremi/models \
+  && chown -R oremi:oremi /var/oremi/models \
+  && pip install --no-cache-dir -r /oremi/requirements.txt \
+  && rm -f /oremi/requirements.txt
 
-COPY oremi_sds /oremi/oremi_sds
+COPY pyproject.toml config.json LICENSE /oremi/
+COPY oremi_sds/ /oremi/oremi_sds
 
 USER oremi
-ENV PYTHONPATH="/oremi:$PYTHONPATH"
-ENTRYPOINT [\
-  "python", "-m", \
-    "oremi_sds", \
-      "--host", "0.0.0.0", \
-      "--port", "5023", \
-      "--config", "/oremi/config.json", \
-      "--model", "/usr/share/tflite/yamnet.tflite" \
-]
+ENTRYPOINT ["/oremi/scripts/entrypoint.sh"]
 
 # Adding metadata at the end due to their values being subject to change a each build.
 ARG CREATED_DATE

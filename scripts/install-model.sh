@@ -18,9 +18,7 @@
 set +e
 
 APP_NAME="oremi-sds"
-MODEL_DIR="$1"  # Models directory passed as argument
-MODEL_NAME="yamnet.tflite"
-MODEL_PATH="$MODEL_DIR/$MODEL_NAME"
+MODEL_DEST="$1"  # Models directory passed as argument
 MODEL_URL="https://storage.googleapis.com/download.tensorflow.org/models/tflite/task_library/audio_classification/rpi/lite-model_yamnet_classification_tflite_1.tflite"
 
 log_info() {
@@ -33,23 +31,23 @@ log_error() {
 }
 
 install_model() {
-  if [ ! -f "$MODEL_PATH" ]; then
+  if [ ! -e "$1" ]; then
     log_info "Downloading and installing model $MODEL_URL..."
-    mkdir -p "$MODEL_DIR"
-    if curl -sL "$MODEL_URL" -o "$MODEL_PATH"; then
-      log_info "Model $MODEL_PATH installed successfully."
+    mkdir -p "$(dirname $1)"
+    if curl -sL "$MODEL_URL" -o "$1"; then
+      log_info "Model $1 installed successfully."
     else
       log_error "Failed to download and install $MODEL_URL"
     fi
   else
-    log_info "Model $MODEL_PATH already installed. Skipping..."
+    log_info "Model $1 already installed. Skipping..."
   fi
 }
 
-# Check if MODEL_DIR argument is provided
-if [ -z "$MODEL_DIR" ]; then
-  log_error "MODEL_DIR argument not provided."
+# Check if MODEL_DEST argument is provided
+if [ -z "$MODEL_DEST" ]; then
+  log_error "Model destination argument not provided."
 fi
 
 # Call the install function
-install_model
+install_model $1

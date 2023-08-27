@@ -18,7 +18,6 @@ cry, Whistling, Wheeze, Snoring, Cough, Sneeze, Burping, and Hiccup.
 
 ## Table of Contents
 
-- [Installing Yamnet Classification Model](#installing-yamnet-classification-model)
 - [Getting Started with Oremi SDS](#getting-started-with-oremi-sds)
 - [Starting the Server with Certificates](#starting-the-server-with-certificates)
 - [Oremi Discovery Integration](#oremi-discovery-integration)
@@ -31,16 +30,30 @@ cry, Whistling, Wheeze, Snoring, Cough, Sneeze, Burping, and Hiccup.
 - [Versioning](#versioning)
 - [License](#license)
 
-## Installing Yamnet Classification Model
+## Getting Started with Oremi SDS
 
-To use Oremi SDS you'll need to install the required Yamnet Classification
-model.
+The easiest way to use Oremi SDS is with Docker. Start with Docker for a quick
+setup. Follow these steps:
 
-**Prerequisites**
+**Using Docker**
 
-- Make sure you have `Bash` and `curl` installed on your system.
+Use the official Docker image `demsking/oremi-sds`. Open your terminal and run:
 
-**Installation Steps**
+```sh
+docker run -d \
+  -p 5023:5023 \
+  -v ~/.cache/tensorflow/models:/var/oremi/models \
+  demsking/oremi-sds
+```
+
+This pulls Oremi SDS and starts it on port `5023`. Additionally, the YAMNet
+model will be automatically downloaded into the volume named `yamnet.tflite`
+for seamless operation.
+
+**Alternative Installation**
+
+If you prefer installing Oremi SDS directly, you'll need to install the
+required YAMNet model manualy.
 
 1. Download the install script from the Oremi SDS repository:
    [install-model.sh](https://gitlab.com/demsking/oremi-sds/-/raw/main/scripts/install-model.sh?inline=false)
@@ -67,27 +80,7 @@ model.
    ./install-model.sh ~/.cache/tensorflow/models
    ```
 
-## Getting Started with Oremi SDS
-
-The easiest way to use Oremi SDS is with Docker. Start with Docker for a quick
-setup. Follow these steps:
-
-**Using Docker**
-
-Use the official Docker image `demsking/oremi-sds`. Open your terminal and run:
-
-```sh
-docker run -d \
-  -p 5023:5023 \
-  -v ~/.cache/tensorflow/models/yamnet.tflite:/usr/share/tflite/yamnet.tflite \
-  demsking/oremi-sds
-```
-
-This fetches Oremi SDS and starts it on port `5023`.
-
-**Alternative Installation**
-
-If you prefer installing Oremi SDS directly:
+Now you can install Oremi SDS from PyPi:
 
 ```sh
 pip install oremi-sds
@@ -167,7 +160,7 @@ the `--password` option to provide the password. Here's how to proceed:
    ```sh
    docker run -d \
       -p 5023:5023 \
-      -v ~/.cache/tensorflow/models/yamnet.tflite:/usr/share/tflite/yamnet.tflite \
+      -v ~/.cache/tensorflow/models/yamnet.tflite:/var/oremi/models/yamnet.tflite \
       -v /path/to/cert.pem:/cert.pem \
       -v /path/to/key.pem:/key.pem \
     demsking/oremi-sds \
@@ -228,12 +221,12 @@ services:
     depends_on:
       - discovery
     volumes:
-      - ~/.cache/tensorflow/models/yamnet.tflite:/usr/share/tflite/yamnet.tflite:ro
+      - ~/.cache/tensorflow/models/yamnet.tflite:/var/oremi/models/yamnet.tflite:ro
       - ~/.config/oremi/ssl:/etc/ssl:ro
     ports:
       - 5023:5023
     command: [
-      "--model", "/usr/share/tflite/yamnet.tflite",
+      "--model", "/var/oremi/models/yamnet.tflite",
       "--cert-file", "/etc/ssl/localhost.pem",
       "--key-file", "/etc/ssl/localhost-key.pem",
       "--discovery-uri", "wss://discovery:5105",
