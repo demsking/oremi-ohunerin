@@ -38,7 +38,6 @@ certificates: $(SSL_CERT_FILE)
 start-wss: model certificates
 	poetry run oremi-sds \
 	  --verbose \
-	  --host :: \
 	  --port 25023 \
 	  --model $(TSLITE_FILE) \
 	  --cert-file $(SSL_CERT_FILE) \
@@ -47,20 +46,17 @@ start-wss: model certificates
 start-ws: model
 	poetry run oremi-sds \
 	  --verbose \
-	  --host :: \
 	  --port 15023 \
 	  --model $(TSLITE_FILE)
 
 client-wss: certificates
 	python client.py \
-	  --host localhost \
 	  --port 25023 \
 	  --cert-file $(SSL_CERT_FILE)
 	  --model $(TSLITE_FILE)
 
 client-docker: certificates
 	python client.py \
-	  --host localhost \
 	  --port 35023 \
 	  --cert-file $(SSL_CERT_FILE)
 
