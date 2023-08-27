@@ -43,7 +43,7 @@ model.
 **Installation Steps**
 
 1. Download the install script from the Oremi SDS repository:
-   [install-model.sh](https://gitlab.com/demsking/oremi-sds/-/blob/main/scripts/install-model.sh?inline=false)
+   [install-model.sh](https://gitlab.com/demsking/oremi-sds/-/raw/main/scripts/install-model.sh?inline=false)
 
 2. Make the script executable:
 
