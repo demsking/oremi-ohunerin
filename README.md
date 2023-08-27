@@ -43,7 +43,7 @@ model.
 **Installation Steps**
 
 1. Download the install script from the Oremi SDS repository:
-   [install-model.sh](https://gitlab.com/demsking/oremi-sds/-/blob/main/scripts/install-model?inline=false)
+   [install-model.sh](https://gitlab.com/demsking/oremi-sds/-/blob/main/scripts/install-model.sh?inline=false)
 
 2. Make the script executable:
 
@@ -312,8 +312,8 @@ about available languages for wakeword detection:
 }
 ```
 
-**Note:** If the client doesn't send the initialization message within 5
-seconds, the server will close the connection with code `1002` and reason
+**Note:** If the client doesn't send the initialization message within **5
+seconds**, the server will close the connection with code `1002` and reason
 `Init Timeout`.
 
 ### Sound Detection
@@ -321,7 +321,7 @@ seconds, the server will close the connection with code `1002` and reason
 **1. Client**
 
 Once the session is initialized, the client streams audio data in bytes to the
-server, with an audio frequency of 16000Hz and a single channel.
+server, with an audio frequency of **16000Hz** and a **single channel**.
 
 **2. Server**
 
