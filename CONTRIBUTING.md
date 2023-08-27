@@ -45,7 +45,7 @@ Therefore:
 
 3. [Hook it `direnv` into your shell](https://direnv.net/docs/hook.html)
 
-4. **Install dependencies**
+4. **Load environment**
 
    At the top-level of your project run:
 
@@ -56,7 +56,13 @@ Therefore:
    The next time your launch your terminal and enter the top-level of your
    project, `direnv` will check for changes.
 
-5. **Start environment**
+5. **Install dependencies**
+
+   ```sh
+   make install
+   ```
+
+6. **Start environment**
 
    ```sh
    make env
@@ -67,25 +73,28 @@ Therefore:
 
 **Makefile targets**
 
-| Target            | Description                                                            |
-|-------------------|------------------------------------------------------------------------|
-| env               | Start the development environment using tmuxinator.                    |
-| clean             | Clean up build artifacts and temporary files.                          |
-| install           | Install dependencies and download the TensorFlow Lite model.           |
-| start             | Start the sound detection server with the downloaded model.             |
-| client            | Start the test client.                                                 |
-| lint              | Run linting checks on the codebase using pre-commit.                   |
-| fix               | Automatically fix any linting issues found by ruff.                    |
-| test              | Run tests using pytest.                                                |
-| update-snapshots  | Update snapshots for tests using pytest.                               |
-| coverage          | Generate a coverage report for the codebase using pytest.              |
-| coverage-html     | Generate an HTML coverage report for the codebase using pytest.        |
-| outdated          | Show outdated dependencies using poetry.                               |
-| update            | Update project dependencies using poetry and pre-commit.               |
-| dist              | Build a distribution of the project using poetry and twine.            |
-| publish           | Publish a distribution of the project to TestPyPI using twine.         |
-| build-image       | Build a Docker image with the project.                                 |
-| publish-image     | Publish the Docker image.                                              |
+| Target          | Description                                                                                            |
+|-----------------|--------------------------------------------------------------------------------------------------------|
+| env             | Initiates the development environment using tmuxinator.                                                |
+| clean           | Removes the 'dist/' directory and all '*.tflite' files in the 'models/' directory.                     |
+| model           | Downloads the TFLite model required for the project.                                                   |
+| install         | Installs the project dependencies using Poetry.                                                        |
+| certificates    | Generates self-signed SSL certificates for secure communication.                                       |
+| start-wss       | Starts the server with SSL/TLS support, utilizing the TFLite model and SSL certificates.               |
+| start-ws        | Starts the server without SSL/TLS, utilizing the TFLite model.                                         |
+| client-wss      | Runs the Python client with SSL/TLS support, utilizing SSL certificates.                               |
+| client-ws       | Runs the Python client without SSL/TLS.                                                                |
+| lint            | Executes linting checks on the codebase using pre-commit.                                              |
+| fix             | Automatically fixes any linting issues found by ruff.                                                  |
+| test            | Runs pytest for testing the project.                                                                   |
+| coverage        | Runs pytest with coverage report generation.                                                           |
+| coverage-html   | Runs pytest with HTML-formatted coverage report generation.                                            |
+| outdated        | Displays outdated dependencies using poetry.                                                           |
+| update          | Updates project dependencies using Poetry, Nix flake, and pre-commit.                                  |
+| dist            | Removes existing 'dist/*' files and builds the project distribution using Poetry.                      |
+| publish-package | Uploads the distribution package to the test PyPI repository using Twine.                              |
+| image           | Builds a Docker image for the project, incorporating relevant metadata.                                |
+| publish-image   | Builds and publishes a Docker image to the specified repository, along with Git tagging and pushing.   |
 
 
 Please see the [Makefile](Makefile) for the full list of targets.

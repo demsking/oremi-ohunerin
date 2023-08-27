@@ -7,87 +7,83 @@
   outputs = { self, nixpkgs, flake-utils }:
     flake-utils.lib.eachDefaultSystem (system:
       let
-        envDir = "$(pwd)/venv";
-        isLinux = pkgs.lib.system == "linux";
+        envDir = "./venv";
         pkgs = import nixpkgs {
           inherit system;
           config = {
             allowUnfree = true;
           };
         };
+        pythonPackages = pkgs.python310Packages;
         buildToolsVersion = "30.0.3";
       in
       {
-        devShell =
-          with pkgs; mkShell rec {
-            buildInputs = [
-              # devtools
-              git
-              tmux
-              ruff
-              gitmux
-              which
-              nodejs
-              poetry
-              gnumake
-              checkmake
-              check-jsonschema
-              pre-commit
-              docker-compose
-              tmuxinator
-              python310Packages.build
-              python310Packages.twine
-              python310Packages.virtualenv
-              python310Packages.pre-commit-hooks
+        devShells.default = with pkgs; mkShell rec {
+          EDITOR = "vim";
+          COMPOSE_PROJECT = "oremi-sds";
+          PYTHONPATH = "./clients/python:$PYTHONPATH";
+          LD_LIBRARY_PATH = "${libusb1}/lib:${stdenv.cc.cc.lib}/lib:$LD_LIBRARY_PATH";
+          buildInputs = [
+            # tmux
+            git
+            tmux
+            gitmux
+            tmuxinator
 
-              # Tensorflow Lite
-              cmake
-              libusb1
-              stdenv.cc.cc.lib
+            # devtools
+            docker-compose
+            python310
+            python310Packages.pip
+            python310Packages.wheel
+            python310Packages.twine
+            python310Packages.toml
+            python310Packages.virtualenv
+            stdenv.cc.cc.lib
 
-              # dependencies for the test client
-              portaudio
-            ];
-            shellHook = ''
-              # Tensorflow Lite
-              export PATH="${cmake}/bin:$PATH"
-              export NIXPKGS_ALLOW_INSECURE=1
+            # certificates
+            openssl
 
-              # Python
-              export PATH="${ruff}/bin:$PATH"
-              export PATH="${hadolint}/bin:$PATH"
-              export LD_LIBRARY_PATH=${envDir}/lib:$LD_LIBRARY_PATH
-              export LD_LIBRARY_PATH=${portaudio}/lib:$LD_LIBRARY_PATH
-              export LD_LIBRARY_PATH=${libusb1}/lib:$LD_LIBRARY_PATH
-              export LD_LIBRARY_PATH=${stdenv.cc.cc.lib}/lib:$LD_LIBRARY_PATH
-              export PIP_PREFIX=${envDir}
-              export PYTHONUSERBASE=${envDir}
-              export PYTHON_SITE_PACKAGES=$PIP_PREFIX/${python310.sitePackages}:$(pwd)
-              export PYTHONPATH=$(pwd):$PYTHON_SITE_PACKAGES:$PYTHONPATH
+            # pre-commit
+            ruff
+            which
+            nodejs
+            hadolint
+            check-jsonschema
+            gnutar
+            gnumake
+            pre-commit
+            python310Packages.pre-commit-hooks
 
-              if $isLinux; then
-                export PORTAUDIO_LIBNAME=libportaudio.so
-                git apply sounddevice.py.patch
-              fi
+            # dependencies for client.py
+            pythonPackages.scipy
+            pythonPackages.sounddevice
 
-              virtualenv `basename ${envDir}`
-              source ${envDir}/bin/activate
+            # Tensorflow Lite
+            cmake
+            libusb1
+            stdenv.cc.cc.lib
 
-              # Node.js
-              mkdir -p .nix-node
-              export NODE_PATH=$PWD/.nix-node
-              export PATH=$NODE_PATH/bin:$PATH
-              npm config set prefix $NODE_PATH
+#             # dependencies for the test client
+#             portaudio
+          ];
+          shellHook = ''
+            # Python
+            virtualenv `basename ${envDir}`
+            VIRTUAL_ENV_DISABLE_PROMPT=true source ${envDir}/bin/activate
 
-              if ! which gimtoc &> /dev/null; then
-                npm install -g gimtoc
-              fi
+            # Node.js
+            mkdir -p .nix-node
+            export NODE_PATH=$PWD/.nix-node
+            export PATH=$NODE_PATH/bin:$PATH,
+            npm config set prefix $NODE_PATH
 
-              # Install pre-commit hooks
-              pre-commit install -f
-            '';
-            EDITOR = "vim";
-            COMPOSE_PROJECT = "oremi-sds";
-          };
-      });
+            if ! which gimtoc &> /dev/null; then
+              npm install -g gimtoc
+            fi
+
+            # Install pre-commit hooks
+            pre-commit install -f > /dev/null
+          '';
+        };
+    });
 }

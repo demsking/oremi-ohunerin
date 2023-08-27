@@ -1,35 +1,53 @@
-# Nix builder
-FROM nixos/nix:latest AS builder
+FROM python:3.10-slim
 
-# Copy our source and setup our working dir.
-COPY . /tmp/build
-WORKDIR /tmp/build
+RUN addgroup --system --gid 1000 oremi \
+  && adduser --system --no-create-home --uid 1000 oremi
 
-# Build our Nix environment
-RUN nix \
-  --extra-experimental-features "nix-command flakes" \
-  --option filter-syscalls false \
-  build
+COPY models/wakeword-en /oremi/
+COPY models/wakeword-fr /oremi/
 
-# Copy the Nix store closure into a directory. The Nix store closure is the
-# entire set of Nix store values that we need for our build.
-RUN mkdir /tmp/nix-store-closure
-RUN cp -R $(nix-store -qR result/) /tmp/nix-store-closure
+RUN apt-get update \
+  && apt-get install --no-install-recommends -y libusb-1.0-0-dev=2:1.0.26-1 \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
 
-# Final image is based on scratch. We copy a bunch of Nix dependencies
-# but they're fully self-contained so we don't need Nix anymore.
-FROM scratch
+COPY pyproject.toml config.json LICENSE build/requirements.txt /oremi/
 
-LABEL Author="Sébastien Demanou <demsking@gmail.com>"
-LABEL Repository="https://gitlab.com/demsking/oremi-sds"
+RUN pip install --no-cache-dir -r /oremi/requirements.txt
 
-ENV THRESHOLD=0.2
-ENV NUM_THREADS=-1
+COPY oremi_sds /oremi/oremi_sds
 
-WORKDIR /app
+USER oremi
+ENV PYTHONPATH="/oremi:$PYTHONPATH"
+ENTRYPOINT [\
+  "python", "-m", \
+    "oremi_sds", \
+      "--host", "0.0.0.0", \
+      "--port", "5023", \
+      "--config", "/oremi/config.json", \
+      "--model", "/usr/share/tflite/yamnet.tflite" \
+]
 
-# Copy /nix/store
-COPY --from=builder /tmp/nix-store-closure /nix/store
-COPY --from=builder /tmp/build/result /app
+# Adding metadata at the end due to their values being subject to change a each build.
+ARG CREATED_DATE
+ARG PACKAGE_NAME
+ARG MAINTAINER
+ARG DESCRIPTION
+ARG VERSION
+ARG SOURCE_URL
+ARG VENDOR
+ARG LICENSE
+ARG REVISION
 
-CMD ["/app/bin/app"]
+# @see https://github.com/opencontainers/image-spec/blob/main/annotations.md
+LABEL org.opencontainers.image.title="$PACKAGE_NAME"
+LABEL org.opencontainers.image.description="$DESCRIPTION"
+LABEL org.opencontainers.image.version="$VERSION"
+LABEL org.opencontainers.image.revision="$REVISION"
+LABEL org.opencontainers.image.authors="$MAINTAINER"
+LABEL org.opencontainers.image.created="$CREATED_DATE"
+LABEL org.opencontainers.image.source="$SOURCE_URL"
+LABEL org.opencontainers.image.url="$SOURCE_URL"
+LABEL org.opencontainers.image.documentation="$SOURCE_URL#readme"
+LABEL org.opencontainers.image.vendor="$VENDOR"
+LABEL org.opencontainers.image.licenses="$LICENSE"

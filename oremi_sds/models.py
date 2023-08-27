@@ -16,7 +16,7 @@
 import datetime
 from typing import Literal, TypedDict
 
-from pydantic import BaseModel, Field
+from attrs import define, field, validators
 
 
 class DetectedSound(TypedDict):
@@ -35,16 +35,18 @@ def create_detected_sound_object(sound_name: str, score: float) -> DetectedSound
   }
 
 
-class InitMessage(BaseModel):
+@define(auto_attribs = True)
+class InitMessage:
   type: Literal['init']
   language: Literal['fr', 'en']
-  features: list[Literal['wakeword-detection', 'sound-detection']] = Field(min_items = 1, default_factory = lambda: [
+  features: list[Literal['wakeword-detection', 'sound-detection']] = field(validator = validators.min_len(1), factory = lambda: [
     'wakeword-detection',
     'sound-detection',
   ])
 
 
-class DictionaryEntry(BaseModel):
+@define(auto_attribs = True)
+class DictionaryEntry:
   """Class representing a dictionary entry."""
 
   word: str
@@ -54,7 +56,8 @@ class DictionaryEntry(BaseModel):
   """The list of phonemes for the word."""
 
 
-class WakewordSetting(BaseModel):
+@define(auto_attribs = True)
+class WakewordSetting:
   """Settings for the wake word detection."""
 
   model: str
@@ -63,11 +66,8 @@ class WakewordSetting(BaseModel):
   dictionary: str
   """Dictionary filename."""
 
-  wakewords: list[DictionaryEntry] = Field(min_items = 1)
-  """List of DictionaryEntry objects representing the wakewords."""
-
-  discriminants: list[DictionaryEntry]
+  discriminants: list[DictionaryEntry] = field(converter = lambda items: [DictionaryEntry(**item) for item in items])
   """List of DictionaryEntry objects representing the discriminants."""
 
-
-Config = dict[str, WakewordSetting]
+  wakewords: list[DictionaryEntry] = field(validator = validators.min_len(1), converter = lambda items: [DictionaryEntry(**item) for item in items])
+  """List of DictionaryEntry objects representing the wakewords."""

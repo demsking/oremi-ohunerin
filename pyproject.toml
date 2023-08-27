@@ -29,7 +29,7 @@ include = [
 ]
 
 packages = [
-  { include = "oremi-sds" },
+  { include = "oremi_sds" },
 ]
 
 [tool.poetry.scripts]
@@ -40,16 +40,22 @@ oremi-sds = 'oremi_sds:main'
 "Source" = "https://gitlab.com/demsking/oremi-sds"
 "Tracker" = "https://gitlab.com/demsking/oremi-sds/-/issues"
 
+[[tool.poetry.source]]
+name = "test"
+url = "https://test.pypi.org/simple/"
+secondary = true
+
 [tool.poetry.dependencies]
 python = ">=3.10,<3.11"
 pocketsphinx = "^5.0.0"
 toml = "^0.10.2"
 numpy = "^1.20"
-coloredlogs = "^15.0.1"
 websockets = "^11.0.3"
-pydantic = "^2.1.1"
 tflite-runtime = "^2.13.0"
 tflite-support = "^0.4.4"
+oremi-core = "^1.0.0.dev3"
+attrs = "^23.1.0"
+oremi-discovery-client = "^1.0.0.dev3"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.3.1"

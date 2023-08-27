@@ -25,8 +25,6 @@ repos:
     rev: 0.24.1
     hooks:
       - id: check-gitlab-ci
-      - id: check-metaschema
-        files: ^schemas/.*\.json$
   - repo: https://github.com/charliermarsh/ruff-pre-commit
     rev: v0.0.284
     hooks:
@@ -36,12 +34,14 @@ repos:
     hooks:
       - id: pyupgrade
         args: [--py38-plus]
-  - repo: https://github.com/mrtazz/checkmake.git
-    rev: 0.2.2
-    hooks:
-      - id: checkmake
   - repo: local
     hooks:
+      - id: hadolint
+        name: hadolint
+        entry: hadolint
+        language: system
+        files: Dockerfile
+        args: ["Dockerfile"]
       - id: gimtoc
         name: gimtoc
         entry: gimtoc
@@ -51,10 +51,9 @@ repos:
       - id: pylint
         name: pylint
         entry: pylint
-        language: system
-        types: [python]
+        language: python
+        files: '\.py$'
         args:
           - "-rn" # Only display messages
           - "--errors-only"
-          - "--ignore-paths=typings"
-          - "--ignore-patterns=.*_test\\.py"
+          - "--ignore-paths=tests,.vscode,.gitlab"

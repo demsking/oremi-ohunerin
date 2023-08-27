@@ -15,13 +15,12 @@
 
 import os
 import tempfile
-from typing import Callable, Coroutine
 
+from oremi.core.logger import Logger
 from pocketsphinx import Config, Decoder
 
-from .models import DetectedSound, DictionaryEntry, WakewordSetting
-from .trace import Trace
-from .vars import APP_ID, ENCODING
+from .models import DictionaryEntry, WakewordSetting
+from .package import APP_NAME
 
 __all__ = [
   'WakewordSetting',
@@ -32,16 +31,9 @@ __all__ = [
 class WakewordEngine:
   """Class for performing wake word detection."""
 
-  def __init__(
-    self,
-    *,
-    setting: WakewordSetting,
-    on_sound_detect: Callable[[DetectedSound], Coroutine],
-    logger: Trace,
-  ):
+  def __init__(self, setting: WakewordSetting, logger: Logger):
     self._logger = logger
     self._setting = setting
-    self._on_sound_detect = on_sound_detect
     config = Config(
       lm = None,
       hmm = setting.model,
@@ -58,13 +50,13 @@ class WakewordEngine:
     filename = os.path.join(temp_dir, 'keyphrases.list')
 
     self._logger.info(f'Creating keyphrases file {filename}')
-    with open(filename, 'w', encoding = ENCODING) as file:
+    with open(filename, 'w', encoding = 'utf-8') as file:
       for entry in self._setting.wakewords + self._setting.discriminants:
         file.write(f'{entry.word}\n')
         self._add_dictionary_entry(entry)
 
-    self._decoder.add_kws(APP_ID, filename)
-    self._decoder.activate_search(APP_ID)
+    self._decoder.add_kws(APP_NAME, filename)
+    self._decoder.activate_search(APP_NAME)
 
   def _add_dictionary_entry(self, entry: DictionaryEntry) -> None:
     """
@@ -103,22 +95,20 @@ class WakewordEngine:
     """Ends the current utterance for the wake word detection."""
     self._decoder.end_utt()
 
-  async def process_raw(self, chunk: bytes) -> float:
+  def process_raw(self, chunk: bytes) -> tuple[str | None, float]:
     self._decoder.process_raw(chunk, False, False)
 
     hypothesis = self._decoder.hyp()
 
-    if hypothesis is None:
-      return False
+    if hypothesis:
+      is_discriminant = self.is_discriminant(hypothesis.hypstr)
 
-    is_discriminant = self.is_discriminant(hypothesis.hypstr)
+      self._decoder.end_utt()
+      self._decoder.start_utt()
 
-    self._decoder.end_utt()
-    self._decoder.start_utt()
+      if not is_discriminant:
+        return 'wakeword', hypothesis.score
 
-    if is_discriminant:
       self._logger.warning(f'Discriminant wakeword detected: {hypothesis.hypstr}, score {hypothesis.score:.2f}')
-      return False
 
-    await self._on_sound_detect('wakeword', hypothesis.score)
-    return True
+    return None, 0.0

@@ -1,0 +1,59 @@
+image: nixos/nix
+
+stages:
+  - setup
+  - test
+  - build
+  - publish
+
+cache:
+  paths:
+    - /nix/store
+    - venv/
+    - dist/
+
+before_script:
+  - mkdir -p ~/.config/nix
+  - echo 'experimental-features = nix-command flakes' >> ~/.config/nix/nix.conf
+
+env setup:
+  stage: setup
+  script:
+    - nix develop --command bash -c 'make install'
+
+lint:
+  stage: test
+  needs:
+    - env setup
+  script:
+    - nix develop --command ./ci/fix-pre-commit-setup.sh
+    - nix develop --command bash -c 'make lint'
+
+tests and coverage:
+  stage: test
+  needs:
+    - env setup
+  script:
+    - nix develop --command bash -c 'make coverage'
+  coverage: '/TOTAL\s+\d+\s+\d+\s+([\d\.]+)%/'
+
+build distribution files:
+  stage: build
+  needs:
+    - lint
+    - tests and coverage
+  script:
+    - nix develop --command bash -c 'make dist'
+  artifacts:
+    paths:
+      - dist/*.whl
+      - dist/*.tar.gz
+
+publish on pypi:
+  stage: publish
+  needs:
+    - build distribution files
+  only:
+    - tags
+  script:
+    - nix develop --command bash -c 'twine upload --non-interactive --disable-progress-bar -r testpypi -u __token__ -p "$PYPI_TOKEN" dist/*'

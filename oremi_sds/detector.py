@@ -13,17 +13,14 @@
 # limitations under the License.
 # ==============================================================================
 
-from typing import Callable, Coroutine
-
+from oremi.core.logger import Logger
 from tflite_support.task import audio, core, processor
 
 from .audio import to_ndarray
-from .models import DetectedSound
-from .trace import Trace
 
 
 class DetectorEngine:
-  def __init__(self, model: str, *, score_threshold: float = 0.1, num_threads: int = -1, logger: Trace):
+  def __init__(self, model: str, *, score_threshold: float = 0.1, num_threads: int = -1, logger: Logger):
     if (score_threshold < 0) or (score_threshold > 1.0):
       raise ValueError('Score threshold must be between (inclusive) 0 and 1.')
 
@@ -73,24 +70,16 @@ class DetectorConsumer:
   Consumes audio data from a detector engine and performs sound classification.
   """
 
-  def __init__(
-    self,
-    detector: DetectorEngine,
-    *,
-    logger: Trace,
-    on_sound_detect: Callable[[DetectedSound], Coroutine],
-  ) -> None:
+  def __init__(self, detector: DetectorEngine, logger: Logger) -> None:
     """
     Initialize the DetectorConsumer.
 
     Args:
       detector (DetectorEngine): The audio detector engine.
-      logger (Trace): The logger instance for logging.
-      on_sound_detect (Callable[[DetectedSound], Coroutine]): A coroutine to handle the detected sound events.
+      logger (Logger): The logger instance for logging.
     """
     self._logger = logger
     self._detector = detector
-    self._on_sound_detect = on_sound_detect
 
     # Initialize the audio classification buffer.
     self._buffer = bytearray(15600)
@@ -102,7 +91,7 @@ class DetectorConsumer:
     """
     self._buffer_index = 0
 
-  async def _classify_audio(self, chunk: bytes):
+  def _classify_audio(self, chunk: bytes) -> tuple[str | None, float]:
     """
     Classify audio data and process detected sounds.
 
@@ -117,9 +106,10 @@ class DetectorConsumer:
       sound = result.classifications[0].categories[0]
 
       self._logger.debug(f'Sound {sound.category_name} detected with score {sound.score:.2f}')
-      await self._on_sound_detect(sound.category_name.lower(), sound.score)
+      return sound.category_name.lower(), sound.score
+    return None, 0.0
 
-  async def process_raw(self, chunk: bytes):
+  def process_raw(self, chunk: bytes) -> tuple[str | None, float]:
     """
     Process raw mono audio data and perform sound classification.
 
@@ -130,5 +120,7 @@ class DetectorConsumer:
       self._buffer[self._buffer_index] = byte
       self._buffer_index += 1
       if self._buffer_index == len(self._buffer):
-        await self._classify_audio(bytes(self._buffer))
+        result = self._classify_audio(bytes(self._buffer))
         self.reset_buffer()
+        return result
+    return None, 0.0

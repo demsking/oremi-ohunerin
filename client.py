@@ -16,35 +16,18 @@
 import argparse
 import asyncio
 import json
+import logging
 import signal
+import ssl
 
 import sounddevice as sd
 import websockets.exceptions
 import websockets.legacy.client
+from oremi.core.logger import Logger
 
 
-def parse_arguments():
-  """
-  Parse command-line arguments.
-
-  Returns:
-    argparse.Namespace: The parsed command-line arguments.
-  """
-  parser = argparse.ArgumentParser(description='Audio Recorder')
-
-  parser.add_argument(
-    '--host',
-    type = str,
-    default = '127.0.0.1',
-    help = 'Host address to connect to (default: 127.0.0.1).',
-  )
-
-  parser.add_argument(
-    '-p', '--port',
-    type = int,
-    default = 5023,
-    help = 'Port number to connect to (default: 5023).',
-  )
+def parse_arguments() -> argparse.Namespace:
+  parser = argparse.ArgumentParser(description = 'Oremi SDS Client')
 
   parser.add_argument(
     '-l', '--language',
@@ -72,6 +55,26 @@ def parse_arguments():
     help = 'List available input devices.',
   )
 
+  parser.add_argument(
+    '--host',
+    type = str,
+    default = 'localhost',
+    help = 'Host address to connect to (default: localhost).',
+  )
+
+  parser.add_argument(
+    '-p', '--port',
+    type = int,
+    default = 5023,
+    help = 'Port number to connect to (default: 5023).',
+  )
+
+  parser.add_argument(
+    '--cert-file',
+    type = str,
+    help = 'Path to the certificate file for secure connection.',
+  )
+
   return parser.parse_args()
 
 
@@ -86,12 +89,12 @@ def list_input_devices():
 async def client():
   audio_queue = asyncio.Queue[bytes]()
   args = parse_arguments()
-  uri = f'ws://{args.host}:{args.port}'
 
   if args.list_devices:
     list_input_devices()
     return
 
+  uri = f'wss://{args.host}:{args.port}' if args.cert_file else f'ws://{args.host}:{args.port}'
   stream = sd.RawInputStream(
     dtype = 'int16',
     samplerate = 16000,
@@ -101,59 +104,67 @@ async def client():
     callback = lambda indata, frames, time, status: loop.call_soon_threadsafe(audio_queue.put_nowait, bytes(indata)),
   )
 
-  async with websockets.legacy.client.connect(uri, user_agent_header = 'sdclient/1.0.0') as websocket:
+  logger = Logger.create('stt-client', level = logging.DEBUG)
+  ssl_context = None
+
+  if args.cert_file:
+    logger.info(f'Using certificat file "{args.cert_file}"')
+    ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    ssl_context.load_verify_locations(args.cert_file)
+
+  async with websockets.legacy.client.connect(uri, ssl = ssl_context, user_agent_header = 'sdclient/1.0.0') as websocket:
     loop = asyncio.get_running_loop()
     loop.add_signal_handler(signal.SIGINT, lambda: loop.create_task(websocket.close(), name = 'SIGINT Signal Task'))
     loop.add_signal_handler(signal.SIGTERM, lambda: loop.create_task(websocket.close(), name = 'SIGTERM Signal Task'))
 
-    print('Sending init message')
+    logger.info('Sending init message')
     await websocket.send(json.dumps({
       'type': 'init',
       'language': args.language,
     }))
 
     init_message_response = await websocket.recv()
-    print(init_message_response)
+    logger.info(init_message_response)
 
     async def listen():
-      print('Listening...')
+      logger.info('Listening...')
       try:
         async for message in websocket:
-          print('>>>', message) # {"type": "sound", "sound": "snoring", "score": 0.109375, "datetime": "2023-08-16T14:42:46.424809"}
+          logger.info(f'Detected: {message}') # {"type": "sound", "sound": "snoring", "score": 0.109375, "datetime": "2023-08-16T14:42:46.424809"}
       except asyncio.CancelledError:
-        print('Recording cancelled')
+        logger.info('Recording cancelled')
       finally:
         await websocket.close()
 
     async def recording():
-      print('Recording...')
+      logger.info('Recording...')
       with stream:
         while True:
           try:
             data = await audio_queue.get()
             await websocket.send(data)
           except websockets.exceptions.ConnectionClosedOK:
-            print('Connection closed')
+            logger.info('Connection closed')
             break
           except websockets.exceptions.ConnectionClosedError as error:
-            print(error)
+            logger.info(error)
             break
           except sd.PortAudioError as error:
-            print(error)
+            logger.info(error)
             break
-      print('Stream closed.')
+      logger.info('Stream closed.')
 
     def handle_task_done(task: asyncio.Task):
       if task.done():
-        print(f'{task.get_name()} done')
+        logger.info(f'{task.get_name()} done')
       elif task.cancelled():
-        print(f'{task.get_name()} cancelled')
+        logger.info(f'{task.get_name()} cancelled')
       else:
         try:
           if task.exception() is not None:
-            print(task)
+            logger.info(task)
         except (asyncio.CancelledError, asyncio.InvalidStateError) as error:
-          print(error)
+          logger.info(error)
 
     listening_task = loop.create_task(listen(), name = 'Listening Task')
     recording_task = loop.create_task(recording(), name = 'Recording Task')

@@ -18,9 +18,11 @@ cry, Whistling, Wheeze, Snoring, Cough, Sneeze, Burping, and Hiccup.
 
 ## Table of Contents
 
-- [Install](#install)
-- [Usage](#usage)
-- [Protocol](#protocol)
+- [Installing Yamnet Classification Model](#installing-yamnet-classification-model)
+- [Getting Started with Oremi SDS](#getting-started-with-oremi-sds)
+- [Starting the Server with Certificates](#starting-the-server-with-certificates)
+- [Oremi Discovery Integration](#oremi-discovery-integration)
+- [Oremi Sound Detection Server Protocol](#oremi-sound-detection-server-protocol)
   * [Initialization](#initialization)
   * [Sound Detection](#sound-detection)
   * [Connection Closure Codes](#connection-closure-codes)
@@ -29,16 +31,74 @@ cry, Whistling, Wheeze, Snoring, Cough, Sneeze, Burping, and Hiccup.
 - [Versioning](#versioning)
 - [License](#license)
 
-## Install
+## Installing Yamnet Classification Model
+
+To use Oremi SDS you'll need to install the required Yamnet Classification
+model.
+
+**Prerequisites**
+
+- Make sure you have `Bash` and `curl` installed on your system.
+
+**Installation Steps**
+
+1. Download the install script from the Oremi SDS repository:
+   [install-model.sh](https://gitlab.com/demsking/oremi-sds/-/blob/main/scripts/install-model?inline=false)
+
+2. Make the script executable:
+
+   ```bash
+   chmod +x install-model.sh
+   ```
+
+3. Run the script with the following command:
+
+   ```sh
+   ./install-model.sh /path/to/models_directory
+   ```
+
+   Replace `/path/to/models_directory` with the directory where you want to
+   install the models.
+
+   **Examples**
+
+   ```sh
+   # install Yamnet model to "~/.cache/tensorflow/models"
+   ./install-model.sh ~/.cache/tensorflow/models
+   ```
+
+## Getting Started with Oremi SDS
+
+The easiest way to use Oremi SDS is with Docker. Start with Docker for a quick
+setup. Follow these steps:
+
+**Using Docker**
+
+Use the official Docker image `demsking/oremi-sds`. Open your terminal and run:
 
 ```sh
-pip install Oremi-SDS
+docker run -d \
+  -p 5023:5023 \
+  -v ~/.cache/tensorflow/models/yamnet.tflite:/usr/share/tflite/yamnet.tflite \
+  demsking/oremi-sds
 ```
 
-## Usage
+This fetches Oremi SDS and starts it on port `5023`.
+
+**Alternative Installation**
+
+If you prefer installing Oremi SDS directly:
 
 ```sh
-usage: oremi-sds [-h] [--host HOST] [-p PORT] -m MODEL [-t THRESHOLD] [-n NUM_THREADS] [-c CONFIG] [--verbose] [-v]
+pip install oremi-sds
+```
+
+After installation, start Oremi SDS using the provided command.
+
+```sh
+usage: oremi-sds [-h] -m MODEL [-t THRESHOLD] [-c CONFIG] [--host HOST] [-p PORT] [--cert-file CERT_FILE]
+                 [--key-file KEY_FILE] [--password PASSWORD] [--discovery-uri DISCOVERY_URI]
+                 [--discovery-cert-file DISCOVERY_CERT_FILE] [--log-file LOG_FILE] [--verbose] [-v]
 
 Oremi Sound Detection Server
 
@@ -48,20 +108,164 @@ options:
                         Path to the TensorFlow Lite model filename (required).
   -t THRESHOLD, --threshold THRESHOLD
                         Detection threshold for filtering predictions (default: 0.1).
-  -n NUM_THREADS, --num-threads NUM_THREADS
-                        Number of threads for TensorFlow Lite interpreter (default: -1, auto-select).
   -c CONFIG, --config CONFIG
                         Path to the configuration file (default: config.json).
   --host HOST           Host address to connect to (default: 127.0.0.1).
   -p PORT, --port PORT  Port number to connect to (default: 5023).
+  --cert-file CERT_FILE
+                        Path to the certificate file for secure connection.
+  --key-file KEY_FILE   Path to the private key file for secure connection.
+  --password PASSWORD   Password to unlock the private key (if protected by a password).
+  --discovery-uri DISCOVERY_URI
+                        Oremi Discovery URI to connect to.
+  --discovery-cert-file DISCOVERY_CERT_FILE
+                        Path to the certificate file to use for the connection.
+  --log-file LOG_FILE   Name of the log file.
   --verbose             Enable verbose logging.
   -v, --version         Show the version of the application.
 ```
 
-You can download the model Tensorflow Lite model here:
-https://storage.googleapis.com/download.tensorflow.org/models/tflite/task_library/audio_classification/rpi/lite-model_yamnet_classification_tflite_1.tflite
+## Starting the Server with Certificates
 
-## Protocol
+To start the Oremi SDS server with a certificate, you can use the
+`--cert-file` and `--key-file` options to specify the certificate and private
+key files. Additionally, if your private key is password-protected, you can use
+the `--password` option to provide the password. Here's how to proceed:
+
+1. **Generate a Self-Signed SSL Certificate (For Testing):**
+
+   If you're testing Oremi SDS locally, you can generate a self-signed
+   SSL certificate.
+   Follow these steps to generate a self-signed certificate using OpenSSL:
+
+   ```sh
+   # Generate a self-signed certificate
+   openssl req -x509 -nodes -new -sha256 -days 365 -newkey rsa:2048 \
+     -subj "/C=CM/CN=localhost" \
+     -keyout key.pem \
+     -out cert.pem
+   ```
+
+   It's important to note that these certificates are self-signed, which means
+   they are not issued by a recognized Certificate Authority (CA). While
+   suitable for testing and development purposes, self-signed certificates may
+   trigger security warnings in browsers and other client applications.
+
+   Please note that this is a simplified example for generating self-signed
+   certificates for testing purposes. In production environments, it's
+   recommended to obtain SSL certificates from a trusted Certificate
+   Authority (CA) like [Let's Encrypt](https://letsencrypt.org/) to ensure
+   security and proper authentication..
+   Let's Encrypt provides free and automated certificates that are recognized
+   by most browsers and clients.
+
+2. **Start the Server using Docker:**
+
+   The quickest way to start the Oremi SDS server with certificates is by
+   using Docker. Run the following command in your terminal:
+
+   ```sh
+   docker run -d \
+      -p 5023:5023 \
+      -v ~/.cache/tensorflow/models/yamnet.tflite:/usr/share/tflite/yamnet.tflite \
+      -v /path/to/cert.pem:/cert.pem \
+      -v /path/to/key.pem:/key.pem \
+    demsking/oremi-sds \
+      --cert-file /cert.pem \
+      --key-file /key.pem \
+      --password your_private_key_password
+   ```
+
+   > Replace `/path/to/cert.pem`, `/path/to/key.pem`, and
+   > `your_private_key_password` with the appropriate values.
+
+   This command mounts the certificate and key files into the Docker container
+   and starts the server.
+
+## Oremi Discovery Integration
+
+Oremi SDS can work seamlessly with
+[Oremi Discovery](https://gitlab.com/demsking/oremi-discovery) to register
+itself during startup.
+
+**Oremi Discovery Integration**
+
+Oremi Discovery allows services to register themselves upon startup, making them
+discoverable by other components. To integrate Oremi SDS with Oremi Discovery, you can
+use the following arguments:
+
+- `--discovery-uri`: Specifies the Oremi SDS URI for connection. For example:
+  `--discovery-uri ws://localhost:5105`.
+
+- `--discovery-cert-file` (optional): Specifies the path to the certificate file to use
+  for secure connections. If you're using a certificate for secure communication with
+  Oremi Discovery, you can provide the certificate using this option. In this case,
+  `--discovery-uri` should be `wss://localhost:5105` to indicate a secure WebSocket
+  connection.
+
+**Example**
+
+Below is a `docker-compose.yaml` configuration that sets up both Oremi
+Discovery and Oremi SDS services with SSL certificates for secure
+communication.
+The volumes are mounted to read the SSL certificates and models:
+
+```yaml
+version: '3.8'
+services:
+  discovery:
+    image: demsking/oremi-discovery
+    volumes:
+      - ~/.config/oremi/ssl:/etc/ssl:ro
+    ports:
+      - 5105:5105
+    command: [
+      "--cert-file", "/etc/ssl/localhost.pem",
+      "--key-file", "/etc/ssl/localhost-key.pem",
+    ]
+  detector:
+    image: demsking/oremi-sds
+    depends_on:
+      - discovery
+    volumes:
+      - ~/.cache/tensorflow/models/yamnet.tflite:/usr/share/tflite/yamnet.tflite:ro
+      - ~/.config/oremi/ssl:/etc/ssl:ro
+    ports:
+      - 5023:5023
+    command: [
+      "--model", "/usr/share/tflite/yamnet.tflite",
+      "--cert-file", "/etc/ssl/localhost.pem",
+      "--key-file", "/etc/ssl/localhost-key.pem",
+      "--discovery-uri", "wss://discovery:5105",
+      "--discovery-cert-file", "/etc/ssl/localhost.pem",
+    ]
+```
+
+In this configuration:
+
+- The `discovery` service runs Oremi Discovery with SSL certificates mounted
+  from `~/.config/oremi/ssl`.
+- The `stt` service runs Oremi SDS and depends on the `discovery` service. It
+  also uses SSL certificates and mounts model from `~/.cache/tensorflow/models`.
+
+For example, you can generate a self-signed certificate using OpenSSL,
+specifying the domain name "discovery" as the subject alternative name:
+
+```sh
+openssl req -x509 -nodes -new -sha256 -days 365 -newkey rsa:2048 \
+  -subj "/C=CM/CN=localhost" \
+  -addext "subjectAltName = DNS:discovery" \
+  -keyout ~/.config/oremi/ssl/localhost-key.pem \
+  -out ~/.config/oremi/ssl/localhost.pem
+```
+
+Finally:
+
+```sh
+docker-compose up
+```
+
+## Oremi Sound Detection Server Protocol
 
 Oremi Sound Detection Server operates using a WebSocket-based protocol for
 real-time sound detection. The protocol involves an initialization step where
@@ -96,13 +300,15 @@ and reason `Init Timeout`.
 
 **2. Server**
 
-The server responds with:
+The server responds with an initialization acknowledgment, providing details
+about available languages for wakeword detection:
 
 ```json
 {
   "type": "init",
   "server": "Oremi Sound Detection Server/1.0.0",
-  "status": "ready"
+  "status": "ready",
+  "languages": ["en", "fr"]
 }
 ```
 
@@ -114,8 +320,8 @@ seconds, the server will close the connection with code `1002` and reason
 
 **1. Client**
 
-Once the session is initialized, the client can send a continuous audio stream
-in bytes, with an audio frequency of 16000Hz and a single channel.
+Once the session is initialized, the client streams audio data in bytes to the
+server, with an audio frequency of 16000Hz and a single channel.
 
 **2. Server**
 

@@ -1,8 +1,13 @@
-APP_VERSION := $(shell python oremi-sds/version.py)
-SRC_FILES := $(wildcard *.json *.toml *.lock oremi-sds/*.py models/*/*)
-TSLITE_FILE := ~/.cache/tensorflow/models/tflite/task_library/audio_classification/rpi/lite-model_yamnet_classification_tflite_1.tflite
+APP_NAME := $(shell python metadata.py name)
+APP_VERSION := $(shell python metadata.py version)
+IMAGE_NAME := demsking/$(APP_NAME)
 
-.PHONY: all clean build image prepare publish-image test
+SSL_PATH := ~/.config/oremi/ssl
+SSL_CERT_FILE := $(SSL_PATH)/localhost.pem
+
+TSLITE_FILE := ~/.cache/tensorflow/models/yamnet.tflite
+
+.PHONY: all clean build image model publish-image test build/requirements.txt
 
 # Start the development environment using tmuxinator
 env:
@@ -12,24 +17,55 @@ clean:
 	rm -rf dist/ models/*.tflite
 
 $(TSLITE_FILE):
-	mkdir -p $(shell dirname $@)
-	curl \
-	  -L 'https://storage.googleapis.com/download.tensorflow.org/models/tflite/task_library/audio_classification/rpi/lite-model_yamnet_classification_tflite_1.tflite' \
-	  -o $@
+	./scripts/install-model.sh $(shell dirname $@)
 
-prepare: $(TSLITE_FILE)
-	mkdir -p dist
+model: $(TSLITE_FILE)
 
-install: prepare
+install: model
+	pip install poetry
 	poetry install
 
-build: dist/oremi-sds
+$(SSL_CERT_FILE):
+	mkdir -p $(shell dirname $@)
+	openssl req -x509 -nodes -new -sha256 -days 3650 -newkey rsa:2048 \
+	  -subj "/C=CM/CN=localhost" \
+	  -addext "subjectAltName = DNS:discovery" \
+	  -keyout $(SSL_PATH)/localhost-key.pem \
+	  -out $(SSL_CERT_FILE)
 
-start: $(TSLITE_FILE)
-	python -m oremi-sds --verbose --host 0.0.0.0 --model $<
+certificates: $(SSL_CERT_FILE)
 
-client:
-	python client.py
+start-wss: model certificates
+	poetry run oremi-sds \
+	  --verbose \
+	  --host :: \
+	  --port 25023 \
+	  --model $(TSLITE_FILE) \
+	  --cert-file $(SSL_CERT_FILE) \
+	  --key-file $(SSL_PATH)/localhost-key.pem
+
+start-ws: model
+	poetry run oremi-sds \
+	  --verbose \
+	  --host :: \
+	  --port 15023 \
+	  --model $(TSLITE_FILE)
+
+client-wss: certificates
+	python client.py \
+	  --host localhost \
+	  --port 25023 \
+	  --cert-file $(SSL_CERT_FILE)
+	  --model $(TSLITE_FILE)
+
+client-docker: certificates
+	python client.py \
+	  --host localhost \
+	  --port 35023 \
+	  --cert-file $(SSL_CERT_FILE)
+
+client-ws:
+	python client.py --port 15023
 
 lint:
 	pre-commit run --all-files
@@ -39,9 +75,6 @@ fix:
 
 test:
 	pytest
-
-update-snapshots:
-	pytest --snapshot-update
 
 coverage:
 	pytest --cov=oremi
@@ -57,30 +90,36 @@ update:
 	nix flake update
 	pre-commit autoupdate
 
-dist: $(SRC_FILES)
+dist:
 	rm -rf dist/*
-	poetry build
+	poetry build --no-cache --format=wheel
 	twine check dist/*
 
-publish: dist
-	twine upload dist/*
+publish-package: dist
+	twine upload -r testpypi dist/*
 
-build/oremi-sds-base.tar.gz: base.nix
-	nix-build --out-link $@ $<
-	docker load < $@
+build/requirements.txt:
+	mkdir -p $(shell dirname $@)
+	poetry export --only=main --without-hashes -f requirements.txt -o $@
 
-build/oremi-sds-image.tar.gz: image.nix
-	nix-build --out-link $@ $<
-	docker load < $@
+image: build/requirements.txt
+	docker build \
+	  --progress plain . -t $(IMAGE_NAME):$(APP_VERSION) \
+	  --build-arg PACKAGE_NAME="$(APP_NAME)" \
+	  --build-arg CREATED_DATE="$(shell date --rfc-3339=seconds)" \
+	  --build-arg MAINTAINER="$(shell python metadata.py authors)" \
+	  --build-arg DESCRIPTION="$(shell python metadata.py description)" \
+	  --build-arg VERSION="$(APP_VERSION)" \
+	  --build-arg REVISION="$(shell git rev-parse HEAD)" \
+	  --build-arg SOURCE_URL="$(shell python metadata.py repository)" \
+	  --build-arg VENDOR="Oremi" \
+	  --build-arg LICENSE="$(shell python metadata.py license)" \
 
-# image: publish
-image:
-	docker build . --progress plain --build-arg VERSION=$(APP_VERSION) -t demsking/oremi-sds:$(APP_VERSION)
-
-# image: build/oremi-sds-image.tar.gz
-# 	docker build . --progress plain --build-arg VERSION=$(APP_VERSION) -t demsking/oremi-sds:$(APP_VERSION)
-# 	docker build . --build-arg VERSION=$(APP_VERSION) -t demsking/oremi-sds:latest
+	docker tag $(IMAGE_NAME):$(APP_VERSION) $(IMAGE_NAME):latest
 
 publish-image: image
-	docker publish demsking/oremi-sds:$(APP_VERSION)
-	docker publish demsking/oremi-sds:latest
+	git commit pyproject.toml -m "Release $(APP_VERSION)"
+	git tag v$(APP_VERSION)
+	docker push $(IMAGE_NAME):$(APP_VERSION)
+	docker push $(IMAGE_NAME):latest
+	git push --tags origin main
