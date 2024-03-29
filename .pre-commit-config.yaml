@@ -40,7 +40,7 @@ repos:
         entry: hadolint
         language: system
         files: Dockerfile
-        args: ["Dockerfile"]
+        args: [--ignore, DL3008, Dockerfile]
       - id: gimtoc
         name: gimtoc
         entry: gimtoc

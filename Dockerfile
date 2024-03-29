@@ -30,9 +30,7 @@ COPY models/wakeword-en /oremi/
 COPY models/wakeword-fr /oremi/
 
 RUN apt-get update \
-  && apt-get install --no-install-recommends -y \
-        curl=7.88.1-10+deb12u1 \
-        libusb-1.0-0-dev=2:1.0.26-1 \
+  && apt-get install --no-install-recommends -y curl libusb-1.0-0-dev \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
