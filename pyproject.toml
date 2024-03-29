@@ -53,9 +53,9 @@ numpy = "^1.20"
 websockets = "^11.0.3"
 tflite-runtime = "^2.13.0"
 tflite-support = "^0.4.4"
-oremi-core = "^1.0.0.dev3"
-attrs = "^23.1.0"
-oremi-discovery-client = "^1.0.0.dev3"
+oremi-discovery = "^1.0.0b4"
+oremi-core = "^1.0.0.dev21"
+dataclasses-json = "^0.6.4"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.3.1"
@@ -71,15 +71,39 @@ pylint-pydantic = "^0.2.4"
 python_functions = "test_"
 
 [tool.ruff]
+fix = true
+target-version = "py310"
+
+# Only enable rules that have safe autofixes;
+# only enable rules that are relevant to stubs
+select = [
+  "F401",   # Remove unused imports
+  "UP004",  # Remove explicit `object` inheritance
+  "UP006",  # PEP-585 autofixes
+  "UP007",  # PEP-604 autofixes
+  "UP013",  # Class-based syntax for TypedDicts
+  "UP014",  # Class-based syntax for NamedTuples
+  "UP019",  # Use str over typing.Text
+  "UP035",  # import from typing, not typing_extensions, wherever possible
+  "PYI009",  # use `...`, not `pass`, in empty class bodies
+  "PYI010",  # function bodies must be empty
+  "PYI012",  # class bodies must not contain `pass`
+  "PYI020",  # quoted annotations are always unnecessary in stubs
+]
+
 ignore = [
+  "E111",   # ignore indentation
   "E501",   # ignore line too long
   "D100",   # ignore missing docstrings in public module
   "D104",   # ignore missing docstrings in public package
   "D105",   # ignore missing docstrings in magic methods
   "RUF005", # admittedly an optimization of code rather than a fail
 ]
+
 line-length = 128
-select = ["E", "F", "W", "RUF"]
+
+[tool.flake8]
+indent-size=2
 
 [tool.ruff.flake8-quotes]
 docstring-quotes = "single"

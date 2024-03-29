@@ -1,5 +1,28 @@
 FROM python:3.10-slim
 
+ARG CREATED_DATE
+ARG PACKAGE_NAME
+ARG MAINTAINER
+ARG DESCRIPTION
+ARG VERSION
+ARG SOURCE_URL
+ARG VENDOR
+ARG LICENSE
+ARG REVISION
+
+# @see https://github.com/opencontainers/image-spec/blob/main/annotations.md
+LABEL org.opencontainers.image.title="$PACKAGE_NAME"
+LABEL org.opencontainers.image.description="$DESCRIPTION"
+LABEL org.opencontainers.image.version="$VERSION"
+LABEL org.opencontainers.image.revision="$REVISION"
+LABEL org.opencontainers.image.authors="$MAINTAINER"
+LABEL org.opencontainers.image.created="$CREATED_DATE"
+LABEL org.opencontainers.image.source="$SOURCE_URL"
+LABEL org.opencontainers.image.url="$SOURCE_URL"
+LABEL org.opencontainers.image.documentation="$SOURCE_URL#readme"
+LABEL org.opencontainers.image.vendor="$VENDOR"
+LABEL org.opencontainers.image.licenses="$LICENSE"
+
 RUN addgroup --system --gid 1000 oremi \
   && adduser --system --no-create-home --uid 1000 oremi
 
@@ -26,27 +49,3 @@ COPY oremi_sds/ /oremi/oremi_sds
 
 USER oremi
 ENTRYPOINT ["/oremi/scripts/entrypoint.sh"]
-
-# Adding metadata at the end due to their values being subject to change a each build.
-ARG CREATED_DATE
-ARG PACKAGE_NAME
-ARG MAINTAINER
-ARG DESCRIPTION
-ARG VERSION
-ARG SOURCE_URL
-ARG VENDOR
-ARG LICENSE
-ARG REVISION
-
-# @see https://github.com/opencontainers/image-spec/blob/main/annotations.md
-LABEL org.opencontainers.image.title="$PACKAGE_NAME"
-LABEL org.opencontainers.image.description="$DESCRIPTION"
-LABEL org.opencontainers.image.version="$VERSION"
-LABEL org.opencontainers.image.revision="$REVISION"
-LABEL org.opencontainers.image.authors="$MAINTAINER"
-LABEL org.opencontainers.image.created="$CREATED_DATE"
-LABEL org.opencontainers.image.source="$SOURCE_URL"
-LABEL org.opencontainers.image.url="$SOURCE_URL"
-LABEL org.opencontainers.image.documentation="$SOURCE_URL#readme"
-LABEL org.opencontainers.image.vendor="$VENDOR"
-LABEL org.opencontainers.image.licenses="$LICENSE"

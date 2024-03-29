@@ -37,7 +37,7 @@ tmux_options: -f .tmux.conf
 startup_window: workspace
 
 # Specifies (by index) which pane of the specified window will be selected on project startup. If not set, the first pane is used.
-startup_pane: 3
+startup_pane: 2
 
 # Controls whether the tmux session should be attached to automatically. Defaults to true.
 attach: true
@@ -49,7 +49,6 @@ windows:
       # 'before' represents legacy functionality and will be deprecated in a future release, in favour of 'after'
       # synchronize: after
       panes:
-        - docker-compose up
         - make start-ws
         - make client-ws
         - git status

@@ -62,12 +62,16 @@
             cmake
             libusb1
             stdenv.cc.cc.lib
-
-#             # dependencies for the test client
-#             portaudio
           ];
           shellHook = ''
             # Python
+            export LD_LIBRARY_PATH=${envDir}/lib:$LD_LIBRARY_PATH
+            export LD_LIBRARY_PATH=${portaudio}/lib:$LD_LIBRARY_PATH
+            export PIP_PREFIX=${envDir}
+            export PYTHONUSERBASE=${envDir}
+            export PYTHON_SITE_PACKAGES=$PIP_PREFIX/${python310.sitePackages}
+            export PYTHONPATH=$(pwd):$PYTHON_SITE_PACKAGES:$PYTHONPATH
+
             virtualenv `basename ${envDir}`
             VIRTUAL_ENV_DISABLE_PROMPT=true source ${envDir}/bin/activate
 

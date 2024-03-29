@@ -16,7 +16,7 @@
 import os
 import tempfile
 
-from oremi.core.logger import Logger
+from oremi_core.logger import Logger
 from pocketsphinx import Config, Decoder
 
 from .models import DictionaryEntry, WakewordSetting

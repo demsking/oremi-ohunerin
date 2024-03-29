@@ -14,7 +14,7 @@ env:
 	tmuxinator
 
 clean:
-	rm -rf dist/ models/*.tflite
+	rm -rf dist/ build/ models/*.tflite
 
 $(TSLITE_FILE):
 	./scripts/install-model.sh $@
@@ -41,27 +41,32 @@ start-wss: model certificates
 	  --port 25023 \
 	  --model $(TSLITE_FILE) \
 	  --cert-file $(SSL_CERT_FILE) \
-	  --key-file $(SSL_PATH)/localhost-key.pem
+	  --key-file $(SSL_PATH)/localhost-key.pem \
+	  --mqtt-host test.mosquitto.org
 
 start-ws: model
 	poetry run oremi-sds \
 	  --verbose \
 	  --port 15023 \
-	  --model $(TSLITE_FILE)
+	  --model $(TSLITE_FILE) \
+	  --mqtt-host test.mosquitto.org
 
 client-wss: certificates
 	python client.py \
 	  --port 25023 \
 	  --cert-file $(SSL_CERT_FILE)
-	  --model $(TSLITE_FILE)
+	  --model $(TSLITE_FILE) \
+	  --device-index 8
 
 client-docker: certificates
 	python client.py \
 	  --port 35023 \
-	  --cert-file $(SSL_CERT_FILE)
+	  --cert-file $(SSL_CERT_FILE) \
+	  --device-index 8
 
 client-ws:
-	python client.py --port 15023
+	python client.py --port 15023 \
+	  --device-index 8
 
 lint:
 	pre-commit run --all-files
@@ -73,10 +78,10 @@ test:
 	pytest
 
 coverage:
-	pytest --cov=oremi
+	pytest --cov=oremi_sds
 
 coverage-html:
-	pytest --cov=oremi --cov-report=html
+	pytest --cov=oremi_sds --cov-report=html
 
 outdated:
 	poetry show --outdated
@@ -86,12 +91,12 @@ update:
 	nix flake update
 	pre-commit autoupdate
 
-dist:
+package:
 	rm -rf dist/*
 	poetry build --no-cache --format=wheel
 	twine check dist/*
 
-publish-package: dist
+publish-package: package
 	twine upload -r testpypi dist/*
 
 build/requirements.txt:
@@ -109,8 +114,7 @@ image: build/requirements.txt
 	  --build-arg REVISION="$(shell git rev-parse HEAD)" \
 	  --build-arg SOURCE_URL="$(shell python metadata.py repository)" \
 	  --build-arg VENDOR="Oremi" \
-	  --build-arg LICENSE="$(shell python metadata.py license)" \
-
+	  --build-arg LICENSE="$(shell python metadata.py license)"
 	docker tag $(IMAGE_NAME):$(APP_VERSION) $(IMAGE_NAME):latest
 
 publish-image: image

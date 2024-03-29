@@ -29,11 +29,10 @@ repos:
     rev: v0.0.284
     hooks:
       - id: ruff
-  - repo: https://github.com/asottile/pyupgrade
-    rev: v3.10.1
+  - repo: https://github.com/iamthefij/docker-pre-commit
+    rev: v3.0.1
     hooks:
-      - id: pyupgrade
-        args: [--py38-plus]
+      - id: docker-compose-check
   - repo: local
     hooks:
       - id: hadolint

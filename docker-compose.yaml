@@ -1,20 +1,7 @@
-version: '3.8'
+---
 services:
-  discovery:
-    image: demsking/oremi-discovery
-    volumes:
-      - ~/.config/oremi/ssl:/etc/ssl:ro
-    ports:
-      - 15105:5105
-    command: [
-      "--verbose",
-      "--cert-file", "/etc/ssl/localhost.pem",
-      "--key-file", "/etc/ssl/localhost-key.pem",
-    ]
   detector:
     image: demsking/oremi-sds
-    depends_on:
-      - discovery
     volumes:
       - ~/.cache/tensorflow/models/yamnet.tflite:/var/oremi/models/yamnet.tflite:ro
       - ~/.config/oremi/ssl:/etc/ssl:ro

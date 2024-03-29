@@ -31,4 +31,4 @@ with open(os.path.join(os.path.dirname(__file__), '..', 'pyproject.toml'), encod
   del package
   del toml
 
-SERVER_HEADER = f'{APP_NAME}/{APP_VERSION}'
+HTTP_HEADER = f'{APP_NAME}/{APP_VERSION}'

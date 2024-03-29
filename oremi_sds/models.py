@@ -14,9 +14,10 @@
 # ==============================================================================
 
 import datetime
+from dataclasses import dataclass
+from dataclasses import field
+from dataclasses_json import dataclass_json
 from typing import Literal, TypedDict
-
-from attrs import define, field, validators
 
 
 class DetectedSound(TypedDict):
@@ -35,17 +36,28 @@ def create_detected_sound_object(sound_name: str, score: float) -> DetectedSound
   }
 
 
-@define(auto_attribs = True)
+@dataclass_json
+@dataclass
 class InitMessage:
   type: Literal['init']
   language: Literal['fr', 'en']
-  features: list[Literal['wakeword-detection', 'sound-detection']] = field(validator = validators.min_len(1), factory = lambda: [
+  features: list[Literal['wakeword-detection', 'sound-detection']] = field(default_factory = lambda: [
     'wakeword-detection',
     'sound-detection',
   ])
 
 
-@define(auto_attribs = True)
+@dataclass_json
+@dataclass
+class ServerInitMessage:
+  type: Literal['init']
+  server: str
+  status: str
+  languages: list[Literal['fr', 'en']]
+
+
+@dataclass_json
+@dataclass
 class DictionaryEntry:
   """Class representing a dictionary entry."""
 
@@ -56,7 +68,8 @@ class DictionaryEntry:
   """The list of phonemes for the word."""
 
 
-@define(auto_attribs = True)
+@dataclass_json
+@dataclass
 class WakewordSetting:
   """Settings for the wake word detection."""
 
@@ -66,8 +79,14 @@ class WakewordSetting:
   dictionary: str
   """Dictionary filename."""
 
-  discriminants: list[DictionaryEntry] = field(converter = lambda items: [DictionaryEntry(**item) for item in items])
+  discriminants: list[DictionaryEntry]
   """List of DictionaryEntry objects representing the discriminants."""
 
-  wakewords: list[DictionaryEntry] = field(validator = validators.min_len(1), converter = lambda items: [DictionaryEntry(**item) for item in items])
+  wakewords: list[DictionaryEntry]
   """List of DictionaryEntry objects representing the wakewords."""
+
+  @classmethod
+  def from_dict(cls, data: dict):
+    discriminants = [DictionaryEntry.from_dict(item) for item in data['discriminants']]
+    wakewords = [DictionaryEntry.from_dict(item) for item in data['wakewords']]
+    return cls(data['model'], data['dictionary'], discriminants, wakewords)

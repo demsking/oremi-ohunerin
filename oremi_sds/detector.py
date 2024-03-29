@@ -13,7 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 
-from oremi.core.logger import Logger
+from oremi_core.logger import Logger
 from tflite_support.task import audio, core, processor
 
 from .audio import to_ndarray
