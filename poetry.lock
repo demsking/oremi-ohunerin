@@ -425,13 +425,13 @@ files = [
 
 [[package]]
 name = "oremi-core"
-version = "1.0.0.dev21"
+version = "1.0.0.dev22"
 description = "The cornerstone of the Oremi ecosystem"
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.10"
 files = [
-    {file = "oremi_core-1.0.0.dev21-py3-none-any.whl", hash = "sha256:c4a5678371cbd7101a1da68e633a30008a9a52b776172a80acc8237d5d391c20"},
-    {file = "oremi_core-1.0.0.dev21.tar.gz", hash = "sha256:4ed1a989f6e187e9aebeb5d120cc572c22c4f485802a5d8e382b503cf53aa8c6"},
+    {file = "oremi_core-1.0.0.dev22-py3-none-any.whl", hash = "sha256:a24a8e2369a9d9d7ec7e266a54e83c1e1bce8ccfaefaf613ec12ef4dc5d970e3"},
+    {file = "oremi_core-1.0.0.dev22.tar.gz", hash = "sha256:ce5e011ae5900e456286e92b13760c3f684f32f94a3807264dc754de2178fda6"},
 ]
 
 [package.dependencies]
@@ -446,13 +446,13 @@ reference = "test"
 
 [[package]]
 name = "oremi-discovery"
-version = "1.0.0b4"
-description = "Oremi Discovery Client"
+version = "1.0.0b6"
+description = "Oremi Discovery"
 optional = false
 python-versions = ">=3.10,<3.11"
 files = [
-    {file = "oremi_discovery-1.0.0b4-py3-none-any.whl", hash = "sha256:5f3af7e671141102c1c54bc1ea5469dac37a0b0460c1205af05a798f06d509e6"},
-    {file = "oremi_discovery-1.0.0b4.tar.gz", hash = "sha256:4f514743d9f3d124713e9bad910f50294a8b26ff401d28b5224deddde33b78cb"},
+    {file = "oremi_discovery-1.0.0b6-py3-none-any.whl", hash = "sha256:f2e5d099d548185e05b4bd9ed5081ea702f3c7e0bd14226f972477ed681ead6a"},
+    {file = "oremi_discovery-1.0.0b6.tar.gz", hash = "sha256:3bdba3ce3b0e5bf8aaaf3b06d1b2a476e0286ee361591f9cee448abafeb4d67b"},
 ]
 
 [package.dependencies]
@@ -598,13 +598,13 @@ global = ["pybind11-global (==2.12.0)"]
 
 [[package]]
 name = "pycparser"
-version = "2.21"
+version = "2.22"
 description = "C parser in Python"
 optional = false
-python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
+python-versions = ">=3.8"
 files = [
-    {file = "pycparser-2.21-py2.py3-none-any.whl", hash = "sha256:8ee45429555515e1f6b185e78100aea234072576aa43ab53aefcae078162fca9"},
-    {file = "pycparser-2.21.tar.gz", hash = "sha256:e644fdec12f7872f86c58ff790da456218b10f863970249516d60a5eaca77206"},
+    {file = "pycparser-2.22-py3-none-any.whl", hash = "sha256:c3702b6d3dd8c7abc1afa565d7e63d53a1d0bd86cdc24edd75470f4de499cfcc"},
+    {file = "pycparser-2.22.tar.gz", hash = "sha256:491c8be9c040f5390f5bf44a5b07752bd07f56edf992381b05c701439eec10f6"},
 ]
 
 [[package]]

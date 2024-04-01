@@ -52,9 +52,11 @@ async def start() -> None:
 
   async def register_service():
     if args.mqtt_host and args.mqtt_port:
-      await discovery.start(args.mqtt_host, args.mqtt_port)
+      await discovery.connect(args.mqtt_host, args.mqtt_port)
       service = Service(
         name = APP_NAME,
+        version=APP_VERSION,
+        protocol='wss' if args.cert_file else 'ws',
         host = hostname or args.host,
         port = args.port,
       )
@@ -62,7 +64,7 @@ async def start() -> None:
 
   async def unregister_service():
     if args.mqtt_host and args.mqtt_port:
-      discovery.stop()
+      discovery.disconnect()
 
   server = Server(
     logger = logger,
