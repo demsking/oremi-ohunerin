@@ -36,7 +36,10 @@ files = [
 [package.dependencies]
 lazy-object-proxy = ">=1.4.0"
 typing-extensions = {version = ">=4.0.0", markers = "python_version < \"3.11\""}
-wrapt = {version = ">=1.11,<2", markers = "python_version < \"3.11\""}
+wrapt = [
+    {version = ">=1.11,<2", markers = "python_version < \"3.11\""},
+    {version = ">=1.14,<2", markers = "python_version >= \"3.11\""},
+]
 
 [[package]]
 name = "cffi"
@@ -425,13 +428,13 @@ files = [
 
 [[package]]
 name = "oremi-core"
-version = "1.0.0.dev22"
+version = "1.0.0.dev24"
 description = "The cornerstone of the Oremi ecosystem"
 optional = false
-python-versions = ">=3.10"
+python-versions = ">=3.8,<4.0"
 files = [
-    {file = "oremi_core-1.0.0.dev22-py3-none-any.whl", hash = "sha256:a24a8e2369a9d9d7ec7e266a54e83c1e1bce8ccfaefaf613ec12ef4dc5d970e3"},
-    {file = "oremi_core-1.0.0.dev22.tar.gz", hash = "sha256:ce5e011ae5900e456286e92b13760c3f684f32f94a3807264dc754de2178fda6"},
+    {file = "oremi_core-1.0.0.dev24-py3-none-any.whl", hash = "sha256:04b4b54a62332aad1afaaecaeac24141da195e6bd8ca2559e1479ad1e01632e8"},
+    {file = "oremi_core-1.0.0.dev24.tar.gz", hash = "sha256:56a0b7db9416fb329f25af299c9a75011f70b9530db213f43a5755d6b00a6689"},
 ]
 
 [package.dependencies]
@@ -446,17 +449,17 @@ reference = "test"
 
 [[package]]
 name = "oremi-discovery"
-version = "1.0.0b6"
-description = "Oremi Discovery"
+version = "1.0.0b17"
+description = "Oremi Discovery is a library for facilitating device and service discovery and communication in IoT networks using the MQTT protocol."
 optional = false
-python-versions = ">=3.10,<3.11"
+python-versions = ">=3.8,<4.0"
 files = [
-    {file = "oremi_discovery-1.0.0b6-py3-none-any.whl", hash = "sha256:f2e5d099d548185e05b4bd9ed5081ea702f3c7e0bd14226f972477ed681ead6a"},
-    {file = "oremi_discovery-1.0.0b6.tar.gz", hash = "sha256:3bdba3ce3b0e5bf8aaaf3b06d1b2a476e0286ee361591f9cee448abafeb4d67b"},
+    {file = "oremi_discovery-1.0.0b17-py3-none-any.whl", hash = "sha256:84ee429729534f88f195e26d371a0485d3ebf1f9c31c97a248e38ab68f8ed64a"},
+    {file = "oremi_discovery-1.0.0b17.tar.gz", hash = "sha256:21b2f0792a4a36dbb83033001b139f9adfb4921349a055ce46addb876f611d09"},
 ]
 
 [package.dependencies]
-dataclasses-json = ">=0.6.4,<0.7.0"
+oremi-core = ">=1.0.0.dev23,<2.0.0"
 paho-mqtt = ">=2.0.0,<3.0.0"
 
 [package.source]
@@ -744,7 +747,10 @@ files = [
 [package.dependencies]
 astroid = ">=2.15.8,<=2.17.0-dev0"
 colorama = {version = ">=0.4.5", markers = "sys_platform == \"win32\""}
-dill = {version = ">=0.2", markers = "python_version < \"3.11\""}
+dill = [
+    {version = ">=0.2", markers = "python_version < \"3.11\""},
+    {version = ">=0.3.6", markers = "python_version >= \"3.11\""},
+]
 isort = ">=4.2.5,<6"
 mccabe = ">=0.6,<0.8"
 platformdirs = ">=2.2.0"
@@ -1196,5 +1202,5 @@ files = [
 
 [metadata]
 lock-version = "2.0"
-python-versions = ">=3.10,<3.11"
-content-hash = "a72296e049ebba38cac82a83862912c2435c7320415ffad4feb6d28a927bdf7b"
+python-versions = ">=3.10,<4.0"
+content-hash = "5961e8844324483873da29449e6ffcf7e4f4ab15a9ce412a5218f5a590747ac1"

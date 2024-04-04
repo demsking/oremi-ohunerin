@@ -1,0 +1,48 @@
+{
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "editor.detectIndentation": false,
+  "files.insertFinalNewline": true,
+  "files.trimFinalNewlines": true,
+  "files.trimTrailingWhitespace": true,
+  "files.exclude": {
+    "venv": true,
+    "**/.directory": true,
+    "**/.coverage": true,
+    "**/.direnv": true,
+    "**/.nix-node": true,
+    "**/.ruff_cache": true,
+    "**/.pytest_cache": true,
+    "**/*.egg-info": true,
+    "**/__pycache__": true,
+    "**/dist": true
+  },
+  "python.analysis.typeCheckingMode": "basic",
+  "python.analysis.diagnosticSeverityOverrides": {
+    "reportMissingTypeStubs": "information",
+    "reportPrivateImportUsage": "none"
+  },
+  "python.analysis.exclude": [
+    "venv/**"
+  ],
+  "python.analysis.autoImportCompletions": true,
+  "python.analysis.completeFunctionParens": true,
+  "python.analysis.diagnosticMode": "workspace",
+  "python.analysis.importFormat": "relative",
+  "python.analysis.inlayHints.functionReturnTypes": true,
+  "python.analysis.inlayHints.pytestParameters": true,
+  "python.analysis.inlayHints.variableTypes": true,
+  "python.analysis.fixAll": ["source.convertImportFormat"],
+  "python.testing.pytestEnabled": true,
+  "python.linting.pylintArgs": [],
+  "python.linting.ignorePatterns": [
+    "**/site-packages/**/*.py",
+    ".vscode/*.py",
+    ".*_test.py",
+    "typings/**/*.py"
+  ],
+  "python.testing.pytestArgs": [
+    "tests"
+  ],
+  "python.testing.unittestEnabled": false
+}

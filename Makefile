@@ -99,22 +99,25 @@ package:
 publish-package: package
 	twine upload -r testpypi dist/*
 
-build/requirements.txt:
+build/requirements.txt: pyproject.toml poetry.lock
 	mkdir -p $(shell dirname $@)
 	poetry export --only=main --without-hashes -f requirements.txt -o $@
 
 image: build/requirements.txt
 	docker build \
-	  --progress plain . -t $(IMAGE_NAME):$(APP_VERSION) \
-	  --build-arg PACKAGE_NAME="$(APP_NAME)" \
-	  --build-arg CREATED_DATE="$(shell date --rfc-3339=seconds)" \
-	  --build-arg MAINTAINER="$(shell python metadata.py authors)" \
-	  --build-arg DESCRIPTION="$(shell python metadata.py description)" \
-	  --build-arg VERSION="$(APP_VERSION)" \
-	  --build-arg REVISION="$(shell git rev-parse HEAD)" \
-	  --build-arg SOURCE_URL="$(shell python metadata.py repository)" \
-	  --build-arg VENDOR="Oremi" \
-	  --build-arg LICENSE="$(shell python metadata.py license)"
+	  --progress plain . \
+	  --tag $(IMAGE_NAME):$(APP_VERSION) \
+	  --label "org.opencontainers.image.title=$(APP_NAME)" \
+	  --label "org.opencontainers.image.description=$(shell python metadata.py description)" \
+	  --label "org.opencontainers.image.version=$(APP_VERSION)" \
+	  --label "org.opencontainers.image.revision=$(shell git rev-parse HEAD)" \
+	  --label "org.opencontainers.image.authors=$(shell python metadata.py authors)" \
+	  --label "org.opencontainers.image.created=$(shell date --rfc-3339=seconds)" \
+	  --label "org.opencontainers.image.source=$(shell python metadata.py repository)" \
+	  --label "org.opencontainers.image.url=$(shell python metadata.py repository)" \
+	  --label "org.opencontainers.image.documentation=$(shell python metadata.py documentation)" \
+	  --label "org.opencontainers.image.vendor=Oremi" \
+	  --label "org.opencontainers.image.licenses=$(shell python metadata.py license)"
 	docker tag $(IMAGE_NAME):$(APP_VERSION) $(IMAGE_NAME):latest
 
 publish-image: image

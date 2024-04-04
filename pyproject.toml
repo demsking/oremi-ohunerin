@@ -46,7 +46,7 @@ url = "https://test.pypi.org/simple/"
 secondary = true
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.11"
+python = ">=3.10,<4.0"
 pocketsphinx = "^5.0.0"
 toml = "^0.10.2"
 numpy = "^1.20"
