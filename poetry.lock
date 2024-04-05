@@ -428,13 +428,13 @@ files = [
 
 [[package]]
 name = "oremi-core"
-version = "1.0.0.dev24"
+version = "1.0.0.dev26"
 description = "The cornerstone of the Oremi ecosystem"
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "oremi_core-1.0.0.dev24-py3-none-any.whl", hash = "sha256:04b4b54a62332aad1afaaecaeac24141da195e6bd8ca2559e1479ad1e01632e8"},
-    {file = "oremi_core-1.0.0.dev24.tar.gz", hash = "sha256:56a0b7db9416fb329f25af299c9a75011f70b9530db213f43a5755d6b00a6689"},
+    {file = "oremi_core-1.0.0.dev26-py3-none-any.whl", hash = "sha256:568c238faba8d93744ab7b5ac78230923d89d6ca0d6e63975335b8aa7848f6ac"},
+    {file = "oremi_core-1.0.0.dev26.tar.gz", hash = "sha256:91593bc920ca92e89e0fc999a8549256055d30509f82c26f263d12f288035acf"},
 ]
 
 [package.dependencies]
@@ -449,13 +449,13 @@ reference = "test"
 
 [[package]]
 name = "oremi-discovery"
-version = "1.0.0b17"
+version = "1.0.0b21"
 description = "Oremi Discovery is a library for facilitating device and service discovery and communication in IoT networks using the MQTT protocol."
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "oremi_discovery-1.0.0b17-py3-none-any.whl", hash = "sha256:84ee429729534f88f195e26d371a0485d3ebf1f9c31c97a248e38ab68f8ed64a"},
-    {file = "oremi_discovery-1.0.0b17.tar.gz", hash = "sha256:21b2f0792a4a36dbb83033001b139f9adfb4921349a055ce46addb876f611d09"},
+    {file = "oremi_discovery-1.0.0b21-py3-none-any.whl", hash = "sha256:d92af9b8205991bfd70103291abe3e5b6ad1edc539fd618adb7303be4295a9eb"},
+    {file = "oremi_discovery-1.0.0b21.tar.gz", hash = "sha256:1bbf25b965ffc89b5ce97398db05e4e550963d096f4bfe9732b32bce394cedd7"},
 ]
 
 [package.dependencies]
