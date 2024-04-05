@@ -73,31 +73,16 @@ Therefore:
 
 **Makefile targets**
 
-| Target          | Description                                                                                            |
-|-----------------|--------------------------------------------------------------------------------------------------------|
-| env             | Initiates the development environment using tmuxinator.                                                |
-| clean           | Removes the 'dist/' directory and all '*.tflite' files in the 'models/' directory.                     |
-| model           | Downloads the TFLite model required for the project.                                                   |
-| install         | Installs the project dependencies using Poetry.                                                        |
-| certificates    | Generates self-signed SSL certificates for secure communication.                                       |
-| start-wss       | Starts the server with SSL/TLS support, utilizing the TFLite model and SSL certificates.               |
-| start-ws        | Starts the server without SSL/TLS, utilizing the TFLite model.                                         |
-| client-wss      | Runs the Python client with SSL/TLS support, utilizing SSL certificates.                               |
-| client-ws       | Runs the Python client without SSL/TLS.                                                                |
-| lint            | Executes linting checks on the codebase using pre-commit.                                              |
-| fix             | Automatically fixes any linting issues found by ruff.                                                  |
-| test            | Runs pytest for testing the project.                                                                   |
-| coverage        | Runs pytest with coverage report generation.                                                           |
-| coverage-html   | Runs pytest with HTML-formatted coverage report generation.                                            |
-| outdated        | Displays outdated dependencies using poetry.                                                           |
-| update          | Updates project dependencies using Poetry, Nix flake, and pre-commit.                                  |
-| dist            | Removes existing 'dist/*' files and builds the project distribution using Poetry.                      |
-| publish-package | Uploads the distribution package to the test PyPI repository using Twine.                              |
-| image           | Builds a Docker image for the project, incorporating relevant metadata.                                |
-| publish-image   | Builds and publishes a Docker image to the specified repository, along with Git tagging and pushing.   |
-
-
 Please see the [Makefile](Makefile) for the full list of targets.
+
+## CMU Sphinx Models
+
+For installation of Sphinx models, see [CMU Sphinx Files](https://sourceforge.net/projects/cmusphinx/files/Acoustic%20and%20Language%20Models/).
+
+You must download the following files:
+
+- CMU Sphinx Acoustic Model `cmusphinx-{language-code}-ptm-5.2.tar.gz`
+- CMU Sphinx Language Dictionary `{language-code}.dict`
 
 ## Documentation
 

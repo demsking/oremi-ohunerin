@@ -3,8 +3,7 @@ FROM python:3.10-slim
 RUN addgroup --system --gid 1000 oremi \
   && adduser --system --no-create-home --uid 1000 oremi
 
-COPY models/wakeword-en /oremi/
-COPY models/wakeword-fr /oremi/
+COPY models/ /oremi/models
 
 RUN apt-get update \
   && apt-get install --no-install-recommends -y curl libusb-1.0-0-dev \

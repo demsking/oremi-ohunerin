@@ -96,7 +96,7 @@ package:
 	poetry build --no-cache --format=wheel
 	twine check dist/*
 
-publish-package: package
+pypi: package
 	twine upload -r testpypi dist/*
 
 build/requirements.txt: pyproject.toml poetry.lock
@@ -120,7 +120,7 @@ image: build/requirements.txt
 	  --label "org.opencontainers.image.licenses=$(shell python metadata.py license)"
 	docker tag $(IMAGE_NAME):$(APP_VERSION) $(IMAGE_NAME):latest
 
-publish-image: image
+publish: image
 	git commit pyproject.toml -m "Release $(APP_VERSION)"
 	git tag v$(APP_VERSION)
 	docker push $(IMAGE_NAME):$(APP_VERSION)
