@@ -428,13 +428,13 @@ files = [
 
 [[package]]
 name = "oremi-core"
-version = "1.0.0.dev26"
+version = "1.0.0.dev27"
 description = "The cornerstone of the Oremi ecosystem"
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "oremi_core-1.0.0.dev26-py3-none-any.whl", hash = "sha256:568c238faba8d93744ab7b5ac78230923d89d6ca0d6e63975335b8aa7848f6ac"},
-    {file = "oremi_core-1.0.0.dev26.tar.gz", hash = "sha256:91593bc920ca92e89e0fc999a8549256055d30509f82c26f263d12f288035acf"},
+    {file = "oremi_core-1.0.0.dev27-py3-none-any.whl", hash = "sha256:be851a52107e97bbc34799936532dfb12a6308307a3bdf0dd6e6fb6d49ec65d8"},
+    {file = "oremi_core-1.0.0.dev27.tar.gz", hash = "sha256:64c89dba486bb867fe9a56c735a6198664582363ea4c346bcd56ef1f0ad4f581"},
 ]
 
 [package.dependencies]
@@ -1018,13 +1018,13 @@ files = [
 
 [[package]]
 name = "typing-extensions"
-version = "4.10.0"
+version = "4.11.0"
 description = "Backported and Experimental Type Hints for Python 3.8+"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "typing_extensions-4.10.0-py3-none-any.whl", hash = "sha256:69b1a937c3a517342112fb4c6df7e72fc39a38e7891a5730ed4985b5214b5475"},
-    {file = "typing_extensions-4.10.0.tar.gz", hash = "sha256:b0abd7c89e8fb96f98db18d86106ff1d90ab692004eb746cf6eda2682f91b3cb"},
+    {file = "typing_extensions-4.11.0-py3-none-any.whl", hash = "sha256:c1f94d72897edaf4ce775bb7558d5b79d8126906a14ea5ed1635921406c0387a"},
+    {file = "typing_extensions-4.11.0.tar.gz", hash = "sha256:83f085bd5ca59c80295fc2a82ab5dac679cbe02b9f33f7d83af68e241bea51b0"},
 ]
 
 [[package]]
