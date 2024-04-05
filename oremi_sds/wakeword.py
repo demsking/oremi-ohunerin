@@ -13,10 +13,10 @@
 # limitations under the License.
 # ==============================================================================
 
+import logging
 import os
 import tempfile
 
-from oremi_core.logger import Logger
 from pocketsphinx import Config, Decoder
 
 from .models import DictionaryEntry, WakewordSetting
@@ -31,7 +31,7 @@ __all__ = [
 class WakewordEngine:
   """Class for performing wake word detection."""
 
-  def __init__(self, setting: WakewordSetting, logger: Logger):
+  def __init__(self, setting: WakewordSetting, logger: logging.Logger):
     self._logger = logger
     self._setting = setting
     config = Config(

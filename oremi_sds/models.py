@@ -53,7 +53,7 @@ class ServerInitMessage:
   type: Literal['init']
   server: str
   status: str
-  languages: list[Literal['fr', 'en']]
+  languages: list[str]
 
 
 @dataclass_json
@@ -87,6 +87,6 @@ class WakewordSetting:
 
   @classmethod
   def from_dict(cls, data: dict):
-    discriminants = [DictionaryEntry.from_dict(item) for item in data['discriminants']]
-    wakewords = [DictionaryEntry.from_dict(item) for item in data['wakewords']]
+    discriminants = [DictionaryEntry.from_dict(item) for item in data['discriminants']] # type: ignore
+    wakewords = [DictionaryEntry.from_dict(item) for item in data['wakewords']] # type: ignore
     return cls(data['model'], data['dictionary'], discriminants, wakewords)

@@ -13,14 +13,14 @@
 # limitations under the License.
 # ==============================================================================
 
-from oremi_core.logger import Logger
+import logging
 from tflite_support.task import audio, core, processor
 
 from .audio import to_ndarray
 
 
 class DetectorEngine:
-  def __init__(self, model: str, *, score_threshold: float = 0.1, num_threads: int = -1, logger: Logger):
+  def __init__(self, model: str, *, score_threshold: float = 0.1, num_threads: int = -1, logger: logging.Logger):
     if (score_threshold < 0) or (score_threshold > 1.0):
       raise ValueError('Score threshold must be between (inclusive) 0 and 1.')
 
@@ -54,7 +54,7 @@ class DetectorEngine:
       ],
     )
 
-    self._logger.info(f'Allowlist: {", ".join(classification_options.category_name_allowlist)}')
+    self._logger.info(f'Allowlist: {", ".join(classification_options.category_name_allowlist)}') # type: ignore
 
     options = audio.AudioClassifierOptions(
       base_options = base_options,
@@ -70,13 +70,13 @@ class DetectorConsumer:
   Consumes audio data from a detector engine and performs sound classification.
   """
 
-  def __init__(self, detector: DetectorEngine, logger: Logger) -> None:
+  def __init__(self, detector: DetectorEngine, logger: logging.Logger) -> None:
     """
     Initialize the DetectorConsumer.
 
     Args:
       detector (DetectorEngine): The audio detector engine.
-      logger (Logger): The logger instance for logging.
+      logger (logging.Logger): The logger instance for logging.
     """
     self._logger = logger
     self._detector = detector
