@@ -125,8 +125,8 @@ async def main():
 
     loop.add_signal_handler(signal.SIGINT, stop_recording)
     loop.add_signal_handler(signal.SIGTERM, stop_recording)
-    loop.add_signal_handler(signal.SIGINT, lambda: loop.create_task(websocket.close(), name = 'SIGINT Signal Task'))
-    loop.add_signal_handler(signal.SIGTERM, lambda: loop.create_task(websocket.close(), name = 'SIGTERM Signal Task'))
+    loop.add_signal_handler(signal.SIGINT, lambda: loop.create_task(websocket.close(), name='SIGINT Signal Task'))
+    loop.add_signal_handler(signal.SIGTERM, lambda: loop.create_task(websocket.close(), name='SIGTERM Signal Task'))
 
     logger.info('Sending init message')
     await websocket.send(json.dumps({
@@ -141,7 +141,7 @@ async def main():
       logger.info('Listening...')
       try:
         async for message in websocket:
-          logger.info(f'Detected: {message}') # {"type": "sound", "sound": "snoring", "score": 0.109375, "datetime": "2023-08-16T14:42:46.424809"}
+          logger.info(f'Detected: {message}')  # {"type": "sound", "sound": "snoring", "score": 0.109375, "datetime": "2023-08-16T14:42:46.424809"}
       except asyncio.CancelledError:
         logger.info('Recording cancelled')
       finally:

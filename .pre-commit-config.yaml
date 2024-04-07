@@ -16,6 +16,17 @@ repos:
       - id: detect-private-key
       - id: double-quote-string-fixer
       - id: name-tests-test
+  # - repo: https://github.com/Lucas-C/pre-commit-hooks
+  #   rev: v1.5.5
+  #   hooks:
+  #     - id: insert-license
+  #       files: \.py$
+  #       args: [
+  #         '--license-filepath', 'LICENSE_HEADER.txt',
+  #         '--comment-style', '',
+  #         '--use-current-year',
+  #         '--no-extra-eol',
+  #       ]
   - repo: https://github.com/python-poetry/poetry
     rev: 1.8.0
     hooks:
@@ -36,17 +47,35 @@ repos:
   - repo: local
     hooks:
       - id: hadolint
-        name: hadolint
+        name: 'Dockerfile Linting'
+        description: 'Runs `hadolint` to lint Dockerfiles.'
         entry: hadolint
+        args: ['--ignore', 'DL3008']
         language: system
         files: Dockerfile
-        args: [--ignore, DL3008, Dockerfile]
       - id: gimtoc
-        name: gimtoc
+        name: 'Generate Table of Contents'
+        description: 'Runs `gimtoc` to generate a Table of Contents in README.md.'
         entry: gimtoc
         language: node
         files: README.md
-        args: ["--file", "README.md", "--section", "Table of Contents", "--output", "README.md"]
+        args: [
+          '--file', 'README.md',
+          '--section', 'Table of Contents',
+          '--output', 'README.md',
+        ]
+      - id: autopep8
+        name: 'Fix Python Code Style using AutoPEP8'
+        description: 'Runs `autopep8` to format Python code.'
+        entry: autopep8
+        language: system
+        files: '\.py$'
+        args: [
+          '--in-place',
+          '--recursive',
+          # Error codes: https://pycodestyle.pycqa.org/en/latest/intro.html#error-codes
+          '--ignore', 'E1,E501',
+        ]
       - id: pylint
         name: pylint
         entry: pylint

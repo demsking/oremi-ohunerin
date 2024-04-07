@@ -41,7 +41,7 @@ def create_detected_sound_object(sound_name: str, score: float) -> DetectedSound
 class InitMessage:
   type: Literal['init']
   language: Literal['fr', 'en']
-  features: list[Literal['wakeword-detection', 'sound-detection']] = field(default_factory = lambda: [
+  features: list[Literal['wakeword-detection', 'sound-detection']] = field(default_factory=lambda: [
     'wakeword-detection',
     'sound-detection',
   ])
@@ -87,6 +87,6 @@ class WakewordSetting:
 
   @classmethod
   def from_dict(cls, data: dict):
-    discriminants = [DictionaryEntry.from_dict(item) for item in data['discriminants']] # type: ignore
-    wakewords = [DictionaryEntry.from_dict(item) for item in data['wakewords']] # type: ignore
+    discriminants = [DictionaryEntry.from_dict(item) for item in data['discriminants']]  # type: ignore
+    wakewords = [DictionaryEntry.from_dict(item) for item in data['wakewords']]  # type: ignore
     return cls(data['model'], data['dictionary'], discriminants, wakewords)

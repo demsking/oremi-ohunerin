@@ -22,5 +22,6 @@ COPY pyproject.toml config.json LICENSE /oremi/
 COPY oremi_sds/ /oremi/oremi_sds
 
 USER oremi
+ENV THRESHOLD="0.1"
 WORKDIR /oremi
 ENTRYPOINT ["/oremi/scripts/entrypoint.sh"]
