@@ -449,13 +449,13 @@ reference = "test"
 
 [[package]]
 name = "oremi-discovery"
-version = "1.0.0b21"
+version = "1.0.0b23"
 description = "Oremi Discovery is a library for facilitating device and service discovery and communication in IoT networks using the MQTT protocol."
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "oremi_discovery-1.0.0b21-py3-none-any.whl", hash = "sha256:d92af9b8205991bfd70103291abe3e5b6ad1edc539fd618adb7303be4295a9eb"},
-    {file = "oremi_discovery-1.0.0b21.tar.gz", hash = "sha256:1bbf25b965ffc89b5ce97398db05e4e550963d096f4bfe9732b32bce394cedd7"},
+    {file = "oremi_discovery-1.0.0b23-py3-none-any.whl", hash = "sha256:c3e13fabb70649f403c588a71824f9e0525db2556ab15abb0b18c521dd2e4519"},
+    {file = "oremi_discovery-1.0.0b23.tar.gz", hash = "sha256:17587a135a55362d537d6949efd0bb3454691ae9d55b984ab14253c5a81a3d5b"},
 ]
 
 [package.dependencies]
