@@ -53,7 +53,6 @@ numpy = "^1.20"
 websockets = "^11.0.3"
 tflite-runtime = "^2.13.0"
 tflite-support = "^0.4.4"
-oremi-discovery = "^1.0.0b4"
 oremi-core = "^1.0.0.dev21"
 dataclasses-json = "^0.6.4"
 
@@ -65,6 +64,7 @@ pytest-asyncio = "^0.21.0"
 pylint = {extras = ["spelling"], version = "^2.17.4"}
 pyupgrade = "^3.6.0"
 pylint-pydantic = "^0.2.4"
+python-lsp-server = "^1.11.0"
 
 [tool.pytest.ini_options]
 # Function starting with the following pattern are considered for test cases.

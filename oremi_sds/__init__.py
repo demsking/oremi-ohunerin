@@ -17,9 +17,6 @@ import asyncio
 import logging
 
 from oremi_core.logger import Logger
-from oremi_core.network import get_ipv4_address
-from oremi_discovery import DiscoveryService
-from oremi_discovery import Service
 
 from .args import parse_arguments
 from .package import APP_NAME, APP_VERSION
@@ -43,39 +40,16 @@ async def start() -> None:
   args = parse_arguments()
   verbose: bool = args.verbose
   log_level = logging.DEBUG if verbose else logging.INFO
-  logger = Logger.create(APP_NAME, filename = args.log_file, level = log_level)
-  hostname = get_ipv4_address()
-  discovery = DiscoveryService(
-    client_id=f'{APP_NAME}/{APP_VERSION}',
-    logger=logger,
-  )
-
-  async def register_service():
-    if args.mqtt_host and args.mqtt_port:
-      await discovery.connect(args.mqtt_host, args.mqtt_port)
-      service = Service(
-        name = APP_NAME,
-        version=APP_VERSION,
-        protocol='wss' if args.cert_file else 'ws',
-        host = hostname or args.host,
-        port = args.port,
-      )
-      discovery.publish(service)
-
-  async def unregister_service():
-    if args.mqtt_host and args.mqtt_port:
-      discovery.disconnect()
+  logger = Logger.create(APP_NAME, filename=args.log_file, level=log_level)
 
   server = Server(
-    logger = logger,
-    model_path = args.model,
-    config_file = args.config,
-    threshold = args.threshold,
-    cert_file = args.cert_file,
-    key_file = args.key_file,
-    password = args.password,
-    on_listening=register_service,
-    on_shutdown=unregister_service,
+    logger=logger,
+    model_path=args.model,
+    config_file=args.config,
+    threshold=args.threshold,
+    cert_file=args.cert_file,
+    key_file=args.key_file,
+    password=args.password,
   )
 
   logger.info(f'Starting {APP_NAME} {APP_VERSION}')
@@ -85,6 +59,7 @@ async def start() -> None:
   logger.info(f'Config: {args.config}')
 
   await server.listen(args.host, args.port)
+  logger.info('E ku ore mi')  # https://translate.google.com/?sl=yo&tl=en&text=E%20ku%20ore%20mi&op=translate
 
 
 def main():

@@ -10,7 +10,7 @@ TSLITE_FILE := ~/.cache/tensorflow/models/yamnet.tflite
 .PHONY: all clean build dist image model publish-image test build/requirements.txt
 
 # Start the development environment using tmuxinator
-env:
+shell:
 	tmuxinator
 
 clean:
@@ -107,6 +107,8 @@ image: build/requirements.txt
 	docker build \
 	  --progress plain . \
 	  --tag $(IMAGE_NAME):$(APP_VERSION) \
+	  --build-arg PACKAGE_NAME="$(APP_NAME)" \
+	  --build-arg PACKAGE_VERSION="$(APP_VERSION)" \
 	  --label "org.opencontainers.image.title=$(APP_NAME)" \
 	  --label "org.opencontainers.image.description=$(shell python metadata.py description)" \
 	  --label "org.opencontainers.image.version=$(APP_VERSION)" \

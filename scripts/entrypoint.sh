@@ -22,9 +22,35 @@ CURRENT_DIR=$(dirname $0)
 
 $CURRENT_DIR/install-model.sh $MODEL_FILENAME || exit 1
 
-PYTHONPATH=/oremi:$PYTHONPATH python -m oremi_sds \
+PYTHONPATH=/oremi:$PYTHONPATH python -m \
+  oremi_sds \
     --host 0.0.0.0 \
     --port 5023 \
     --threshold $THRESHOLD \
     --config /oremi/config.json \
-    --model $MODEL_FILENAME $@
+    --model $MODEL_FILENAME \
+    $@ \
+  &
+
+if [ -n "$MQTT_HOST" ]; then
+  if [[ "$@" == *"--cert-file"* ]]; then
+    service_protocol="wss"
+  else
+    service_protocol="ws"
+  fi
+
+  oremi-discovery \
+    --mqtt-host "$MQTT_HOST" \
+    --mqtt-port "$MQTT_PORT" \
+    --client-id "$CLIENT_ID" \
+    --discovery-channel "$DISCOVERY_CHANNEL" \
+    --service-name "$SERVICE_NAME" \
+    --service-version "$SERVICE_VERSION" \
+    --service-protocol "$service_protocol" \
+    --service-host "$SERVICE_HOST" \
+    --service-port "$SERVICE_PORT" \
+  &
+fi
+
+# Wait for all background processes to finish
+wait

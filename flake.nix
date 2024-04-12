@@ -49,10 +49,19 @@
             nodejs
             hadolint
             check-jsonschema
-            gnutar
             gnumake
+            bandit
+            skjold
+            shellcheck
+            prospector
+            pyupgrade
             pre-commit
+            editorconfig-checker
+            python310Packages.doc8
+            python310Packages.pyroma
+            python310Packages.autopep8
             python310Packages.pre-commit-hooks
+            python310Packages.reorder-python-imports
 
             # dependencies for client.py
             pythonPackages.scipy
