@@ -28,15 +28,15 @@ class DetectorEngine:
 
     # Initialize the audio classification model.
     base_options = core.BaseOptions(
-      file_name = model,
-      use_coral = False,
-      num_threads = num_threads,
+      file_name=model,
+      use_coral=False,
+      num_threads=num_threads,
     )
 
     classification_options = processor.ClassificationOptions(
-      max_results = 1,
-      score_threshold = score_threshold,
-      category_name_allowlist = [
+      max_results=1,
+      score_threshold=score_threshold,
+      category_name_allowlist=[
         'Shout',  # Cri
         'Bellows',  # Sonner
         'Children shouting',  # Cris d'enfants
@@ -54,11 +54,11 @@ class DetectorEngine:
       ],
     )
 
-    self._logger.info(f'Allowlist: {", ".join(classification_options.category_name_allowlist)}') # type: ignore
+    self._logger.info(f'Allowlist: {", ".join(classification_options.category_name_allowlist)}')  # type: ignore
 
     options = audio.AudioClassifierOptions(
-      base_options = base_options,
-      classification_options = classification_options,
+      base_options=base_options,
+      classification_options=classification_options,
     )
 
     self.classifier = audio.AudioClassifier.create_from_options(options)

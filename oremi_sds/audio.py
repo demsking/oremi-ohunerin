@@ -31,7 +31,7 @@ def to_ndarray(data: bytes, num_channels: int):
     np.ndarray: A NumPy array of float64 values representing the audio data, normalized to the range [-1.0, 1.0].
   """
   # Create a NumPy array from the byte string
-  audio_array = np.frombuffer(data, dtype = np.int16)
+  audio_array = np.frombuffer(data, dtype=np.int16)
 
   # Convert the data type of the array to float
   audio_array = audio_array.astype(np.float64)

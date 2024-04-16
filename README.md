@@ -67,17 +67,8 @@ required YAMNet model manualy.
 3. Run the script with the following command:
 
    ```sh
-   ./install-model.sh /path/to/models_directory
-   ```
-
-   Replace `/path/to/models_directory` with the directory where you want to
-   install the models.
-
-   **Examples**
-
-   ```sh
    # install Yamnet model to "~/.cache/tensorflow/models"
-   ./install-model.sh ~/.cache/tensorflow/models
+   ./install-model.sh ~/.cache/tensorflow/models/yamnet.tflite
    ```
 
 Now you can install Oremi SDS from PyPi:
@@ -89,11 +80,9 @@ pip install oremi-sds
 After installation, start Oremi SDS using the provided command.
 
 ```sh
-usage: oremi-sds [-h] -m MODEL [-t THRESHOLD] [-c CONFIG] [--host HOST] [-p PORT] [--cert-file CERT_FILE]
-                 [--key-file KEY_FILE] [--password PASSWORD] [--discovery-uri DISCOVERY_URI]
-                 [--discovery-cert-file DISCOVERY_CERT_FILE] [--log-file LOG_FILE] [--verbose] [-v]
+usage: oremi-sds [-h] -m MODEL [-t THRESHOLD] [-c CONFIG] [--host HOST] [-p PORT] [--cert-file CERT_FILE] [--key-file KEY_FILE] [--password PASSWORD] [--log-file LOG_FILE] [--verbose] [-v]
 
-Oremi Sound Detection Server
+Real-time ambient sound and wake word detection
 
 options:
   -h, --help            show this help message and exit
@@ -103,16 +92,12 @@ options:
                         Detection threshold for filtering predictions (default: 0.1).
   -c CONFIG, --config CONFIG
                         Path to the configuration file (default: config.json).
-  --host HOST           Host address to connect to (default: 127.0.0.1).
-  -p PORT, --port PORT  Port number to connect to (default: 5023).
+  --host HOST           Host address to listen on (default: 127.0.0.1).
+  -p PORT, --port PORT  Port number to listen on (default: 5023).
   --cert-file CERT_FILE
                         Path to the certificate file for secure connection.
   --key-file KEY_FILE   Path to the private key file for secure connection.
   --password PASSWORD   Password to unlock the private key (if protected by a password).
-  --discovery-uri DISCOVERY_URI
-                        Oremi Discovery URI to connect to.
-  --discovery-cert-file DISCOVERY_CERT_FILE
-                        Path to the certificate file to use for the connection.
   --log-file LOG_FILE   Name of the log file.
   --verbose             Enable verbose logging.
   -v, --version         Show the version of the application.

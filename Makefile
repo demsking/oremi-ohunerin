@@ -35,21 +35,22 @@ $(SSL_CERT_FILE):
 
 certificates: $(SSL_CERT_FILE)
 
+help:
+	poetry run oremi-sds -h
+
 start-wss: model certificates
 	poetry run oremi-sds \
 	  --verbose \
 	  --port 25023 \
 	  --model $(TSLITE_FILE) \
 	  --cert-file $(SSL_CERT_FILE) \
-	  --key-file $(SSL_PATH)/localhost-key.pem \
-	  --mqtt-host test.mosquitto.org
+	  --key-file $(SSL_PATH)/localhost-key.pem
 
 start-ws: model
 	poetry run oremi-sds \
 	  --verbose \
 	  --port 15023 \
-	  --model $(TSLITE_FILE) \
-	  --mqtt-host test.mosquitto.org
+	  --model $(TSLITE_FILE)
 
 client-wss: certificates
 	python client.py \

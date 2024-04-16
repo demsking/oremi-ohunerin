@@ -50,10 +50,9 @@ python = ">=3.10,<4.0"
 pocketsphinx = "^5.0.0"
 toml = "^0.10.2"
 numpy = "^1.20"
-websockets = "^11.0.3"
 tflite-runtime = "^2.13.0"
 tflite-support = "^0.4.4"
-oremi-core = "^1.0.0.dev21"
+oremi-core = "^1.0.0b6"
 dataclasses-json = "^0.6.4"
 
 [tool.poetry.group.dev.dependencies]
@@ -62,8 +61,6 @@ pytest-cov = "^4.0.0"
 pluggy = "^1.0.0"
 pytest-asyncio = "^0.21.0"
 pylint = {extras = ["spelling"], version = "^2.17.4"}
-pyupgrade = "^3.6.0"
-pylint-pydantic = "^0.2.4"
 python-lsp-server = "^1.11.0"
 
 [tool.pytest.ini_options]

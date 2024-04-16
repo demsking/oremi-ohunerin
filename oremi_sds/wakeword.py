@@ -35,10 +35,10 @@ class WakewordEngine:
     self._logger = logger
     self._setting = setting
     config = Config(
-      lm = None,
-      hmm = setting.model,
-      dict = setting.dictionary,
-      kws_threshold = 1e-10,
+      lm=None,
+      hmm=setting.model,
+      dict=setting.dictionary,
+      kws_threshold=1e-10,
     )
 
     self._decoder = Decoder(config)
@@ -50,7 +50,7 @@ class WakewordEngine:
     filename = os.path.join(temp_dir, 'keyphrases.list')
 
     self._logger.info(f'Creating keyphrases file {filename}')
-    with open(filename, 'w', encoding = 'utf-8') as file:
+    with open(filename, 'w', encoding='utf-8') as file:
       for entry in self._setting.wakewords + self._setting.discriminants:
         file.write(f'{entry.word}\n')
         self._add_dictionary_entry(entry)
