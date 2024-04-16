@@ -52,9 +52,6 @@ ENV SERVICE_NAME="$PACKAGE_NAME"
 # Discovery service version configuration
 ENV SERVICE_VERSION="$PACKAGE_VERSION"
 
-# Discovery service protocol configuration
-ENV SERVICE_PROTOCOL="ws"
-
 # Discovery channel configuration
 ENV DISCOVERY_CHANNEL="discovery"
 
