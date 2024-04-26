@@ -33,6 +33,10 @@ PYTHONPATH=/oremi:$PYTHONPATH python -m \
   &
 
 if [ -n "$MQTT_HOST" ]; then
+  if [ "$SERVICE_HOST" = "AUTO" ]; then
+    SERVICE_HOST=$(hostname -I | cut -d' ' -f1)
+  fi
+
   if [[ "$@" == *"--cert-file"* ]]; then
     service_protocol="wss"
   else
