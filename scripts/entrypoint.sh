@@ -33,26 +33,14 @@ PYTHONPATH=/oremi:$PYTHONPATH python -m \
   &
 
 if [ -n "$MQTT_HOST" ]; then
-  if [ "$SERVICE_HOST" = "AUTO" ]; then
-    SERVICE_HOST=$(hostname -I | cut -d' ' -f1)
-  fi
-
-  if [[ "$@" == *"--cert-file"* ]]; then
-    service_protocol="wss"
-  else
-    service_protocol="ws"
-  fi
-
   oremi-discovery \
     --mqtt-host "$MQTT_HOST" \
     --mqtt-port "$MQTT_PORT" \
     --client-id "$CLIENT_ID" \
     --discovery-channel "$DISCOVERY_CHANNEL" \
     --service-name "$SERVICE_NAME" \
-    --service-version "$SERVICE_VERSION" \
-    --service-protocol "$service_protocol" \
-    --service-host "$SERVICE_HOST" \
-    --service-port "$SERVICE_PORT" \
+    --service-version $SERVICE_VERSION \
+    --service-uri $SERVICE_URI \
   &
 fi
 

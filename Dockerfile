@@ -20,7 +20,7 @@ RUN mkdir -p /var/oremi/models \
   && pip install \
   --no-cache-dir \
   -i https://test.pypi.org/simple/ \
-  oremi-discovery==1.0.0b24
+  oremi-discovery==1.0.0b25
 
 COPY pyproject.toml config.json LICENSE /oremi/
 COPY oremi_sds/ /oremi/oremi_sds
@@ -32,7 +32,7 @@ USER oremi
 ENV THRESHOLD="0.1"
 
 # MQTT host configuration for discovery
-ENV MQTT_HOST=""
+ENV MQTT_HOST=
 
 # MQTT port configuration for discovery
 ENV MQTT_PORT="1883"
@@ -40,11 +40,8 @@ ENV MQTT_PORT="1883"
 # Discovery client ID
 ENV CLIENT_ID="$PACKAGE_NAME/$PACKAGE_VERSION"
 
-# Discovery service host configuration
-ENV SERVICE_HOST=
-
-# Discovery service port configuration
-ENV SERVICE_PORT="5023"
+# Discovery service URI
+ENV SERVICE_URI=
 
 # Discovery service name configuration
 ENV SERVICE_NAME="$PACKAGE_NAME"
@@ -54,6 +51,8 @@ ENV SERVICE_VERSION="$PACKAGE_VERSION"
 
 # Discovery channel configuration
 ENV DISCOVERY_CHANNEL="discovery"
+
+EXPOSE 5023
 
 WORKDIR /oremi
 ENTRYPOINT ["/oremi/scripts/entrypoint.sh"]
