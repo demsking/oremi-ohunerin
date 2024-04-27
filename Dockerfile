@@ -10,7 +10,6 @@ RUN apt-get update \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
-COPY scripts/ /oremi/scripts
 COPY build/requirements.txt /oremi/
 
 RUN mkdir -p /var/oremi/models \
@@ -18,10 +17,11 @@ RUN mkdir -p /var/oremi/models \
   && pip install --no-cache-dir -r /oremi/requirements.txt \
   && rm -f /oremi/requirements.txt \
   && pip install \
-  --no-cache-dir \
-  -i https://test.pypi.org/simple/ \
-  oremi-discovery==1.0.0b25
+            --no-cache-dir \
+            -i https://test.pypi.org/simple/ \
+            oremi-discovery==1.0.0b25
 
+COPY scripts/ /oremi/scripts
 COPY pyproject.toml config.json LICENSE /oremi/
 COPY oremi_sds/ /oremi/oremi_sds
 

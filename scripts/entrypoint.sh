@@ -38,8 +38,6 @@ if [ -n "$SERVICE_URI" ]; then
     export MACHINE_ID=$(cat /proc/sys/kernel/random/uuid)
   fi
 
-  echo $MACHINE_ID > /etc/machine-id
-
   oremi-discovery \
     --mqtt-host $MQTT_HOST \
     --mqtt-port $MQTT_PORT \
