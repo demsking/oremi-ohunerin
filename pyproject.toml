@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "oremi-sds"
-version = "1.0.0b14"
+version = "1.0.0b15"
 description = "Real-time ambient sound and wake word detection"
 keywords = ["sound", "detection", "wakeword"]
 authors = ["Sébastien Demanou <demsking@gmail.com>"]
