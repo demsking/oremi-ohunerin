@@ -32,11 +32,18 @@ PYTHONPATH=/oremi:$PYTHONPATH python -m \
     $@ \
   &
 
-if [ -n "$MQTT_HOST" ]; then
+# Check if SERVICE_URI variable is explicitly defined
+if [ -n "$SERVICE_URI" ]; then
+  if [ -z "$MACHINE_ID" ]; then
+    export MACHINE_ID=$(cat /proc/sys/kernel/random/uuid)
+  fi
+
+  echo $MACHINE_ID > /etc/machine-id
+
   oremi-discovery \
-    --mqtt-host "$MQTT_HOST" \
-    --mqtt-port "$MQTT_PORT" \
-    --client-id "$CLIENT_ID" \
+    --mqtt-host $MQTT_HOST \
+    --mqtt-port $MQTT_PORT \
+    --client-id "$CLIENT_ID/$MACHINE_ID" \
     --discovery-channel "$DISCOVERY_CHANNEL" \
     --service-name "$SERVICE_NAME" \
     --service-version $SERVICE_VERSION \
