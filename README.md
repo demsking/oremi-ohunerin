@@ -20,7 +20,7 @@ interaction.
 ## Table of Contents
 
 - [Getting Started with Oremi Ohunerin](#getting-started-with-oremi-ohunerin)
-- [Starting the Server with Certificates](#starting-the-server-with-certificates)
+- [Starting Ohunerin with Certificates](#starting-ohunerin-with-certificates)
 - [Oremi Ohunerin Protocol](#oremi-ohunerin-protocol)
   * [Initialization](#initialization)
   * [Sound Detection](#sound-detection)
@@ -103,12 +103,12 @@ options:
   -v, --version         Show the version of the application.
 ```
 
-## Starting the Server with Certificates
+## Starting Ohunerin with Certificates
 
-To start the Oremi Ohunerin server with a certificate, you can use the
-`--cert-file` and `--key-file` options to specify the certificate and private
-key files. Additionally, if your private key is password-protected, you can use
-the `--password` option to provide the password. Here's how to proceed:
+To start the Oremi Ohunerin with a certificate, you can use the `--cert-file`
+and `--key-file` options to specify the certificate and private key files.
+Additionally, if your private key is password-protected, you can use the
+`--password` option to provide the password. Here's how to proceed:
 
 1. **Generate a Self-Signed SSL Certificate (For Testing):**
 
@@ -137,7 +137,7 @@ the `--password` option to provide the password. Here's how to proceed:
    Let's Encrypt provides free and automated certificates that are recognized
    by most browsers and clients.
 
-2. **Start the Server using Docker:**
+2. **Start Ohunerin using Docker:**
 
    The quickest way to start the Oremi Ohunerin server with certificates is by
    using Docker. Run the following command in your terminal:
