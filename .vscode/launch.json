@@ -5,7 +5,7 @@
       "name": "Debug",
       "type": "python",
       "request": "launch",
-      "module": "oremi_sds",
+      "module": "ohunerin",
       "args": [
         "--verbose",
         "--host", "0.0.0.0",

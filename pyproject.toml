@@ -3,15 +3,15 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
-name = "oremi-sds"
+name = "oremi-ohunerin"
 version = "1.0.0b15"
 description = "Real-time ambient sound and wake word detection"
 keywords = ["sound", "detection", "wakeword"]
 authors = ["Sébastien Demanou <demsking@gmail.com>"]
 license = "Apache-2.0"
 readme = "README.md"
-repository = "https://gitlab.com/demsking/oremi-sds"
-documentation = "https://gitlab.com/demsking/oremi-sds/-/blob/main/README.md"
+repository = "https://gitlab.com/demsking/oremi-ohunerin"
+documentation = "https://gitlab.com/demsking/oremi-ohunerin/-/blob/main/README.md"
 classifiers = [
   "Development Status :: 2 - Pre-Alpha",
   "Environment :: Console",
@@ -29,16 +29,16 @@ include = [
 ]
 
 packages = [
-  { include = "oremi_sds" },
+  { include = "ohunerin" },
 ]
 
 [tool.poetry.scripts]
-oremi-sds = 'oremi_sds:main'
+oremi-ohunerin = 'ohunerin:main'
 
 [tool.poetry.urls]
 "Say Thanks!" = "https://www.buymeacoffee.com/demsking"
-"Source" = "https://gitlab.com/demsking/oremi-sds"
-"Tracker" = "https://gitlab.com/demsking/oremi-sds/-/issues"
+"Source" = "https://gitlab.com/demsking/oremi-ohunerin"
+"Tracker" = "https://gitlab.com/demsking/oremi-ohunerin/-/issues"
 
 [[tool.poetry.source]]
 name = "test"

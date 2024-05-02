@@ -1,4 +1,4 @@
-from oremi_sds.package import APP_DESCRIPTION, APP_NAME, APP_VERSION
+from ohunerin.package import APP_DESCRIPTION, APP_NAME, APP_VERSION
 
 import argparse
 

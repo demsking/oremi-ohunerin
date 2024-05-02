@@ -1,7 +1,7 @@
 FROM python:3.10-slim
 
-RUN addgroup --system --gid 1000 oremi \
-  && adduser --system --no-create-home --uid 1000 oremi
+RUN addgroup --system --gid 1000 olumulo \
+  && adduser --system --no-create-home --uid 1000 olumulo
 
 COPY models/ /oremi/models
 
@@ -13,22 +13,22 @@ RUN apt-get update \
 COPY build/requirements.txt /oremi/
 
 RUN mkdir -p /var/oremi/models \
-  && chown -R oremi:oremi /var/oremi/models \
+  && chown -R olumulo:olumulo /var/oremi/models \
   && pip install --no-cache-dir -r /oremi/requirements.txt \
   && rm -f /oremi/requirements.txt \
   && pip install \
-            --no-cache-dir \
-            -i https://test.pypi.org/simple/ \
-            oremi-discovery==1.0.0b25
+    --no-cache-dir \
+    -i https://test.pypi.org/simple/ \
+    oremi-discovery==1.0.0b25
 
 COPY scripts/ /oremi/scripts
 COPY pyproject.toml config.json LICENSE /oremi/
-COPY oremi_sds/ /oremi/oremi_sds
+COPY ohunerin/ /oremi/ohunerin
 
 ARG PACKAGE_NAME
 ARG PACKAGE_VERSION
 
-USER oremi
+USER olumulo
 ENV THRESHOLD="0.1"
 
 # MQTT host configuration for discovery

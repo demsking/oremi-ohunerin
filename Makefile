@@ -36,10 +36,10 @@ $(SSL_CERT_FILE):
 certificates: $(SSL_CERT_FILE)
 
 help:
-	poetry run oremi-sds -h
+	poetry run oremi-ohunerin -h
 
 start-wss: model certificates
-	poetry run oremi-sds \
+	poetry run oremi-ohunerin \
 	  --verbose \
 	  --port 25023 \
 	  --model $(TSLITE_FILE) \
@@ -47,7 +47,7 @@ start-wss: model certificates
 	  --key-file $(SSL_PATH)/localhost-key.pem
 
 start-ws: model
-	poetry run oremi-sds \
+	poetry run oremi-ohunerin \
 	  --verbose \
 	  --port 15023 \
 	  --model $(TSLITE_FILE)
@@ -79,10 +79,10 @@ test:
 	pytest
 
 coverage:
-	pytest --cov=oremi_sds
+	pytest --cov=ohunerin
 
 coverage-html:
-	pytest --cov=oremi_sds --cov-report=html
+	pytest --cov=ohunerin --cov-report=html
 
 outdated:
 	poetry show --outdated
@@ -100,14 +100,25 @@ package:
 pypi: package
 	twine upload -r testpypi dist/*
 
+#
+## Packaging
 build/requirements.txt: pyproject.toml poetry.lock
-	mkdir -p $(shell dirname $@)
+	mkdir -p build/
 	poetry export --only=main --without-hashes -f requirements.txt -o $@
 
-image: build/requirements.txt
-	docker build \
-	  --progress plain . \
+build/context:
+	docker buildx create --name $(APP_NAME) --bootstrap
+	mkdir -p build/
+	touch $@
+
+image: build/requirements.txt build/context
+	docker buildx use $(APP_NAME)
+	docker buildx build . \
+	  --platform linux/amd64 \
+	  --push \
+	  --progress plain \
 	  --tag $(IMAGE_NAME):$(APP_VERSION) \
+	  --tag $(IMAGE_NAME):latest \
 	  --build-arg PACKAGE_NAME="$(APP_NAME)" \
 	  --build-arg PACKAGE_VERSION="$(APP_VERSION)" \
 	  --label "org.opencontainers.image.title=$(APP_NAME)" \
@@ -121,11 +132,8 @@ image: build/requirements.txt
 	  --label "org.opencontainers.image.documentation=$(shell python metadata.py documentation)" \
 	  --label "org.opencontainers.image.vendor=Oremi" \
 	  --label "org.opencontainers.image.licenses=$(shell python metadata.py license)"
-	docker tag $(IMAGE_NAME):$(APP_VERSION) $(IMAGE_NAME):latest
 
 publish: image
 	git commit pyproject.toml -m "Release $(APP_VERSION)"
 	git tag v$(APP_VERSION)
-	docker push $(IMAGE_NAME):$(APP_VERSION)
-	docker push $(IMAGE_NAME):latest
 	git push --tags origin main

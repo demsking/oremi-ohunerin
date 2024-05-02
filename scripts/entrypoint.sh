@@ -23,7 +23,7 @@ CURRENT_DIR=$(dirname $0)
 $CURRENT_DIR/install-model.sh $MODEL_FILENAME || exit 1
 
 PYTHONPATH=/oremi:$PYTHONPATH python -m \
-  oremi_sds \
+  ohunerin \
     --host 0.0.0.0 \
     --port 5023 \
     --threshold $THRESHOLD \

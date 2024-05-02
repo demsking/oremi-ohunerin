@@ -1,27 +1,27 @@
-# Oremi Sound Detection Server
+# Oremi Ohunerin
 
-[![pypi version](https://badge.fury.io/py/oremi-sds.svg)](https://pypi.org/project/oremi-sds/)
+[![pypi version](https://badge.fury.io/py/oremi-ohunerin.svg)](https://pypi.org/project/oremi-ohunerin/)
 [![Buy me a beer](https://img.shields.io/badge/Buy%20me-a%20beer-1f425f.svg)](https://www.buymeacoffee.com/demsking)
 
-Oremi Sound Detection Server is a WebSocket server designed to detect sound
-events, including wake words and a predefined list of songs, for the Oremi
-Personal Assistant.
+Oremi Ohunerin is the real-time audio detection component of the Oremi Personal
+Assistant project, operating as a websocket server proficient in identifying
+environmental sounds and the specific wake word to activate Oremi.
 
-The server listens on port `5023` for incoming connections from clients, which
-can continuously stream audio data. Once connected, clients can send audio
-data in `bytes`, and the server will process it in real-time, detecting sounds
-and sending JSON messages back to the client when a sound is recognized.
+Leveraging cutting-edge technologies such as Tensorflow YAMNet for comprehensive
+audio detection and PocketSphinx for precise wake word identification, this
+component ensures accurate recognition of various sound categories, including
+but not limited to shouts, laughter, crying, and more.
 
-Oremi SDS detects the Oremi wake word including sounds: Shout, Bellows,
-Children shouting, Laughter, Baby laughter, Crying, sobbing, Baby cry, infant
-cry, Whistling, Wheeze, Snoring, Cough, Sneeze, Burping, and Hiccup.
+Derived from the Yoruba term "ohun erin," meaning "sound detection," Ohunerin
+embodies the essence of its function, facilitating seamless integration of
+auditory cues into the Oremi ecosystem, thus enhancing user experience and
+interaction.
 
 ## Table of Contents
 
-- [Getting Started with Oremi SDS](#getting-started-with-oremi-sds)
+- [Getting Started with Oremi Ohunerin](#getting-started-with-oremi-ohunerin)
 - [Starting the Server with Certificates](#starting-the-server-with-certificates)
-- [Oremi Discovery Integration](#oremi-discovery-integration)
-- [Oremi Sound Detection Server Protocol](#oremi-sound-detection-server-protocol)
+- [Oremi Ohunerin Protocol](#oremi-ohunerin-protocol)
   * [Initialization](#initialization)
   * [Sound Detection](#sound-detection)
   * [Connection Closure Codes](#connection-closure-codes)
@@ -30,33 +30,33 @@ cry, Whistling, Wheeze, Snoring, Cough, Sneeze, Burping, and Hiccup.
 - [Versioning](#versioning)
 - [License](#license)
 
-## Getting Started with Oremi SDS
+## Getting Started with Oremi Ohunerin
 
-The easiest way to use Oremi SDS is with Docker. Start with Docker for a quick
-setup. Follow these steps:
+The easiest way to use Oremi Ohunerin is with Docker. Start with Docker for a
+quick setup. Follow these steps:
 
 **Using Docker**
 
-Use the official Docker image `demsking/oremi-sds`. Open your terminal and run:
+Use the official Docker image `demsking/oremi-ohunerin`. Open your terminal and run:
 
 ```sh
 docker run -d \
   -p 5023:5023 \
   -v ~/.cache/tensorflow/models:/var/oremi/models \
-  demsking/oremi-sds
+  demsking/oremi-ohunerin
 ```
 
-This pulls Oremi SDS and starts it on port `5023`. Additionally, the YAMNet
+This pulls Oremi Ohunerin and starts it on port `5023`. Additionally, the YAMNet
 model will be automatically downloaded into the volume named `yamnet.tflite`
 for seamless operation.
 
 **Alternative Installation**
 
-If you prefer installing Oremi SDS directly, you'll need to install the
+If you prefer installing Oremi Ohunerin directly, you'll need to install the
 required YAMNet model manualy.
 
-1. Download the install script from the Oremi SDS repository:
-   [install-model.sh](https://gitlab.com/demsking/oremi-sds/-/raw/main/scripts/install-model.sh?inline=false)
+1. Download the install script from the Oremi Ohunerin repository:
+   [install-model.sh](https://gitlab.com/demsking/oremi-ohunerin/-/raw/main/scripts/install-model.sh?inline=false)
 
 2. Make the script executable:
 
@@ -71,16 +71,16 @@ required YAMNet model manualy.
    ./install-model.sh ~/.cache/tensorflow/models/yamnet.tflite
    ```
 
-Now you can install Oremi SDS from PyPi:
+Now you can install Oremi Ohunerin from PyPi:
 
 ```sh
-pip install oremi-sds
+pip install oremi-ohunerin
 ```
 
-After installation, start Oremi SDS using the provided command.
+After installation, start Oremi Ohunerin using the provided command.
 
 ```sh
-usage: oremi-sds [-h] -m MODEL [-t THRESHOLD] [-c CONFIG] [--host HOST] [-p PORT] [--cert-file CERT_FILE] [--key-file KEY_FILE] [--password PASSWORD] [--log-file LOG_FILE] [--verbose] [-v]
+usage: oremi-ohunerin [-h] -m MODEL [-t THRESHOLD] [-c CONFIG] [--host HOST] [-p PORT] [--cert-file CERT_FILE] [--key-file KEY_FILE] [--password PASSWORD] [--log-file LOG_FILE] [--verbose] [-v]
 
 Real-time ambient sound and wake word detection
 
@@ -105,14 +105,14 @@ options:
 
 ## Starting the Server with Certificates
 
-To start the Oremi SDS server with a certificate, you can use the
+To start the Oremi Ohunerin server with a certificate, you can use the
 `--cert-file` and `--key-file` options to specify the certificate and private
 key files. Additionally, if your private key is password-protected, you can use
 the `--password` option to provide the password. Here's how to proceed:
 
 1. **Generate a Self-Signed SSL Certificate (For Testing):**
 
-   If you're testing Oremi SDS locally, you can generate a self-signed
+   If you're testing Oremi Ohunerin locally, you can generate a self-signed
    SSL certificate.
    Follow these steps to generate a self-signed certificate using OpenSSL:
 
@@ -139,7 +139,7 @@ the `--password` option to provide the password. Here's how to proceed:
 
 2. **Start the Server using Docker:**
 
-   The quickest way to start the Oremi SDS server with certificates is by
+   The quickest way to start the Oremi Ohunerin server with certificates is by
    using Docker. Run the following command in your terminal:
 
    ```sh
@@ -148,7 +148,7 @@ the `--password` option to provide the password. Here's how to proceed:
       -v ~/.cache/tensorflow/models/yamnet.tflite:/var/oremi/models/yamnet.tflite \
       -v /path/to/cert.pem:/cert.pem \
       -v /path/to/key.pem:/key.pem \
-    demsking/oremi-sds \
+    demsking/oremi-ohunerin \
       --cert-file /cert.pem \
       --key-file /key.pem \
       --password your_private_key_password
@@ -160,99 +160,20 @@ the `--password` option to provide the password. Here's how to proceed:
    This command mounts the certificate and key files into the Docker container
    and starts the server.
 
-## Oremi Discovery Integration
+## Oremi Ohunerin Protocol
 
-Oremi SDS can work seamlessly with
-[Oremi Discovery](https://gitlab.com/demsking/oremi-discovery) to register
-itself during startup.
+Oremi Ohunerin websocket server listens on port `5023` for incoming connections
+from clients, which can continuously stream audio data. Once connected, clients
+can send audio data in `bytes`, and the server will process it in real-time,
+detecting sounds and sending JSON messages back to the client when a sound is
+recognized.
 
-**Oremi Discovery Integration**
-
-Oremi Discovery allows services to register themselves upon startup, making them
-discoverable by other components. To integrate Oremi SDS with Oremi Discovery, you can
-use the following arguments:
-
-- `--discovery-uri`: Specifies the Oremi SDS URI for connection. For example:
-  `--discovery-uri ws://localhost:5105`.
-
-- `--discovery-cert-file` (optional): Specifies the path to the certificate file to use
-  for secure connections. If you're using a certificate for secure communication with
-  Oremi Discovery, you can provide the certificate using this option. In this case,
-  `--discovery-uri` should be `wss://localhost:5105` to indicate a secure WebSocket
-  connection.
-
-**Example**
-
-Below is a `docker-compose.yaml` configuration that sets up both Oremi
-Discovery and Oremi SDS services with SSL certificates for secure
-communication.
-The volumes are mounted to read the SSL certificates and models:
-
-```yaml
-version: '3.8'
-services:
-  discovery:
-    image: demsking/oremi-discovery
-    volumes:
-      - ~/.config/oremi/ssl:/etc/ssl:ro
-    ports:
-      - 5105:5105
-    command: [
-      "--cert-file", "/etc/ssl/localhost.pem",
-      "--key-file", "/etc/ssl/localhost-key.pem",
-    ]
-  detector:
-    image: demsking/oremi-sds
-    depends_on:
-      - discovery
-    volumes:
-      - ~/.cache/tensorflow/models/yamnet.tflite:/var/oremi/models/yamnet.tflite:ro
-      - ~/.config/oremi/ssl:/etc/ssl:ro
-    ports:
-      - 5023:5023
-    command: [
-      "--model", "/var/oremi/models/yamnet.tflite",
-      "--cert-file", "/etc/ssl/localhost.pem",
-      "--key-file", "/etc/ssl/localhost-key.pem",
-      "--discovery-uri", "wss://discovery:5105",
-      "--discovery-cert-file", "/etc/ssl/localhost.pem",
-    ]
-```
-
-In this configuration:
-
-- The `discovery` service runs Oremi Discovery with SSL certificates mounted
-  from `~/.config/oremi/ssl`.
-- The `stt` service runs Oremi SDS and depends on the `discovery` service. It
-  also uses SSL certificates and mounts model from `~/.cache/tensorflow/models`.
-
-For example, you can generate a self-signed certificate using OpenSSL,
-specifying the domain name "discovery" as the subject alternative name:
-
-```sh
-openssl req -x509 -nodes -new -sha256 -days 365 -newkey rsa:2048 \
-  -subj "/C=CM/CN=localhost" \
-  -addext "subjectAltName = DNS:discovery" \
-  -keyout ~/.config/oremi/ssl/localhost-key.pem \
-  -out ~/.config/oremi/ssl/localhost.pem
-```
-
-Finally:
-
-```sh
-docker-compose up
-```
-
-## Oremi Sound Detection Server Protocol
-
-Oremi Sound Detection Server operates using a WebSocket-based protocol for
-real-time sound detection. The protocol involves an initialization step where
-the client provides essential details such as the number of audio channels,
-sample rate, block size, language, and features to enable. Once the session is
-initialized, the client can continuously stream audio data to the server. The
-server processes the audio in real-time and sends JSON messages back to the
-client when it detects specific sounds, such as wake words or predefined
-songs.
+The protocol involves an initialization step where the client provides essential
+details such as the number of audio channels, sample rate, block size, language,
+and features to enable. Once the session is initialized, the client can
+continuously stream audio data to the server. The server processes the audio in
+real-time and sends JSON messages back to the client when it detects specific
+sounds, such as wake words or predefined songs.
 
 The section outlines the message structures, initialization process, sound
 detection mechanism, and possible connection closure codes. Developers can use
@@ -264,7 +185,7 @@ build their applications accordingly.
 **1. Client**
 
 When a client connects to the server, it must send an initial
-[JSON initiation message](https://gitlab.com/demsking/oremi-sds/blob/main/schemas/InitMessage.json)
+[JSON initiation message](https://gitlab.com/demsking/oremi-ohunerin/blob/main/schemas/InitMessage.json)
 **within 5 seconds** or else the connection will be closed with code `1002`
 and reason `Init Timeout`.
 
@@ -284,7 +205,7 @@ about available languages for wakeword detection:
 ```json
 {
   "type": "init",
-  "server": "Oremi Sound Detection Server/1.0.0",
+  "server": "oremi-ohunerin/1.0.0",
   "status": "ready",
   "languages": ["en", "fr"]
 }
@@ -304,7 +225,7 @@ server, with an audio frequency of **16000Hz** and a **single channel**.
 **2. Server**
 
 The server processes the audio stream in real-time and sends a
-[JSON sound message](https://gitlab.com/demsking/oremi-sds/blob/main/schemas/DetectedSoundSchema.json)
+[JSON sound message](https://gitlab.com/demsking/oremi-ohunerin/blob/main/schemas/DetectedSoundSchema.json)
 when it detects a sound:
 
 **Example for wakeword**
@@ -340,15 +261,15 @@ Possible connection closure codes:
 
 ### Example Implementation
 
-For an example of how to implement a client for the "Oremi Sound Detection
-Server," you can refer to the [client.py file](https://gitlab.com/demsking/oremi-sds/blob/main/client.py)
+For an example of how to implement a client for the "Oremi Ohunerin", you can
+refer to the [client.py file](https://gitlab.com/demsking/oremi-ohunerin/blob/main/client.py)
 in the GitLab repository.
 The example demonstrates how to connect to the server, send audio data, and
 handle the JSON messages received from the server.
 
 ## Contribute
 
-Please follow [CONTRIBUTING.md](https://gitlab.com/demsking/oremi-sds/blob/main/CONTRIBUTING.md).
+Please follow [CONTRIBUTING.md](https://gitlab.com/demsking/oremi-ohunerin/blob/main/CONTRIBUTING.md).
 
 ## Versioning
 
@@ -368,4 +289,4 @@ See [SemVer.org](https://semver.org/) for more details.
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use
 this file except in compliance with the License.
-You may obtain a copy of the License at [LICENSE](https://gitlab.com/demsking/oremi-sds/blob/main/LICENSE).
+You may obtain a copy of the License at [LICENSE](https://gitlab.com/demsking/oremi-ohunerin/blob/main/LICENSE).

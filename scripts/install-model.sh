@@ -17,7 +17,7 @@
 
 set +e
 
-APP_NAME="oremi-sds"
+APP_NAME="oremi-ohunerin"
 MODEL_DEST="$1"  # Models directory passed as argument
 MODEL_URL="https://storage.googleapis.com/download.tensorflow.org/models/tflite/task_library/audio_classification/rpi/lite-model_yamnet_classification_tflite_1.tflite"
 
