@@ -1,6 +1,8 @@
-from ohunerin.package import APP_DESCRIPTION, APP_NAME, APP_VERSION
-
 import argparse
+
+from .package import APP_DESCRIPTION
+from .package import APP_NAME
+from .package import APP_VERSION
 
 
 def parse_arguments():
@@ -57,19 +59,6 @@ def parse_arguments():
     '--password',
     type=str,
     help='Password to unlock the private key (if protected by a password).',
-  )
-
-  parser.add_argument(
-    '--log-file',
-    type=str,
-    default=None,
-    help='Name of the log file.',
-  )
-
-  parser.add_argument(
-    '--verbose',
-    action='store_true',
-    help='Enable verbose logging.'
   )
 
   parser.add_argument(

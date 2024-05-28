@@ -14,7 +14,6 @@
             allowUnfree = true;
           };
         };
-        pythonPackages = pkgs.python310Packages;
         buildToolsVersion = "30.0.3";
       in
       {
@@ -32,12 +31,12 @@
 
             # devtools
             docker-compose
-            python310
-            python310Packages.pip
-            python310Packages.wheel
-            python310Packages.twine
-            python310Packages.toml
-            python310Packages.virtualenv
+            python311
+            python311Packages.pip
+            python311Packages.wheel
+            python311Packages.twine
+            python311Packages.toml
+            python311Packages.virtualenv
             stdenv.cc.cc.lib
 
             # certificates
@@ -57,15 +56,14 @@
             pyupgrade
             pre-commit
             editorconfig-checker
-            python310Packages.doc8
-            python310Packages.pyroma
-            python310Packages.autopep8
-            python310Packages.pre-commit-hooks
-            python310Packages.reorder-python-imports
+            python311Packages.doc8
+            python311Packages.pyroma
+            python311Packages.autopep8
+            python311Packages.pre-commit-hooks
+            python311Packages.reorder-python-imports
 
             # dependencies for client.py
-            pythonPackages.scipy
-            pythonPackages.sounddevice
+            python311Packages.scipy
 
             # Tensorflow Lite
             cmake
@@ -78,7 +76,7 @@
             export LD_LIBRARY_PATH=${portaudio}/lib:$LD_LIBRARY_PATH
             export PIP_PREFIX=${envDir}
             export PYTHONUSERBASE=${envDir}
-            export PYTHON_SITE_PACKAGES=$PIP_PREFIX/${python310.sitePackages}
+            export PYTHON_SITE_PACKAGES=$PIP_PREFIX/${python311.sitePackages}
             export PYTHONPATH=$(pwd):$PYTHON_SITE_PACKAGES:$PYTHONPATH
 
             virtualenv `basename ${envDir}`

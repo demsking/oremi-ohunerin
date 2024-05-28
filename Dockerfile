@@ -1,4 +1,4 @@
-FROM python:3.10-slim
+FROM python:3.11-slim
 
 RUN addgroup --system --gid 1000 olumulo \
   && adduser --system --no-create-home --uid 1000 olumulo
@@ -21,21 +21,24 @@ RUN mkdir -p /var/oremi/models \
     -i https://test.pypi.org/simple/ \
     oremi-discovery==1.0.0b25
 
-COPY scripts/ /oremi/scripts
-COPY pyproject.toml config.json LICENSE /oremi/
+# Binaries
+COPY bin/* /opt/oremi/bin/
+RUN chmod +x /opt/oremi/bin/*
+
+# Copy application files
+COPY pyproject.toml config.json LICENSE /opt/oremi/
 COPY ohunerin/ /oremi/ohunerin
 
 ARG PACKAGE_NAME
 ARG PACKAGE_VERSION
 
 USER olumulo
+
+ENV TZ="Africa/Douala"
 ENV THRESHOLD="0.1"
 
-# MQTT host configuration for discovery
-ENV MQTT_HOST=
-
-# MQTT port configuration for discovery
-ENV MQTT_PORT="1883"
+ENV LOG_LEVEL="info"
+ENV LOG_FILE=
 
 # Discovery client ID
 ENV CLIENT_ID="$PACKAGE_NAME/$PACKAGE_VERSION"
@@ -43,16 +46,16 @@ ENV CLIENT_ID="$PACKAGE_NAME/$PACKAGE_VERSION"
 # Discovery service URI
 ENV SERVICE_URI=
 
-# Discovery service name configuration
+# Discovery service name
 ENV SERVICE_NAME="$PACKAGE_NAME"
 
-# Discovery service version configuration
+# Discovery service version
 ENV SERVICE_VERSION="$PACKAGE_VERSION"
 
-# Discovery channel configuration
-ENV DISCOVERY_CHANNEL="discovery"
+# Discovery URL
+ENV DISCOVERY_URL=
 
 EXPOSE 5023
 
 WORKDIR /oremi
-ENTRYPOINT ["/oremi/scripts/entrypoint.sh"]
+ENTRYPOINT ["/opt/oremi/bin/entrypoint.sh"]

@@ -12,16 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-
 import asyncio
 import logging
 
-from oremi_core.logger import Logger
-
 from .args import parse_arguments
-from .package import APP_NAME, APP_VERSION
-from .server import (DetectedSound, DetectorConsumer, DetectorEngine, InitMessage, Server,
-                     WakewordEngine, WakewordSetting)
+from .logger import logger
+from .package import APP_NAME
+from .package import APP_VERSION
+from .server import DetectedSound
+from .server import DetectorConsumer
+from .server import DetectorEngine
+from .server import InitMessage
+from .server import Server
+from .server import WakewordEngine
+from .server import WakewordSetting
 
 __all__ = [
   'DetectorConsumer',
@@ -38,9 +42,6 @@ __all__ = [
 
 async def start() -> None:
   args = parse_arguments()
-  verbose: bool = args.verbose
-  log_level = logging.DEBUG if verbose else logging.INFO
-  logger = Logger.create(APP_NAME, filename=args.log_file, level=log_level)
 
   server = Server(
     logger=logger,
@@ -53,7 +54,7 @@ async def start() -> None:
   )
 
   logger.info(f'Starting {APP_NAME} {APP_VERSION}')
-  logger.info(f'Log level {"DEBUG" if logger.level == logging.DEBUG else "INFO"}')
+  logger.info(f'Log level: {"DEBUG" if logger.level == logging.DEBUG else "INFO"}')
   logger.info(f'Model: {args.model}')
   logger.info(f'Threshold: {args.threshold}')
   logger.info(f'Config: {args.config}')

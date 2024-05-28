@@ -1,3 +1,4 @@
+#!/bin/sh
 # Copyright 2024 Sébastien Demanou. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,22 +13,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import os
-import tomllib
+set -e
 
-__all__ = [
-  'APP_NAME',
-  'APP_DESCRIPTION',
-  'APP_VERSION',
-]
+MODEL_FILENAME=/var/oremi/models/yamnet.tflite
+CURRENT_DIR=$(dirname $0)
 
-_current_dir = os.path.dirname(os.path.abspath(__file__))
-_pyproject_path = os.path.join(_current_dir, '..', 'pyproject.toml')
+$CURRENT_DIR/install-model.sh $MODEL_FILENAME || exit 1
 
-with open(_pyproject_path, 'rb') as file:
-  package = tomllib.load(file)['tool']['poetry']
-  APP_NAME = package['name']
-  APP_DESCRIPTION = package['description']
-  APP_VERSION = package['version']
-  del package
-  del tomllib
+oremi-ohunerin \
+  --host 0.0.0.0 \
+  --port 5023 \
+  --threshold $THRESHOLD \
+  --config /oremi/config.json \
+  --model $MODEL_FILENAME $@ \
+  &
+
+wait-for 127.0.0.1 5023
+discovery '{}' &
+
+# Wait for all background processes to finish
+wait

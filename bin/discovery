@@ -1,6 +1,5 @@
-#!/bin/bash
-
-# Copyright 2023 Sébastien Demanou. All Rights Reserved.
+#!/bin/sh
+# Copyright 2024 Sébastien Demanou. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,26 +13,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+set -e
 
-set +e
+# Usage: discovery [service_data]
 
-MODEL_FILENAME=/var/oremi/models/yamnet.tflite
-CURRENT_DIR=$(dirname $0)
+SERVICE_DATA=${1:-'{}'}
 
-$CURRENT_DIR/install-model.sh $MODEL_FILENAME || exit 1
+# Check if SERVICE_URI and DISCOVERY_URL are defined
+if [ -n "$SERVICE_URI" ] && [ -n "$DISCOVERY_URL" ]; then
+    # Extract MQTT_HOST and remaining part containing MQTT_PORT and DISCOVERY_CHANNEL
+    MQTT_HOST=$(echo "$DISCOVERY_URL" | cut -d':' -f1)
+    REMAINING=$(echo "$DISCOVERY_URL" | cut -d':' -f2-)
 
-PYTHONPATH=/oremi:$PYTHONPATH python -m \
-  ohunerin \
-    --host 0.0.0.0 \
-    --port 5023 \
-    --threshold $THRESHOLD \
-    --config /oremi/config.json \
-    --model $MODEL_FILENAME \
-    $@ \
-  &
+    # Extract MQTT_PORT and DISCOVERY_CHANNEL from the remaining part
+    MQTT_PORT=$(echo "$REMAINING" | cut -d'/' -f1)
+    DISCOVERY_CHANNEL=$(echo "$REMAINING" | cut -d'/' -f2)
 
-# Check if SERVICE_URI variable is explicitly defined
-if [ -n "$SERVICE_URI" ]; then
   if [ -z "$MACHINE_ID" ]; then
     export MACHINE_ID=$(cat /proc/sys/kernel/random/uuid)
   fi
@@ -46,8 +41,5 @@ if [ -n "$SERVICE_URI" ]; then
     --service-name "$SERVICE_NAME" \
     --service-version $SERVICE_VERSION \
     --service-uri $SERVICE_URI \
-  &
+    --service-data "$SERVICE_DATA"
 fi
-
-# Wait for all background processes to finish
-wait

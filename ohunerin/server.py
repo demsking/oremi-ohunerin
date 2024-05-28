@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-
 import asyncio
 import concurrent.futures
 import json
@@ -25,9 +24,15 @@ import websockets.legacy.server
 from oremi_core.wsserver import WebsocketConnection
 from oremi_core.wsserver import WebsocketServer
 
-from .detector import DetectorConsumer, DetectorEngine
-from .models import DetectedSound, InitMessage, ServerInitMessage, WakewordSetting, create_detected_sound_object
-from .package import APP_NAME, HTTP_HEADER
+from .detector import DetectorConsumer
+from .detector import DetectorEngine
+from .models import create_detected_sound_object
+from .models import DetectedSound
+from .models import InitMessage
+from .models import ServerInitMessage
+from .models import WakewordSetting
+from .package import APP_NAME
+from .package import APP_VERSION
 from .wakeword import WakewordEngine
 
 __all__ = [
@@ -39,6 +44,9 @@ __all__ = [
   'WakewordSetting',
   'Server',
 ]
+
+
+HTTP_HEADER = f'{APP_NAME}/{APP_VERSION}'
 
 
 class Server(WebsocketServer):

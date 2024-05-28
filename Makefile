@@ -39,16 +39,16 @@ help:
 	poetry run oremi-ohunerin -h
 
 start-wss: model certificates
+	LOG_LEVEL=debug \
 	poetry run oremi-ohunerin \
-	  --verbose \
 	  --port 25023 \
 	  --model $(TSLITE_FILE) \
 	  --cert-file $(SSL_CERT_FILE) \
 	  --key-file $(SSL_PATH)/localhost-key.pem
 
 start-ws: model
+	LOG_LEVEL=debug \
 	poetry run oremi-ohunerin \
-	  --verbose \
 	  --port 15023 \
 	  --model $(TSLITE_FILE)
 
@@ -56,18 +56,15 @@ client-wss: certificates
 	python client.py \
 	  --port 25023 \
 	  --cert-file $(SSL_CERT_FILE)
-	  --model $(TSLITE_FILE) \
-	  --device-index 8
+	  --model $(TSLITE_FILE)
 
 client-docker: certificates
 	python client.py \
 	  --port 35023 \
-	  --cert-file $(SSL_CERT_FILE) \
-	  --device-index 8
+	  --cert-file $(SSL_CERT_FILE)
 
 client-ws:
-	python client.py --port 15023 \
-	  --device-index 8
+	python client.py --port 15023
 
 lint:
 	pre-commit run --all-files
