@@ -16,20 +16,12 @@
 set -e
 
 MODEL_FILENAME=/var/oremi/models/yamnet.tflite
-CURRENT_DIR=$(dirname $0)
 
-$CURRENT_DIR/install-model.sh $MODEL_FILENAME || exit 1
+install-model.sh $MODEL_FILENAME || exit 1
 
 oremi-ohunerin \
   --host 0.0.0.0 \
   --port 5023 \
   --threshold $THRESHOLD \
-  --config /oremi/config.json \
-  --model $MODEL_FILENAME $@ \
-  &
-
-wait-for 127.0.0.1 5023
-discovery '{}' &
-
-# Wait for all background processes to finish
-wait
+  --config /opt/oremi/config.json \
+  --model $MODEL_FILENAME $@

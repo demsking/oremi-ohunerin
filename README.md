@@ -114,12 +114,8 @@ Docker containers:
 
 | Variable        | Description                     | Default Value |
 |-----------------|---------------------------------|---------------|
-| **Logging**                                                       |
 | LOG_LEVEL       | Logging level                   | "info"        |
 | LOG_FILE        | Log file path                   |               |
-| **Discovery**                                                     |
-| DISCOVERY_URL   | Discovery channel configuration |               |
-| SERVICE_URI     | Discovery service URI           |               |
 
 ## Starting Ohunerin with Certificates
 
