@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "oremi-ohunerin"
-version = "1.0.0b1"
+version = "1.0.0b2"
 description = "Real-time ambient sound and wake word detection"
 keywords = ["sound", "detection", "wakeword"]
 authors = ["Sébastien Demanou <demsking@gmail.com>"]
@@ -48,7 +48,6 @@ secondary = true
 [tool.poetry.dependencies]
 python = ">=3.11,<3.12"
 pocketsphinx = "^5.0.0"
-toml = "^0.10.2"
 numpy = "^1.20"
 tflite-runtime = "^2.13.0"
 tflite-support = "^0.4.4"
