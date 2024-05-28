@@ -20,6 +20,7 @@ interaction.
 ## Table of Contents
 
 - [Getting Started with Oremi Ohunerin](#getting-started-with-oremi-ohunerin)
+- [Environment Variables](#environment-variables)
 - [Starting Ohunerin with Certificates](#starting-ohunerin-with-certificates)
 - [Oremi Ohunerin Protocol](#oremi-ohunerin-protocol)
   * [Initialization](#initialization)
@@ -37,14 +38,19 @@ quick setup. Follow these steps:
 
 **Using Docker**
 
-Use the official Docker image `demsking/oremi-ohunerin`. Open your terminal and run:
+Use the official Docker image [`demsking/oremi-ohunerin`](https://hub.docker.com/r/demsking/oremi-ohunerin)
+to run Oremi Ohunerin:
 
 ```sh
 docker run -d \
+  --env-file <path_to_env_file> \
   -p 5023:5023 \
   -v ~/.cache/tensorflow/models:/var/oremi/models \
   demsking/oremi-ohunerin
 ```
+
+Replace `<path_to_env_file>` with the path to your environment variable file
+containing the necessary configurations.
 
 This pulls Oremi Ohunerin and starts it on port `5023`. Additionally, the YAMNet
 model will be automatically downloaded into the volume named `yamnet.tflite`
@@ -80,7 +86,7 @@ pip install oremi-ohunerin
 After installation, start Oremi Ohunerin using the provided command.
 
 ```sh
-usage: oremi-ohunerin [-h] -m MODEL [-t THRESHOLD] [-c CONFIG] [--host HOST] [-p PORT] [--cert-file CERT_FILE] [--key-file KEY_FILE] [--password PASSWORD] [--log-file LOG_FILE] [--verbose] [-v]
+usage: oremi-ohunerin [-h] -m MODEL [-t THRESHOLD] [-c CONFIG] [--host HOST] [-p PORT] [--cert-file CERT_FILE] [--key-file KEY_FILE] [--password PASSWORD] [-v]
 
 Real-time ambient sound and wake word detection
 
@@ -98,10 +104,22 @@ options:
                         Path to the certificate file for secure connection.
   --key-file KEY_FILE   Path to the private key file for secure connection.
   --password PASSWORD   Password to unlock the private key (if protected by a password).
-  --log-file LOG_FILE   Name of the log file.
-  --verbose             Enable verbose logging.
   -v, --version         Show the version of the application.
 ```
+
+## Environment Variables
+
+The following environment variables can be used to configure the Oremi Ohunerin
+Docker containers:
+
+| Variable        | Description                     | Default Value |
+|-----------------|---------------------------------|---------------|
+| **Logging**                                                       |
+| LOG_LEVEL       | Logging level                   | "info"        |
+| LOG_FILE        | Log file path                   |               |
+| **Discovery**                                                     |
+| DISCOVERY_URL   | Discovery channel configuration |               |
+| SERVICE_URI     | Discovery service URI           |               |
 
 ## Starting Ohunerin with Certificates
 
