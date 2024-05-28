@@ -12,9 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-
 import logging
-from tflite_support.task import audio, core, processor
+
+from tflite_support.task import audio
+from tflite_support.task import core
+from tflite_support.task import processor
 
 from .audio import to_ndarray
 

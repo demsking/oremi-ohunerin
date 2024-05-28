@@ -12,14 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-
 import logging
 import os
 import tempfile
 
-from pocketsphinx import Config, Decoder
+from pocketsphinx import Config
+from pocketsphinx import Decoder
 
-from .models import DictionaryEntry, WakewordSetting
+from .models import DictionaryEntry
+from .models import WakewordSetting
 from .package import APP_NAME
 
 __all__ = [

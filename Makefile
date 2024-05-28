@@ -22,8 +22,8 @@ $(TSLITE_FILE):
 model: $(TSLITE_FILE)
 
 install: model
-	pip install poetry
 	poetry install
+	git apply sounddevice.py.patch
 
 $(SSL_CERT_FILE):
 	mkdir -p $(shell dirname $@)
@@ -130,7 +130,7 @@ image: build/requirements.txt build/context
 	  --label "org.opencontainers.image.vendor=Oremi" \
 	  --label "org.opencontainers.image.licenses=$(shell python metadata.py license)"
 
+# 	git commit pyproject.toml -m "Release $(APP_VERSION)"
 publish: image
-	git commit pyproject.toml -m "Release $(APP_VERSION)"
 	git tag v$(APP_VERSION)
 	git push --tags origin main

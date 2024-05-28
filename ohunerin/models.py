@@ -12,12 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-
 import datetime
 from dataclasses import dataclass
 from dataclasses import field
+from typing import Literal
+from typing import TypedDict
+
 from dataclasses_json import dataclass_json
-from typing import Literal, TypedDict
 
 
 class DetectedSound(TypedDict):
