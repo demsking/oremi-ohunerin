@@ -103,7 +103,7 @@ async def main():
     callback=lambda indata, frames, time, status: loop.call_soon_threadsafe(audio_queue.put_nowait, bytes(indata)),
   )
 
-  logger = Logger.create('stt-client', level=logging.DEBUG)
+  logger = Logger.create('sds-client', level=logging.DEBUG)
   stream_open = True
   ssl_context = None
 
