@@ -1,6 +1,5 @@
 # Oremi Ohunerin
 
-[![pypi version](https://badge.fury.io/py/oremi-ohunerin.svg)](https://pypi.org/project/oremi-ohunerin/)
 [![Buy me a beer](https://img.shields.io/badge/Buy%20me-a%20beer-1f425f.svg)](https://www.buymeacoffee.com/demsking)
 
 Oremi Ohunerin is the real-time audio detection component of the Oremi Personal
