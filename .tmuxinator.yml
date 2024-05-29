@@ -50,5 +50,5 @@ windows:
       # synchronize: after
       panes:
         - make start-ws
-        - make client-ws
+        - sleep 5 && make client-ws
         - git status
