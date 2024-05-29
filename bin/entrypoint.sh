@@ -15,13 +15,9 @@
 # ==============================================================================
 set -e
 
-MODEL_FILENAME=/var/oremi/models/yamnet.tflite
-
-install-model.sh $MODEL_FILENAME || exit 1
-
 oremi-ohunerin \
   --host 0.0.0.0 \
   --port 5023 \
   --threshold $THRESHOLD \
   --config /opt/oremi/config.json \
-  --model $MODEL_FILENAME $@
+  --model /var/oremi/models/yamnet.tflite $@

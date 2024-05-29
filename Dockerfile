@@ -1,32 +1,25 @@
 FROM python:3.11-slim
 
 RUN addgroup --system --gid 1000 olumulo \
-  && adduser --system --no-create-home --uid 1000 olumulo \
-  && mkdir -p /var/oremi/models \
-  && chown -R olumulo:olumulo /var/oremi/models
+  && adduser --system --no-create-home --uid 1000 olumulo
 
-COPY models/ /oremi/models
+COPY models/ /var/oremi/models
 
 RUN apt-get update \
-  && apt-get install --no-install-recommends -y curl libusb-1.0-0-dev \
+  && apt-get install --no-install-recommends -y libusb-1.0-0-dev \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
-COPY build/requirements.txt /tmp/requirements.txt
-RUN pip install --no-cache-dir --upgrade -r /tmp/requirements.txt \
-  && rm /tmp/requirements.txt
+COPY build/requirements.txt /opt/oremi/requirements.txt
+RUN pip install --no-cache-dir --upgrade -r /opt/oremi/requirements.txt
 
 # Binaries
 COPY bin/* /opt/oremi/bin/
-COPY scripts/* /opt/oremi/scripts/
-RUN chmod +x /opt/oremi/bin/* /opt/oremi/scripts/*
+RUN chmod +x /opt/oremi/bin/*
 
 # Copy application files
 COPY pyproject.toml config.json LICENSE /opt/oremi/
 COPY ohunerin/ /opt/oremi/ohunerin
-
-ARG PACKAGE_NAME
-ARG PACKAGE_VERSION
 
 USER olumulo
 

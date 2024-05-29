@@ -5,7 +5,7 @@ IMAGE_NAME := demsking/$(APP_NAME)
 SSL_PATH := ~/.config/oremi/ssl
 SSL_CERT_FILE := $(SSL_PATH)/localhost.pem
 
-TSLITE_FILE := ~/.cache/tensorflow/models/yamnet.tflite
+TSLITE_FILE := ./models/yamnet.tflite
 
 .PHONY: all clean build dist image model publish-image test build/requirements.txt
 
@@ -108,7 +108,7 @@ build/context:
 	mkdir -p build/
 	touch $@
 
-image: build/requirements.txt build/context
+image: build/requirements.txt build/context model
 	docker buildx use $(APP_NAME)
 	docker buildx build . \
 	  --platform linux/amd64 \
@@ -116,8 +116,6 @@ image: build/requirements.txt build/context
 	  --progress plain \
 	  --tag $(IMAGE_NAME):$(APP_VERSION) \
 	  --tag $(IMAGE_NAME):latest \
-	  --build-arg PACKAGE_NAME="$(APP_NAME)" \
-	  --build-arg PACKAGE_VERSION="$(APP_VERSION)" \
 	  --label "org.opencontainers.image.title=$(APP_NAME)" \
 	  --label "org.opencontainers.image.description=$(shell python metadata.py description)" \
 	  --label "org.opencontainers.image.version=$(APP_VERSION)" \

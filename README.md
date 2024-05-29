@@ -44,16 +44,13 @@ to run Oremi Ohunerin:
 docker run -d \
   --env-file <path_to_env_file> \
   -p 5023:5023 \
-  -v ~/.cache/tensorflow/models:/var/oremi/models \
   demsking/oremi-ohunerin
 ```
 
 Replace `<path_to_env_file>` with the path to your environment variable file
 containing the necessary configurations.
 
-This pulls Oremi Ohunerin and starts it on port `5023`. Additionally, the YAMNet
-model will be automatically downloaded into the volume named `yamnet.tflite`
-for seamless operation.
+This pulls Oremi Ohunerin and starts it on port `5023`.
 
 **Alternative Installation**
 
