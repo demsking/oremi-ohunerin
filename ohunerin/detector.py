@@ -22,7 +22,14 @@ from .audio import to_ndarray
 
 
 class DetectorEngine:
-  def __init__(self, model: str, *, score_threshold: float = 0.1, num_threads: int = -1, logger: logging.Logger):
+  def __init__(
+    self,
+    model: str,
+    *,
+    score_threshold: float = 0.1,
+    num_threads: int = -1,
+    logger: logging.Logger,
+  ):
     if (score_threshold < 0) or (score_threshold > 1.0):
       raise ValueError('Score threshold must be between (inclusive) 0 and 1.')
 

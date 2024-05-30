@@ -13,6 +13,36 @@ TSLITE_FILE := ./models/yamnet.tflite
 shell:
 	tmuxinator
 
+pull:
+	docker compose pull
+
+up: certificates
+	docker compose up -d --remove-orphans
+
+watch: certificates
+	docker compose watch detector
+
+config:
+	docker compose config
+
+stats:
+	docker compose stats
+
+ps:
+	docker compose ps
+
+restart:
+	docker compose restart
+
+down:
+	docker compose down
+
+exec:
+	docker compose exec detector bash
+
+logs:
+	docker compose logs -f
+
 clean:
 	rm -rf dist/ build/ models/*.tflite
 
@@ -29,7 +59,7 @@ $(SSL_CERT_FILE):
 	mkdir -p $(shell dirname $@)
 	openssl req -x509 -nodes -new -sha256 -days 3650 -newkey rsa:2048 \
 	  -subj "/C=CM/CN=localhost" \
-	  -addext "subjectAltName = DNS:discovery" \
+	  -addext "subjectAltName = DNS:localhost" \
 	  -keyout $(SSL_PATH)/localhost-key.pem \
 	  -out $(SSL_CERT_FILE)
 
@@ -55,7 +85,7 @@ start-ws: model
 client-wss: certificates
 	python client.py \
 	  --port 25023 \
-	  --cert-file $(SSL_CERT_FILE)
+	  --cert-file $(SSL_CERT_FILE) \
 	  --model $(TSLITE_FILE)
 
 client-docker: certificates

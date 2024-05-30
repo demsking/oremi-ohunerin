@@ -7,10 +7,9 @@
       "request": "launch",
       "module": "ohunerin",
       "args": [
-        "--verbose",
         "--host", "0.0.0.0",
         "--port", "15023",
-        "--model", "~/.cache/tensorflow/models/yamnet.tflite"
+        "--model", "models/yamnet.tflite"
       ],
       "cwd": "${workspaceFolder}",
       "env": {

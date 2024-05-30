@@ -43,6 +43,12 @@ __all__ = [
 async def start() -> None:
   args = parse_arguments()
 
+  logger.info(f'Starting {APP_NAME} {APP_VERSION}')
+  logger.info(f'Log level: {"DEBUG" if logger.level == logging.DEBUG else "INFO"}')
+  logger.info(f'Model: {args.model}')
+  logger.info(f'Threshold: {args.threshold}')
+  logger.info(f'Config: {args.config}')
+
   server = Server(
     logger=logger,
     model_path=args.model,
@@ -52,12 +58,6 @@ async def start() -> None:
     key_file=args.key_file,
     password=args.password,
   )
-
-  logger.info(f'Starting {APP_NAME} {APP_VERSION}')
-  logger.info(f'Log level: {"DEBUG" if logger.level == logging.DEBUG else "INFO"}')
-  logger.info(f'Model: {args.model}')
-  logger.info(f'Threshold: {args.threshold}')
-  logger.info(f'Config: {args.config}')
 
   await server.listen(args.host, args.port)
   logger.info('E ku ore mi')  # https://translate.google.com/?sl=yo&tl=en&text=E%20ku%20ore%20mi&op=translate

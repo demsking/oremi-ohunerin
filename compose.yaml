@@ -1,15 +1,33 @@
 ---
 services:
   detector:
-    image: demsking/oremi-sds
+    tty: true
+    build: .
+    image: demsking/oremi-ohunerin
     volumes:
-      - ~/.cache/tensorflow/models/yamnet.tflite:/var/oremi/models/yamnet.tflite:ro
+      # - ~/.cache/tensorflow/models/yamnet.tflite:/var/oremi/models/yamnet.tflite:ro
       - ~/.config/oremi/ssl:/etc/ssl:ro
     ports:
       - 35023:5023
     command: [
-      "--verbose",
-      "--model", "/var/oremi/models/yamnet.tflite",
       "--cert-file", "/etc/ssl/localhost.pem",
       "--key-file", "/etc/ssl/localhost-key.pem",
     ]
+    develop:
+      watch:
+        - action: rebuild
+          path: Dockerfile
+        - action: rebuild
+          path: build/requirements.txt
+        - action: sync+restart
+          path: ohunerin
+          target: /opt/oremi/ohunerin
+        - action: rebuild
+          path: bin/
+          target: /opt/oremi/bin
+        - action: sync+restart
+          path: models
+          target: /var/oremi/models
+        - action: sync+restart
+          path: config.json
+          target: /opt/oremi/config.json

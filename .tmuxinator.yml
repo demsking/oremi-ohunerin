@@ -10,7 +10,7 @@ socket_name: oremi-sds
 # Project hooks
 
 # Runs on project start, always
-# on_project_start: docker-compose up -d
+on_project_start: make up
 
 # Run on project start, the first time
 # on_project_first_start: direnv allow
@@ -19,7 +19,7 @@ socket_name: oremi-sds
 # on_project_restart: command
 
 # Run on project exit ( detaching from tmux session )
-# on_project_exit: docker-compose down
+on_project_exit: make down
 
 # Run on project stop
 # on_project_stop: command
@@ -37,7 +37,7 @@ tmux_options: -f .tmux.conf
 startup_window: workspace
 
 # Specifies (by index) which pane of the specified window will be selected on project startup. If not set, the first pane is used.
-startup_pane: 2
+startup_pane: 4
 
 # Controls whether the tmux session should be attached to automatically. Defaults to true.
 attach: true
@@ -49,6 +49,8 @@ windows:
       # 'before' represents legacy functionality and will be deprecated in a future release, in favour of 'after'
       # synchronize: after
       panes:
+        - make watch
+        - sleep 2 && make logs
         - make start-ws
         - sleep 5 && make client-ws
         - git status

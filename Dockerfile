@@ -4,6 +4,7 @@ RUN addgroup --system --gid 1000 olumulo \
   && adduser --system --no-create-home --uid 1000 olumulo
 
 COPY models/ /var/oremi/models
+COPY models/yamnet.tflite /var/oremi/models/
 
 RUN apt-get update \
   && apt-get install --no-install-recommends -y libusb-1.0-0-dev \
@@ -23,7 +24,8 @@ COPY ohunerin/ /opt/oremi/ohunerin
 
 USER olumulo
 
-ENV PATH="/opt/oremi/bin:/opt/oremi/scripts:$PATH"
+ENV PATH="/opt/oremi/bin:$PATH"
+ENV PYTHONPATH="/opt/oremi:$PYTHONUSERBASE:$PYTHONPATH"
 
 ENV TZ="Africa/Douala"
 ENV THRESHOLD="0.1"
@@ -32,7 +34,6 @@ ENV LOG_LEVEL="info"
 ENV LOG_FILE=
 
 EXPOSE 5023
-VOLUME /var/oremi/models
 
-WORKDIR /opt/oremi
+WORKDIR /var/oremi
 ENTRYPOINT ["/opt/oremi/bin/entrypoint.sh"]

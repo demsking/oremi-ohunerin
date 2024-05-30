@@ -119,7 +119,7 @@ async def main():
       stream.close()
       print('Stream closed.')
 
-  async with websockets.legacy.client.connect(uri, ssl=ssl_context, user_agent_header='sdclient/1.0.0') as websocket:
+  async with websockets.legacy.client.connect(uri, ssl=ssl_context, user_agent_header='sds-client/1.0.0') as websocket:
     loop = asyncio.get_running_loop()
 
     loop.add_signal_handler(signal.SIGINT, stop_recording)
