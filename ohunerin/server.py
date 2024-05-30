@@ -30,6 +30,7 @@ from .models import create_detected_sound_object
 from .models import DetectedSound
 from .models import InitMessage
 from .models import ServerInitMessage
+from .models import SoundType
 from .models import WakewordSetting
 from .package import APP_NAME
 from .package import APP_VERSION
@@ -68,8 +69,9 @@ class Server(WebsocketServer):
       password=password,
       logger=logger,
     )
-    self.verbose = logger.level != logging.INFO
+    self.verbose = logger.isEnabledFor(logging.DEBUG)
     self.config: dict[str, WakewordSetting] = {}
+
     num_threads = os.cpu_count() or 1
     self.detector = DetectorEngine(
       model=model_path,
@@ -77,7 +79,12 @@ class Server(WebsocketServer):
       num_threads=num_threads,
       logger=logger,
     )
-    self.pool = concurrent.futures.ThreadPoolExecutor(num_threads, thread_name_prefix=APP_NAME)
+
+    self.pool = concurrent.futures.ThreadPoolExecutor(
+      max_workers=num_threads,
+      thread_name_prefix=APP_NAME,
+    )
+
     self._loop = asyncio.get_running_loop()
     self._load_config_file(config_file)
 
@@ -85,7 +92,13 @@ class Server(WebsocketServer):
   def supported_languages(self) -> list[str]:
     return list(self.config.keys())
 
-  def _create_ssl_context(self, *, cert_file: str, key_file: str | None = None, password: str | None = None):
+  def _create_ssl_context(
+    self,
+    *,
+    cert_file: str,
+    key_file: str | None = None,
+    password: str | None = None,
+  ):
     ssl_context = None
 
     if cert_file:
@@ -106,10 +119,14 @@ class Server(WebsocketServer):
       config_content = json.load(file)
       assert isinstance(config_content, dict)
       for language, locale_config in config_content.items():
-        self.logger.info(f'Loading wakeword config for language "{language}"')
+        self.logger.info(f'Loading wakeword config for language "{language}": {locale_config["wakewords"]}')
         self.config[language] = WakewordSetting.from_dict(locale_config)
 
-  def _handle_connection_close(self, websocket: websockets.legacy.server.WebSocketServerProtocol, exception: websockets.exceptions.ConnectionClosedOK):
+  def _handle_connection_close(
+    self,
+    websocket: websockets.legacy.server.WebSocketServerProtocol,
+    exception: websockets.exceptions.ConnectionClosedOK,
+  ):
     if exception.reason:
       self.logger.info(f'Connection closed {websocket.remote_address} with code {exception.code}. Reason: {exception.reason}')
     else:
@@ -118,15 +135,20 @@ class Server(WebsocketServer):
   async def _handle_detection_result(
     self,
     websocket: websockets.legacy.server.WebSocketServerProtocol,
+    sound_type: SoundType,
     sound_name: str | None,
     score: float,
   ) -> None:
     if sound_name:
-      sound = create_detected_sound_object(sound_name, score)
+      sound = create_detected_sound_object(sound_type, sound_name, score)
       message = json.dumps(sound)
       await websocket.send(message)
 
-  async def _process_request(self, websocket: WebsocketConnection, message: bytes):
+  async def _process_request(
+    self,
+    websocket: WebsocketConnection,
+    message: bytes,
+  ):
     return super()._process_request(websocket, message)
 
   async def _handle_audio_data(
@@ -161,7 +183,7 @@ class Server(WebsocketServer):
       async for chunk in websocket:
         if 'wakeword-detection' in request.features:
           sound, score = await self._loop.run_in_executor(self.pool, wakeword_engine.process_raw, chunk)  # type: ignore
-          await self._handle_detection_result(websocket, sound, score)
+          await self._handle_detection_result(websocket, 'wakeword', sound, score)
 
           if sound:
             if 'sound-detection' in request.features:
@@ -170,7 +192,7 @@ class Server(WebsocketServer):
 
         if 'sound-detection' in request.features:
           sound, score = consumer.process_raw(chunk)  # type: ignore
-          await self._handle_detection_result(websocket, sound, score)
+          await self._handle_detection_result(websocket, 'sound', sound, score)
     except websockets.exceptions.ConnectionClosedOK as exception:
       self._handle_connection_close(websocket, exception)
     except Exception as exception:
@@ -184,7 +206,10 @@ class Server(WebsocketServer):
       if started and 'wakeword-detection' in request.features:
         wakeword_engine.end_utt()
 
-  async def _handle_messages(self, websocket: websockets.legacy.server.WebSocketServerProtocol):
+  async def _handle_messages(
+    self,
+    websocket: websockets.legacy.server.WebSocketServerProtocol,
+  ):
     init_timeout_timer_handler = self._loop.call_later(5, lambda: self._loop.create_task(
       websocket.close(code=1002, reason='Init Timeout'),
       name='Init Timeout Task',

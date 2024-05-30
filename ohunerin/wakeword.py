@@ -108,7 +108,7 @@ class WakewordEngine:
       self._decoder.start_utt()
 
       if not is_discriminant:
-        return 'wakeword', hypothesis.score
+        return hypothesis.hypstr, hypothesis.score
 
       self._logger.warning(f'Discriminant wakeword detected: {hypothesis.hypstr}, score {hypothesis.score:.2f}')
 

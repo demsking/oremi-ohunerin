@@ -21,16 +21,23 @@ from typing import TypedDict
 from dataclasses_json import dataclass_json
 
 
+SoundType = Literal['sound', 'wakeword']
+
+
 class DetectedSound(TypedDict):
-  type: Literal['sound']
+  type: SoundType
   sound: str
   score: float
   datetime: str
 
 
-def create_detected_sound_object(sound_name: str, score: float) -> DetectedSound:
+def create_detected_sound_object(
+  sound_type: SoundType,
+  sound_name: str,
+  score: float,
+) -> DetectedSound:
   return {
-    'type': 'sound',
+    'type': sound_type,
     'sound': sound_name,
     'score': score,
     'datetime': datetime.datetime.now().isoformat(),

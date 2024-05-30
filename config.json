@@ -3,7 +3,8 @@
     "model": "models/wakeword-fr/cmusphinx-fr-ptm-8khz-5.2",
     "dictionary": "models/wakeword-fr/pronounciation-dictionary.dict",
     "wakewords": [
-      { "word": "orémi", "phones": ["oo rr ei mm ii"] }
+      { "word": "oremi", "phones": ["oo rr ei mm ii"] },
+      { "word": "dikomlam", "phones": ["dd ii kk oo mm ll aa mm"] }
     ],
     "discriminants": [
       { "word": "rémi", "phones": ["rr ei mm ii"] }
@@ -13,7 +14,8 @@
     "model": "models/wakeword-en/acoustic-model",
     "dictionary": "models/wakeword-en/pronounciation-dictionary.dict",
     "wakewords": [
-      { "word": "oremi", "phones": ["AO R EY M E"] }
+      { "word": "oremi", "phones": ["AO R EY M E"] },
+      { "word": "dikomlam", "phones": ["TH IH K AA M L AA M"] }
     ],
     "discriminants": []
   }
