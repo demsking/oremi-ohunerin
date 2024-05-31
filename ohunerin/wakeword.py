@@ -80,13 +80,31 @@ class WakewordEngine:
     """
     Checks whether a given word is a discriminant.
 
+    In the context of the "oremi" wakeword when using French language,
+    certain words like "rémi" can be handled unexpectedly as the wakeword.
+    This function checks if the input word matches any predefined discriminants.
+    Additionally, if the word contains a space, it checks if both parts are
+    identical, which can be a discriminant for engines like Pocketsphinx that
+    may trigger on repeated words such as "rémi rémi".
+
     Args:
-        word (str): The word to check.
+      word (str): The word to check.
 
     Returns:
-        bool: True if the word is a discriminant, otherwise False.
+      bool: True if the word is a discriminant, otherwise False.
     """
-    return any(item for item in self._setting.discriminants if item.word == word)
+    # Check against predefined discriminants
+    result = any(
+      item for item in self._setting.discriminants if item.word == word
+    )
+
+    if not result:
+      # Check for space and equality of parts
+      if ' ' in word:
+        part1, part2 = word.split(' ', 1)  # split into two parts only
+        return part1 == part2
+
+    return result
 
   def start_utt(self) -> None:
     """Starts a new utterance for the wake word detection."""
