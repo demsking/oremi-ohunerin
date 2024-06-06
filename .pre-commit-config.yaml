@@ -37,7 +37,7 @@ repos:
         files: ^oremi_engine/skills/.*/config/.*\.yaml$
         args: ["--schemafile", "schemas/SkillSchema.json"]
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.4.5
+    rev: v0.4.8
     hooks:
       - id: ruff
         args: [--fix]
@@ -49,7 +49,7 @@ repos:
       # - id: python-no-log-warn
       - id: python-use-type-annotations
   - repo: https://github.com/asottile/reorder-python-imports
-    rev: v3.12.0
+    rev: v3.13.0
     hooks:
       - id: reorder-python-imports
   - repo: local
