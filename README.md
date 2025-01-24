@@ -26,6 +26,7 @@ interaction.
   * [Sound Detection](#sound-detection)
   * [Connection Closure Codes](#connection-closure-codes)
   * [Example Implementation](#example-implementation)
+- [Oremi Ohunerin Listener](#oremi-ohunerin-listener)
 - [Contribute](#contribute)
 - [Versioning](#versioning)
 - [License](#license)
@@ -276,6 +277,17 @@ refer to the [client.py file](https://gitlab.com/demsking/oremi-ohunerin/blob/ma
 in the GitLab repository.
 The example demonstrates how to connect to the server, send audio data, and
 handle the JSON messages received from the server.
+
+## Oremi Ohunerin Listener
+
+The **Oremi Ohunerin Listener** is a complementary component designed to work
+seamlessly with the Oremi Ohunerin WebSocket server. It listens to the
+microphone, streams audio data to the Oremi Ohunerin server for real-time sound
+detection, and publishes the detected sound results to an MQTT broker. This
+makes it ideal for integrating sound detection capabilities into IoT systems or
+other applications that rely on MQTT for communication.
+
+For more details, visit the [Oremi Ohunerin Listener repository](https://gitlab.com/demsking/oremi-ohunerin-listener).
 
 ## Contribute
 
