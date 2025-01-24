@@ -1,8 +1,5 @@
 {
   "recommendations": [
-    "charliermarsh.ruff",
-    "ms-python.python",
-    "ms-python.vscode-pylance",
-    "mkhl.direnv"
+    "ms-vscode-remote.remote-containers"
   ]
 }

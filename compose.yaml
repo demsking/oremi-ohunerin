@@ -3,7 +3,7 @@ services:
   detector:
     tty: true
     build: .
-    image: demsking/oremi-ohunerin
+    image: demsking/oremi-ohunerin:test
     volumes:
       # - ~/.cache/tensorflow/models/yamnet.tflite:/var/oremi/models/yamnet.tflite:ro
       - ~/.config/oremi/ssl:/etc/ssl:ro

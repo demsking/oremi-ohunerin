@@ -13,6 +13,9 @@ TSLITE_FILE := ./models/yamnet.tflite
 shell:
 	tmuxinator
 
+stop:
+	tmux kill-session -t oremi-ohunerin
+
 pull:
 	docker compose pull
 

@@ -1,7 +1,7 @@
-diff --git a/venv/lib/python3.10/site-packages/sounddevice.py b/venv/lib/python3.10/site-packages/sounddevice.py
+diff --git a/.venv/lib/python3.11/site-packages/sounddevice.py b/.venv/lib/python3.11/site-packages/sounddevice.py
 index a94f43b..4c82281 100644
---- a/venv/lib/python3.10/site-packages/sounddevice.py
-+++ b/venv/lib/python3.10/site-packages/sounddevice.py
+--- a/.venv/lib/python3.11/site-packages/sounddevice.py
++++ b/.venv/lib/python3.11/site-packages/sounddevice.py
 @@ -59,16 +59,19 @@ from _sounddevice import ffi as _ffi
 
 

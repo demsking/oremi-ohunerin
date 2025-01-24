@@ -2,19 +2,25 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Debug",
-      "type": "python",
+      "name": "Debug Server",
+      "type": "debugpy",
       "request": "launch",
       "module": "ohunerin",
       "args": [
         "--host", "0.0.0.0",
-        "--port", "15023",
+        "--port", "5023",
         "--model", "models/yamnet.tflite"
       ],
       "cwd": "${workspaceFolder}",
-      "env": {
-        "LD_LIBRARY_PATH": "/nix/store/sh4175nh74gjh9428iwy6k9qsq9k14im-libusb-1.0.26/lib:/nix/store/yazs3bdl481s2kyffgsa825ihy1adn8f-gcc-12.2.0-lib/lib:$LD_LIBRARY_PATH"
-      },
+      "justMyCode": true
+    },
+    {
+      "name": "Debug Client",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "client",
+      "args": [],
+      "cwd": "${workspaceFolder}",
       "justMyCode": true
     }
   ]

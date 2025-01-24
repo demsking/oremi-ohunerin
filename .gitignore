@@ -1,4 +1,6 @@
-venv/
+.venv/
+.devbox/
+.trunk/
 htmlcov/
 dist/
 __pycache__/

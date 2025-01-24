@@ -39,39 +39,93 @@ Therefore:
 
 ## Development Setup
 
-1. [Install The Determinate Nix Installer](https://github.com/DeterminateSystems/nix-installer)
+This project supports a dual setup for development: **Dev Containers** for an
+isolated development environment in VS Code and **Devbox** for consistent
+tooling when working in an external terminal. Follow the steps below to set up
+your environment.
 
-2. [Install `direnv` with your OS package manager](https://direnv.net/docs/installation.html#from-system-packages)
+### 1. Using Dev Container (Recommended for Development)
 
-3. [Hook it `direnv` into your shell](https://direnv.net/docs/hook.html)
+Dev Containers provide a consistent and isolated development environment within
+VS Code.
 
-4. **Load environment**
+1. **Install Docker**
+   - Ensure Docker is installed and running on your machine. Download it from
+     [here](https://www.docker.com/products/docker-desktop).
 
-   At the top-level of your project run:
+2. **Install VS Code and Dev Container Extension**
+   - Install [VS Code](https://code.visualstudio.com/).
+   - Install the [Dev Containers extension](
+     https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers
+     ).
 
-   ```sh
-   direnv allow
-   ```
+3. **Open Project in Dev Container**
+   - Open the project in VS Code.
+   - Click on the green "><" icon in the bottom-left corner of VS Code and
+     select **"Reopen in Container"**.
+   - VS Code will build the Dev Container and set up the development
+     environment automatically.
 
-   The next time your launch your terminal and enter the top-level of your
-   project, `direnv` will check for changes.
+4. **Debugging in VS Code**
+   - The project includes preconfigured debug configurations for both the server
+     and client. These configurations are defined in the `.vscode/launch.json`
+     file.
+   - To use them, open the **Run and Debug** panel in VS Code (Ctrl+Shift+D or
+     Cmd+Shift+D on macOS), select the desired configuration, and click **Start
+     Debugging**.
 
-5. **Install dependencies**
+### 2. Using Devbox (For External Terminal Tooling)
 
-   ```sh
-   make install
-   ```
+Devbox ensures consistent tooling and dependencies when working outside of VS
+Code, such as in an external terminal.
 
-6. **Start environment**
+1. **Install Devbox**
+   - Follow the instructions to [install Devbox](
+     https://www.jetify.com/devbox/docs/installing_devbox/).
 
-   ```sh
-   make shell
-   ```
+2. **Install `direnv`**
+   - Install `direnv` using your OS package manager. Refer to the [installation
+     guide](https://direnv.net/docs/installation.html#from-system-packages).
 
-   This will starts a preconfigured Tmux session.
-   Please see the [.tmuxinator.yml](.tmuxinator.yml) file.
+3. **Hook `direnv` into Your Shell**
+   - Follow the steps to [hook `direnv` into your shell](
+     https://direnv.net/docs/hook.html).
 
-**Makefile targets**
+4. **Load Environment**
+   - At the top-level of your project, run:
+     ```sh
+     direnv allow
+     ```
+   - The next time you launch your terminal and enter the project directory,
+     `direnv` will automatically load the Devbox environment.
+
+5. **Install Dependencies**
+   - Run:
+     ```sh
+     make install
+     ```
+
+6. **Start Environment**
+   - Start the development environment with:
+     ```sh
+     make shell
+     ```
+   - This will launch a preconfigured Tmux session. Refer to the
+     [.tmuxinator.yml](.tmuxinator.yml) file for details.
+
+### Key Notes
+- **Dev Containers** are ideal for development within VS Code, providing an
+  isolated and consistent environment with preconfigured debug launchers.
+- **Devbox** ensures consistent tooling and dependencies when working in an
+  external terminal, complementing the Dev Container setup.
+- Both setups share the same `make install` and `make shell` commands, ensuring
+  consistency across environments.
+
+By using both Dev Containers and Devbox, you get the best of both worlds: a
+seamless development experience in VS Code and consistent tooling in your
+terminal.
+
+## Makefile Targets
 
 Please see the [Makefile](Makefile) for the full list of targets.
 

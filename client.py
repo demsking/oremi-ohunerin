@@ -1,4 +1,4 @@
-# Copyright 2023 Sébastien Demanou. All Rights Reserved.
+# Copyright 2023-2025 Sébastien Demanou. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -29,20 +29,23 @@ def parse_arguments() -> argparse.Namespace:
   parser = argparse.ArgumentParser(description='Oremi SDS Client')
 
   parser.add_argument(
-    '-l', '--language',
+    '-l',
+    '--language',
     type=str,
     default='fr',
   )
 
   parser.add_argument(
-    '-i', '--device-index',
+    '-i',
+    '--device-index',
     type=int,
     default=-1,
     help='Index of the audio device to be used for recording audio.',
   )
 
   parser.add_argument(
-    '-d', '--device',
+    '-d',
+    '--device',
     type=str,
     default='',
     help='Name of the device.',
@@ -62,7 +65,8 @@ def parse_arguments() -> argparse.Namespace:
   )
 
   parser.add_argument(
-    '-p', '--port',
+    '-p',
+    '--port',
     type=int,
     default=5023,
     help='Port number to connect to (default: 5023).',
@@ -82,7 +86,9 @@ def list_input_devices():
   print('Available input devices:')
   for i, device in enumerate(devices):
     if device['max_input_channels'] > 0:
-      print(f"{i + 1}. {device['name']} - {device['max_input_channels']} channel(s) - Sample rate: {device['default_samplerate']} Hz")
+      print(
+        f"{i + 1}. {device['name']} - {device['max_input_channels']} channel(s) - Sample rate: {device['default_samplerate']} Hz"
+      )
 
 
 async def main():
@@ -93,7 +99,7 @@ async def main():
     list_input_devices()
     return
 
-  uri = f'wss://{args.host}:{args.port}' if args.cert_file else f'ws://{args.host}:{args.port}'
+  uri = f"wss://{args.host}:{args.port}" if args.cert_file else f"ws://{args.host}:{args.port}"
   stream = sd.RawInputStream(
     dtype='int16',
     samplerate=16000,
@@ -128,10 +134,14 @@ async def main():
     loop.add_signal_handler(signal.SIGTERM, lambda: loop.create_task(websocket.close(), name='SIGTERM Signal Task'))
 
     logger.info('Sending init message')
-    await websocket.send(json.dumps({
-      'type': 'init',
-      'language': args.language,
-    }))
+    await websocket.send(
+      json.dumps(
+        {
+          'type': 'init',
+          'language': args.language,
+        }
+      )
+    )
 
     init_message_response = await websocket.recv()
     logger.info(init_message_response)
@@ -140,7 +150,9 @@ async def main():
       logger.info('Listening...')
       try:
         async for message in websocket:
-          logger.info(f'Detected: {message}')  # {"type": "sound", "sound": "snoring", "score": 0.109375, "datetime": "2023-08-16T14:42:46.424809"}
+          logger.info(
+            f"Detected: {message}"
+          )  # {"type": "sound", "sound": "snoring", "score": 0.109375, "datetime": "2023-08-16T14:42:46.424809"}
       except asyncio.CancelledError:
         logger.info('Recording cancelled')
       finally:
@@ -166,9 +178,9 @@ async def main():
 
     def handle_task_done(task: asyncio.Task):
       if task.done():
-        logger.info(f'{task.get_name()} done')
+        logger.info(f"{task.get_name()} done")
       elif task.cancelled():
-        logger.info(f'{task.get_name()} cancelled')
+        logger.info(f"{task.get_name()} cancelled")
       else:
         try:
           if task.exception() is not None:

@@ -13,7 +13,6 @@ readme = "README.md"
 repository = "https://gitlab.com/demsking/oremi-ohunerin"
 documentation = "https://gitlab.com/demsking/oremi-ohunerin/-/blob/main/README.md"
 classifiers = [
-  "Development Status :: 2 - Pre-Alpha",
   "Environment :: Console",
   "Intended Audience :: Developers",
   "Natural Language :: English",
@@ -40,18 +39,13 @@ oremi-ohunerin = 'ohunerin:main'
 "Source" = "https://gitlab.com/demsking/oremi-ohunerin"
 "Tracker" = "https://gitlab.com/demsking/oremi-ohunerin/-/issues"
 
-[[tool.poetry.source]]
-name = "test"
-url = "https://test.pypi.org/simple/"
-secondary = true
-
 [tool.poetry.dependencies]
 python = ">=3.11,<3.12"
 pocketsphinx = "^5.0.0"
 numpy = "^1.20"
 tflite-runtime = "^2.13.0"
 tflite-support = "^0.4.4"
-oremi-core = "^1.0.0b6"
+oremi-core = "^1.2.1"
 dataclasses-json = "^0.6.4"
 
 [tool.poetry.group.dev.dependencies]
@@ -59,51 +53,7 @@ pytest = "^7.3.1"
 pytest-cov = "^4.0.0"
 pluggy = "^1.0.0"
 pytest-asyncio = "^0.21.0"
-pylint = {extras = ["spelling"], version = "^2.17.4"}
-python-lsp-server = "^1.11.0"
 
 [tool.pytest.ini_options]
 # Function starting with the following pattern are considered for test cases.
 python_functions = "test_"
-
-[tool.ruff]
-fix = true
-target-version = "py311"
-
-# Only enable rules that have safe autofixes;
-# only enable rules that are relevant to stubs
-select = [
-  "F401",   # Remove unused imports
-  "UP004",  # Remove explicit `object` inheritance
-  "UP006",  # PEP-585 autofixes
-  "UP007",  # PEP-604 autofixes
-  "UP013",  # Class-based syntax for TypedDicts
-  "UP014",  # Class-based syntax for NamedTuples
-  "UP019",  # Use str over typing.Text
-  "UP035",  # import from typing, not typing_extensions, wherever possible
-  "PYI009",  # use `...`, not `pass`, in empty class bodies
-  "PYI010",  # function bodies must be empty
-  "PYI012",  # class bodies must not contain `pass`
-  "PYI020",  # quoted annotations are always unnecessary in stubs
-]
-
-ignore = [
-  "E111",   # ignore indentation
-  "E501",   # ignore line too long
-  "D100",   # ignore missing docstrings in public module
-  "D104",   # ignore missing docstrings in public package
-  "D105",   # ignore missing docstrings in magic methods
-  "RUF005", # admittedly an optimization of code rather than a fail
-]
-
-line-length = 128
-
-[tool.flake8]
-indent-size=2
-
-[tool.ruff.flake8-quotes]
-docstring-quotes = "single"
-inline-quotes = "single"
-
-[tool.ruff.pydocstyle]
-convention = "google"

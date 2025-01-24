@@ -1,25 +1,58 @@
 # See https://pre-commit.com for more information
 # See https://pre-commit.com/hooks.html for more hooks
+exclude: ^(tests)/.*
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
+    rev: v5.0.0
     hooks:
       - id: trailing-whitespace
+        name: 'Trailing Whitespace Remover'
+        description: 'Removes trailing whitespace from all lines.'
       - id: check-added-large-files
-        args: ['--maxkb=13000']
+        name: 'Check for Large Added Files'
+        description: 'Prevents adding files larger than a specified size.'
       - id: check-ast
+        name: 'Check Python AST'
+        description: 'Verifies Python files parse as valid syntax trees.'
       - id: check-case-conflict
+        name: 'Check Case Conflict'
+        description: 'Detects files with names that would conflict on a case-insensitive filesystem.'
+      # - id: check-docstring-first
+      - id: check-executables-have-shebangs
+        name: 'Check Executables for Shebangs'
+        description: 'Ensures that executable files have a valid shebang.'
+      - id: check-json
+        name: 'Check JSON Syntax'
+        description: 'Validates JSON files for syntax errors.'
       - id: check-merge-conflict
+        name: 'Check for Merge Conflicts'
+        description: 'Detects merge conflict markers in files.'
       - id: check-yaml
+        name: 'Check YAML Syntax'
+        description: 'Validates YAML files for syntax errors.'
       - id: check-toml
+        name: 'Check TOML Syntax'
+        description: 'Validates TOML files for syntax errors.'
       - id: debug-statements
+        name: 'Debug Statement Detection'
+        description: 'Checks for debug statements (e.g., print, pdb) in Python files.'
       - id: detect-private-key
+        name: 'Detect Private Keys'
+        description: 'Prevents committing files that appear to contain private keys.'
       - id: double-quote-string-fixer
+        name: 'Double Quote String Fixer'
+        description: 'Ensures all strings in Python files use double quotes.'
       - id: name-tests-test
+      - id: requirements-txt-fixer
+        name: 'Requirements.txt Fixer'
+        description: 'Sorts entries in requirements.txt files and removes duplicates.'
+
   - repo: https://github.com/Lucas-C/pre-commit-hooks
     rev: v1.5.5
     hooks:
       - id: insert-license
+        name: 'Insert License Header'
+        description: 'Inserts license headers into Python files.'
         files: \.py$
         args: [
           '--license-filepath', 'LICENSE_HEADER.txt',
@@ -27,61 +60,37 @@ repos:
           '--use-current-year',
           '--no-extra-eol',
         ]
-  - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.28.4
-    hooks:
-      - id: check-gitlab-ci
-      - id: check-metaschema
-        files: ^schemas/.*\.json$
-      - id: check-jsonschema
-        files: ^oremi_engine/skills/.*/config/.*\.yaml$
-        args: ["--schemafile", "schemas/SkillSchema.json"]
-  - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.4.8
-    hooks:
-      - id: ruff
-        args: [--fix]
-  - repo: https://github.com/pre-commit/pygrep-hooks
-    rev: v1.10.0
-    hooks:
-      - id: python-check-mock-methods
-      - id: python-no-eval
-      # - id: python-no-log-warn
-      - id: python-use-type-annotations
+
   - repo: https://github.com/asottile/reorder-python-imports
-    rev: v3.13.0
+    rev: v3.14.0
     hooks:
       - id: reorder-python-imports
+        name: 'Reorder Python Imports'
+        description: 'Automatically sorts and groups Python imports.'
+
   - repo: local
     hooks:
-      - id: editorconfig-checker
-        name: 'Check .editorconfig Rules'
-        description: 'Runs `editorconfig-checker` to lint text files according to `.editorconfig` rules.'
-        language: system
-        entry: editorconfig-checker
-        types: [text]
-        require_serial: true
       - id: hadolint
         name: 'Dockerfile Linting'
         description: 'Runs `hadolint` to lint Dockerfiles.'
         entry: hadolint
-        args: ['--ignore', 'DL3008']
         language: system
         files: Dockerfile
       - id: gimtoc
         name: 'Generate Table of Contents'
         description: 'Runs `gimtoc` to generate a Table of Contents in README.md.'
-        entry: gimtoc
+        entry: npx
         language: node
         files: README.md
         args: [
-          '--file', 'README.md',
-          '--section', 'Table of Contents',
-          '--output', 'README.md',
+          'gimtoc',
+            '--file', 'README.md',
+            '--section', 'Table of Contents',
+            '--output', 'README.md',
         ]
       - id: autopep8
         name: 'Fix Python Code Style using AutoPEP8'
-        description: 'Runs `autopep8` to format Python code.'
+        description: 'Runs `autopep8` to format Python code according to PEP 8 standards.'
         entry: autopep8
         language: system
         files: '\.py$'
@@ -91,40 +100,41 @@ repos:
           # Error codes: https://pycodestyle.pycqa.org/en/latest/intro.html#error-codes
           '--ignore', 'E1,E501',
         ]
-      # - id: pylint
-      #   name: pylint
-      #   entry: pylint
-      #   language: python
-      #   files: '\.py$'
-      #   args:
-      #     - "-rn" # Only display messages
-      #     - "--errors-only"
-      #     - "--ignore-paths=tests,.vscode,.gitlab"
-      #     - "--ignore-patterns=.*_test\\.py"
-  # - repo: https://github.com/PyCQA/bandit
-  #   rev: 1.7.6
-  #   hooks:
-  #     - id: bandit
-  #       args: [-c, bandit.yaml]
+
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: v0.9.2
+    hooks:
+      - id: ruff
+        name: 'Ruff Linter'
+        description: 'Runs Ruff, an extremely fast Python linter.'
+
+  - repo: https://github.com/pre-commit/pygrep-hooks
+    rev: v1.10.0
+    hooks:
+      - id: python-check-mock-methods
+        name: 'Check Mock Methods'
+        description: 'Ensures correct usage of mock methods in tests.'
+      - id: python-no-eval
+        name: 'Disallow Python eval'
+        description: 'Prevents use of the dangerous `eval` function in Python.'
+      - id: python-no-log-warn
+        name: 'Disallow Deprecated log.warn'
+        description: 'Prevents use of deprecated `log.warn` in favor of `log.warning`.'
+      - id: python-use-type-annotations
+        name: 'Enforce Type Annotations'
+        description: 'Ensures Python functions and methods use type annotations.'
+
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.8.2
+    hooks:
+      - id: bandit
+        name: 'Bandit Security Linter'
+        description: 'Runs Bandit to find common security issues in Python code.'
+        args: [-c, bandit.yaml]
+
   - repo: https://github.com/PyCQA/doc8
-    rev: v1.1.1
+    rev: v1.1.2
     hooks:
       - id: doc8
-  - repo: https://github.com/asottile/pyupgrade
-    rev: v3.15.2
-    hooks:
-      - id: pyupgrade
-        args: [--py311-plus]
-  # TODO Fix this hook
-  # - repo: https://github.com/PyCQA/prospector
-  #   rev: v1.10.3
-  #   hooks:
-  #     - id: prospector
-  #       args: [-X]
-  #       exclude: 'migrations/.*|tests/.*'
-  # - repo: https://github.com/twu/skjold
-  #   rev: v0.6.1
-  #   hooks:
-  #     - id: skjold
-  #       files: (pyproject.toml|poetry.lock)$
-  #       pass_filenames: false
+        name: 'Doc8 Documentation Linter'
+        description: 'Runs Doc8 to check for style issues in documentation files.'
