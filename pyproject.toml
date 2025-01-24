@@ -42,17 +42,17 @@ oremi-ohunerin = 'ohunerin:main'
 [tool.poetry.dependencies]
 python = ">=3.11,<3.12"
 pocketsphinx = "^5.0.0"
-numpy = "^1.20"
+numpy = "^2.2.2"
 tflite-runtime = "^2.13.0"
 tflite-support = "^0.4.4"
 oremi-core = "^1.2.1"
 dataclasses-json = "^0.6.4"
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^7.3.1"
-pytest-cov = "^4.0.0"
+pytest = "^8.3.4"
+pytest-cov = "^6.0.0"
 pluggy = "^1.0.0"
-pytest-asyncio = "^0.21.0"
+pytest-asyncio = "^0.25.2"
 
 [tool.pytest.ini_options]
 # Function starting with the following pattern are considered for test cases.
