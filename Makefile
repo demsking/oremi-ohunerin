@@ -2,12 +2,9 @@ APP_NAME := $(shell python metadata.py name)
 APP_VERSION := $(shell python metadata.py version)
 IMAGE_NAME := demsking/$(APP_NAME)
 
-SSL_PATH := ~/.config/oremi/ssl
-SSL_CERT_FILE := $(SSL_PATH)/localhost.pem
-
 TSLITE_FILE := ./models/yamnet.tflite
 
-.PHONY: all clean build dist image model publish-image test build/requirements.txt
+.PHONY: all clean build dist image model publish-image test
 
 # Start the development environment using tmuxinator
 shell:
@@ -19,10 +16,10 @@ stop:
 pull:
 	docker compose pull
 
-up: certificates
+up:
 	docker compose up -d --remove-orphans
 
-watch: certificates
+watch:
 	docker compose watch detector
 
 config:
@@ -56,48 +53,9 @@ model: $(TSLITE_FILE)
 
 install: model
 	poetry install
-	git apply sounddevice.py.patch
-
-$(SSL_CERT_FILE):
-	mkdir -p $(shell dirname $@)
-	openssl req -x509 -nodes -new -sha256 -days 3650 -newkey rsa:2048 \
-	  -subj "/C=CM/CN=localhost" \
-	  -addext "subjectAltName = DNS:localhost" \
-	  -keyout $(SSL_PATH)/localhost-key.pem \
-	  -out $(SSL_CERT_FILE)
-
-certificates: $(SSL_CERT_FILE)
 
 help:
 	poetry run oremi-ohunerin -h
-
-start-wss: model certificates
-	LOG_LEVEL=debug \
-	poetry run oremi-ohunerin \
-	  --port 25023 \
-	  --model $(TSLITE_FILE) \
-	  --cert-file $(SSL_CERT_FILE) \
-	  --key-file $(SSL_PATH)/localhost-key.pem
-
-start-ws: model
-	LOG_LEVEL=debug \
-	poetry run oremi-ohunerin \
-	  --port 15023 \
-	  --model $(TSLITE_FILE)
-
-client-wss: certificates
-	python client.py \
-	  --port 25023 \
-	  --cert-file $(SSL_CERT_FILE) \
-	  --model $(TSLITE_FILE)
-
-client-docker: certificates
-	python client.py \
-	  --port 35023 \
-	  --cert-file $(SSL_CERT_FILE)
-
-client-ws:
-	python client.py --port 15023
 
 lint:
 	pre-commit run --all-files
@@ -128,20 +86,16 @@ package:
 	twine check dist/*
 
 pypi: package
-	twine upload -r testpypi dist/*
+	twine upload dist/*
 
 #
 ## Packaging
-build/requirements.txt: pyproject.toml poetry.lock
-	mkdir -p build/
-	poetry export --only=main --without-hashes -f requirements.txt -o $@
-
 build/context:
 	docker buildx create --name $(APP_NAME) --bootstrap
 	mkdir -p build/
 	touch $@
 
-image: build/requirements.txt build/context model
+image: build/context model
 	docker buildx use $(APP_NAME)
 	docker buildx build . \
 	  --platform linux/amd64 \

@@ -28,8 +28,8 @@
           "**/.devbox": true,
           "**/.venv": true
         },
-        "python.defaultInterpreterPath": "/workspaces/oremi-ohunerin/.venv/bin/python",
-        "python.pythonPath": "/workspaces/oremi-ohunerin/.venv/bin/python",
+        "python.defaultInterpreterPath": "$POETRY_HOME/venv/bin/python",
+        "python.pythonPath": "$POETRY_HOME/venv/bin/python",
         "python.terminal.activateEnvInCurrentTerminal": true,
         "pylint.importStrategy": "fromEnvironment",
         "editor.formatOnPaste": false,
