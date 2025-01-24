@@ -19,15 +19,16 @@
     "python311Packages.pytest@latest",
     "python311Packages.twine@latest",
     "yamllint@latest",
-    "nodejs@latest"
+    "nodejs@latest",
+    "git-lfs@latest"
   ],
   "env": {
     "DEVBOX_COREPACK_ENABLED": "true",
-    "PATH": "$VENV_DIR/bin:$DEVBOX_PACKAGES_DIR/bin:$PATH",
-    "LD_LIBRARY_PATH": "$DEVBOX_PACKAGES_DIR/lib:$LD_LIBRARY_PATH"
+    "PATH":                    "$VENV_DIR/bin:$DEVBOX_PACKAGES_DIR/bin:$PATH",
+    "LD_LIBRARY_PATH":         "$DEVBOX_PACKAGES_DIR/lib:$LD_LIBRARY_PATH"
   },
   "shell": {
     "init_hook": ["pre-commit install -f"],
-    "scripts": {}
+    "scripts":   {}
   }
 }
