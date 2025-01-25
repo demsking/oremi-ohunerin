@@ -115,7 +115,14 @@ image: build/context model
 	  --label "org.opencontainers.image.vendor=Oremi" \
 	  --label "org.opencontainers.image.licenses=$(shell python metadata.py license)"
 
-publish: image
+image-test:
+	docker build --debug . \
+	  --progress plain \
+	  --tag $(IMAGE_NAME):test \
+	  --build-arg APP_NAME=$(APP_NAME) \
+	  --build-arg APP_VERSION=$(APP_VERSION)
+
+publish: image pypi
 	git commit pyproject.toml -m "Release $(APP_VERSION)"
 	git tag v$(APP_VERSION)
 	git push --tags origin main
