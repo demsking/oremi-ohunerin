@@ -1,18 +1,48 @@
+#
+## Stage 1: Build environment
+FROM python:3.11-slim AS install-dependencies-stage
+
+ENV PATH="/root/.local/bin:$PATH"
+ENV POETRY_HOME='/usr/local'
+ENV POETRY_VIRTUALENVS_CREATE=false
+
+# Set the shell to /bin/bash and enable pipefail
+SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
+
+# Install build dependencies
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends curl \
+  && curl -sSL https://install.python-poetry.org | python - \
+  && rm -rf /var/lib/apt/lists/*
+
+# Copy and install Python dependencies
+WORKDIR /src
+COPY poetry.lock pyproject.toml ./
+RUN poetry install --no-root --no-interaction --no-ansi --only=main
+
+
+#
+## Stage 2: Runtime environment
 FROM python:3.11-slim
 
 RUN addgroup --system --gid 1000 olumulo \
   && adduser --system --no-create-home --uid 1000 olumulo
 
-COPY models/ /var/oremi/models
-COPY models/yamnet.tflite /var/oremi/models/
+# Set the shell to /bin/bash and enable pipefail
+SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
 
+# Install dependencies
 RUN apt-get update \
   && apt-get install --no-install-recommends -y libusb-1.0-0-dev \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
-COPY build/requirements.txt /opt/oremi/requirements.txt
-RUN pip install --no-cache-dir --upgrade -r /opt/oremi/requirements.txt
+COPY models/ /var/oremi/models
+COPY models/yamnet.tflite /var/oremi/models/
+
+# Copy built Python dependencies from the install-dependencies-stage stage
+COPY --from=install-dependencies-stage /usr/local/lib/python3.11/site-packages/ /usr/local/lib/python3.11/site-packages/
+COPY --from=install-dependencies-stage /usr/local/bin/ /usr/local/bin/
 
 # Binaries
 COPY bin/* /opt/oremi/bin/
