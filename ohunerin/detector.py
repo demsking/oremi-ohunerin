@@ -47,8 +47,6 @@ class DetectorEngine:
       score_threshold=score_threshold,
     )
 
-    self._logger.info(f"Allowlist: {', '.join(classification_options.category_name_allowlist)}")  # type: ignore
-
     options = audio.AudioClassifierOptions(
       base_options=base_options,
       classification_options=classification_options,
