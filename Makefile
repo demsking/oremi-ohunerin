@@ -118,9 +118,7 @@ image: build/context model
 image-test:
 	docker build --debug . \
 	  --progress plain \
-	  --tag $(IMAGE_NAME):test \
-	  --build-arg APP_NAME=$(APP_NAME) \
-	  --build-arg APP_VERSION=$(APP_VERSION)
+	  --tag $(IMAGE_NAME):test
 
 publish: image pypi
 	git commit pyproject.toml -m "Release $(APP_VERSION)"
