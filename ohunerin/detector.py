@@ -1,4 +1,4 @@
-# Copyright 2023 Sébastien Demanou. All Rights Reserved.
+# Copyright 2023-2025 Sébastien Demanou. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -45,25 +45,9 @@ class DetectorEngine:
     classification_options = processor.ClassificationOptions(
       max_results=1,
       score_threshold=score_threshold,
-      category_name_allowlist=[
-        'Shout',  # Cri
-        'Bellows',  # Sonner
-        'Children shouting',  # Cris d'enfants
-        'Laughter',  # Rire
-        'Baby laughter',  # Rire de bébé
-        'Crying, sobbing',  # Pleurer, sangloter
-        'Baby cry, infant cry',  # Cri de bébé, pleurs d'enfant
-        'Whistling',  # Siffler
-        'Wheeze',  # Wheeze
-        'Snoring',  # Ronfler
-        'Cough',  # Tousser
-        'Sneeze',  # Éternuer
-        'Burping',  # Roter
-        'Hiccup',  # Hoqueter
-      ],
     )
 
-    self._logger.info(f'Allowlist: {", ".join(classification_options.category_name_allowlist)}')  # type: ignore
+    self._logger.info(f"Allowlist: {', '.join(classification_options.category_name_allowlist)}")  # type: ignore
 
     options = audio.AudioClassifierOptions(
       base_options=base_options,
@@ -114,7 +98,7 @@ class DetectorConsumer:
     if len(result.classifications) > 0 and len(result.classifications[0].categories) > 0:
       sound = result.classifications[0].categories[0]
 
-      self._logger.debug(f'Sound {sound.category_name} detected with score {sound.score:.2f}')
+      self._logger.debug(f"Sound {sound.category_name} detected with score {sound.score:.2f}")
       return sound.category_name.lower(), sound.score
     return None, 0.0
 
