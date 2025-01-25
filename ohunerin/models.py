@@ -62,7 +62,7 @@ class Discriminant:
 @dataclass_json
 @dataclass
 class WakewordDetectionFeature:
-  name: Literal['wakeword-detection']
+  name: Literal['wakeword-detection'] = 'wakeword-detection'
   wakewords: list[Wakeword] = field(default_factory=list)
   discriminants: list[Discriminant] = field(default_factory=list)
 
@@ -70,7 +70,7 @@ class WakewordDetectionFeature:
 @dataclass_json
 @dataclass
 class SoundDetectionFeature:
-  name: Literal['sound-detection']
+  name: Literal['sound-detection'] = 'sound-detection'
   allowlist: list[str] = field(default_factory=list)
 
 
@@ -81,8 +81,8 @@ class InitMessage:
   language: Literal['fr', 'en']
   features: list[WakewordDetectionFeature | SoundDetectionFeature] = field(
     default_factory=lambda: [
-      {'name': 'wakeword-detection'},
-      {'name': 'sound-detection'},
+      WakewordDetectionFeature(),
+      SoundDetectionFeature(),
     ]
   )
 

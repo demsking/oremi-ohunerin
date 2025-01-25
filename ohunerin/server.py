@@ -20,6 +20,7 @@ import os
 import traceback
 
 import websockets.exceptions
+import websockets.legacy.protocol
 import websockets.legacy.server
 from oremi_core.wsserver import WebsocketConnection
 from oremi_core.wsserver import WebsocketServer
@@ -200,6 +201,13 @@ class Server(WebsocketServer):
   ) -> None:
     started = False
     wakeword_engine, consumer = self._parse_request(setting, request)
+
+    if wakeword_engine is None and consumer is None:
+      websocket.close(
+        websockets.legacy.protocol.CloseCode.INVALID_DATA,
+        'No feature provided in the init message, which is required to start listening',
+      )
+      return
 
     try:
       event = ServerInitMessage(
