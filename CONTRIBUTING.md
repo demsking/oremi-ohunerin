@@ -144,6 +144,7 @@ You must download the following files:
 - [Building a phonetic dictionary](https://cmusphinx.github.io/wiki/tutorialdict)
 - [WebSocket Status Codes](https://datatracker.ietf.org/doc/html/rfc6455#section-7.4.1)
 - [YAMNet](https://www.kaggle.com/models/google/yamnet/tfLite)
+- [YAMNet Labels](tensorflow_lite_support/metadata/python/tests/testdata/audio_classifier/yamnet_521_labels.txt)
 
 ## Contribute
 

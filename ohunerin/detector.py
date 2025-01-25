@@ -29,6 +29,7 @@ class DetectorEngine:
     score_threshold: float = 0.1,
     num_threads: int = -1,
     logger: logging.Logger,
+    allowlist: list[str] | None = None,
   ):
     if (score_threshold < 0) or (score_threshold > 1.0):
       raise ValueError('Score threshold must be between (inclusive) 0 and 1.')
@@ -45,6 +46,7 @@ class DetectorEngine:
     classification_options = processor.ClassificationOptions(
       max_results=1,
       score_threshold=score_threshold,
+      category_name_allowlist=allowlist,
     )
 
     options = audio.AudioClassifierOptions(

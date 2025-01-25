@@ -7,10 +7,14 @@
       "request": "launch",
       "module": "ohunerin",
       "args": [
-        "--host", "0.0.0.0",
-        "--port", "5023",
-        "--model", "models/yamnet.tflite"
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "5023",
+        "--model",
+        "models/yamnet.tflite"
       ],
+      "envFile": "${workspaceFolder}/.env",
       "cwd": "${workspaceFolder}",
       "justMyCode": true
     },

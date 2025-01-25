@@ -204,7 +204,10 @@ and reason `Init Timeout`.
 {
   "type": "init",
   "language": "fr",
-  "features": ["wakeword-detection", "sound-detection"]
+  "features": [
+    { "name": "wakeword-detection" },
+    { "name": "sound-detection" }
+  ]
 }
 ```
 

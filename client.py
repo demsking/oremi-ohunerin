@@ -139,8 +139,38 @@ async def main():
         {
           'type': 'init',
           'language': args.language,
-        }
-      )
+          'features': [
+            {
+              'name': 'wakeword-detection',
+              'wakewords': [
+                {'word': 'bonjour', 'phones': []},
+              ],
+              'discriminants': [
+                {'word': 'rémi', 'phones': []},
+              ],
+            },
+            {
+              'name': 'sound-detection',
+              'allowlist': [
+                'Shout',  # Cri
+                'Bellows',  # Sonner
+                'Children shouting',  # Cris d'enfants
+                'Laughter',  # Rire
+                'Baby laughter',  # Rire de bébé
+                'Crying, sobbing',  # Pleurer, sangloter
+                'Baby cry, infant cry',  # Cri de bébé, pleurs d'enfant
+                'Whistling',  # Siffler
+                'Wheeze',  # Wheeze
+                'Snoring',  # Ronfler
+                'Cough',  # Tousserq
+                'Sneeze',  # Éternuer
+                'Burping',  # Roter
+                'Hiccup',  # Hoqueter
+              ],
+            },
+          ],
+        },
+      ),
     )
 
     init_message_response = await websocket.recv()

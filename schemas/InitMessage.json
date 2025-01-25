@@ -1,6 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
+  "description": "JSON Schema for the message structure used during the initialization process.",
   "properties": {
     "type": {
       "type": "string",
@@ -15,12 +16,88 @@
     "features": {
       "type": "array",
       "items": {
-        "type": "string",
-        "enum": ["wakeword-detection", "sound-detection"]
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "const": "wakeword-detection",
+                "description": "Feature name for wakeword detection."
+              },
+              "config": {
+                "type": "object",
+                "properties": {
+                  "wakewords": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "word": {
+                          "type": "string",
+                          "description": "The wakeword to detect."
+                        },
+                        "phones": {
+                          "type": "array",
+                          "items": { "type": "string" },
+                          "description": "Phonetic representation of the wakeword."
+                        }
+                      },
+                      "required": ["word", "phones"]
+                    },
+                    "description": "List of wakewords to detect."
+                  },
+                  "discriminants": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "word": {
+                          "type": "string",
+                          "description": "The discriminant word to distinguish from wakewords."
+                        },
+                        "phones": {
+                          "type": "array",
+                          "items": { "type": "string" },
+                          "description": "Phonetic representation of the discriminant word."
+                        }
+                      },
+                      "required": ["word", "phones"]
+                    },
+                    "description": "List of discriminant words."
+                  }
+                },
+                "description": "Configuration for wakeword detection."
+              }
+            },
+            "required": ["name"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "const": "sound-detection",
+                "description": "Feature name for sound detection."
+              },
+              "config": {
+                "type": "object",
+                "properties": {
+                  "sounds": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "description": "Optional list of sounds to detect, based on the LABELS file."
+                  }
+                },
+                "description": "Configuration for sound detection."
+              }
+            },
+            "required": ["name"]
+          }
+        ]
       },
-      "description": "The list of features to enable, should include 'wakeword-detection' and/or 'sound-detection'. Default value is ['wakeword-detection', 'sound-detection']."
+      "description": "The list of features to enable, each with its configuration."
     }
   },
-  "required": ["type", "language"],
-  "description": "JSON Schema for the message structure used during the initialization process."
+  "required": ["type", "language", "features"]
 }

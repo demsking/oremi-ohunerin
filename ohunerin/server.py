@@ -1,4 +1,4 @@
-# Copyright 2023 Sébastien Demanou. All Rights Reserved.
+# Copyright 2023-2025 Sébastien Demanou. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -37,17 +37,17 @@ from .package import APP_VERSION
 from .wakeword import WakewordEngine
 
 __all__ = [
+  'DetectedSound',
   'DetectorConsumer',
   'DetectorEngine',
-  'DetectedSound',
   'InitMessage',
+  'Server',
   'WakewordEngine',
   'WakewordSetting',
-  'Server',
 ]
 
 
-HTTP_HEADER = f'{APP_NAME}/{APP_VERSION}'
+HTTP_HEADER = f"{APP_NAME}/{APP_VERSION}"
 
 
 class Server(WebsocketServer):
@@ -71,17 +71,12 @@ class Server(WebsocketServer):
     )
     self.verbose = logger.isEnabledFor(logging.DEBUG)
     self.config: dict[str, WakewordSetting] = {}
-
-    num_threads = os.cpu_count() or 1
-    self.detector = DetectorEngine(
-      model=model_path,
-      score_threshold=threshold,
-      num_threads=num_threads,
-      logger=logger,
-    )
+    self.num_threads = os.cpu_count() or 1
+    self.threshold = threshold
+    self.model_path = model_path
 
     self.pool = concurrent.futures.ThreadPoolExecutor(
-      max_workers=num_threads,
+      max_workers=self.num_threads,
       thread_name_prefix=APP_NAME,
     )
 
@@ -114,13 +109,17 @@ class Server(WebsocketServer):
     return ssl_context
 
   def _load_config_file(self, config_file: str):
-    self.logger.info(f'Loading wakeword config from {config_file}')
+    self.logger.info(f"Loading wakeword config from {config_file}")
+
     with open(config_file, encoding='utf-8') as file:
       config_content = json.load(file)
-      assert isinstance(config_content, dict)
-      for language, locale_config in config_content.items():
-        self.logger.info(f'Loading wakeword config for language "{language}": {locale_config["wakewords"]}')
-        self.config[language] = WakewordSetting.from_dict(locale_config)
+
+      if isinstance(config_content, dict):
+        for language, locale_config in config_content.items():
+          self.logger.info(f'Loading wakeword config for language "{language}": {locale_config["wakewords"]}')
+          self.config[language] = WakewordSetting.from_dict(locale_config)
+      else:
+        raise ValueError('Invalid config file format: expected a dictionary')
 
   def _handle_connection_close(
     self,
@@ -128,9 +127,9 @@ class Server(WebsocketServer):
     exception: websockets.exceptions.ConnectionClosedOK,
   ):
     if exception.reason:
-      self.logger.info(f'Connection closed {websocket.remote_address} with code {exception.code}. Reason: {exception.reason}')
+      self.logger.info(f"Connection closed {websocket.remote_address} with code {exception.code}. Reason: {exception.reason}")
     else:
-      self.logger.info(f'Connection closed {websocket.remote_address} with code {exception.code}')
+      self.logger.info(f"Connection closed {websocket.remote_address} with code {exception.code}")
 
   async def _handle_detection_result(
     self,
@@ -151,6 +150,48 @@ class Server(WebsocketServer):
   ):
     return super()._process_request(websocket, message)
 
+  def _parse_request(
+    self,
+    setting: WakewordSetting,
+    request: InitMessage,
+  ) -> tuple[WakewordEngine | None, DetectorConsumer | None]:
+    wakeword_engine: WakewordEngine | None = None
+    consumer: DetectorConsumer | None = None
+
+    for feature in request.features:
+      if feature.name == 'wakeword-detection':
+        wakeword_setting = setting.copy()
+
+        if feature.wakewords:
+          self.logger.info(
+            f"Initializing wakeword detection feature with additional {feature.wakewords} and discriminants {feature.discriminants}"
+          )
+
+          wakeword_setting.wakewords += feature.wakewords
+          wakeword_setting.discriminants += feature.discriminants
+        else:
+          self.logger.info('Initializing wakeword detection feature')
+
+        wakeword_engine = WakewordEngine(wakeword_setting, self.logger)
+
+      if feature.name == 'sound-detection':
+        if feature.allowlist:
+          self.logger.info(f"Initializing sound detection feature and allowlist {', '.join(feature.allowlist)}")
+        else:
+          self.logger.info('Initializing sound detection feature')
+
+        detector = DetectorEngine(
+          model=self.model_path,
+          score_threshold=self.threshold,
+          num_threads=self.num_threads,
+          logger=self.logger,
+          allowlist=feature.allowlist,
+        )
+
+        consumer = DetectorConsumer(detector, logger=self.logger)
+
+    return wakeword_engine, consumer
+
   async def _handle_audio_data(
     self,
     websocket: websockets.legacy.server.WebSocketServerProtocol,
@@ -158,12 +199,7 @@ class Server(WebsocketServer):
     request: InitMessage,
   ) -> None:
     started = False
-
-    if 'wakeword-detection' in request.features:
-      wakeword_engine = WakewordEngine(setting, self.logger)
-
-    if 'sound-detection' in request.features:
-      consumer = DetectorConsumer(self.detector, self.logger)
+    wakeword_engine, consumer = self._parse_request(setting, request)
 
     try:
       event = ServerInitMessage(
@@ -174,55 +210,62 @@ class Server(WebsocketServer):
       )
 
       await websocket.send(event.to_json())  # type: ignore
-      self.logger.info(f'Connection from {websocket.remote_address} {websocket.request_headers["User-Agent"]}')
+      self.logger.info(f"Connection from {websocket.remote_address} {websocket.request_headers['User-Agent']}")
 
-      if 'wakeword-detection' in request.features:
+      if wakeword_engine:
         wakeword_engine.start_utt()
 
       started = True
+
       async for chunk in websocket:
-        if 'wakeword-detection' in request.features:
+        if wakeword_engine:
           sound, score = await self._loop.run_in_executor(self.pool, wakeword_engine.process_raw, chunk)  # type: ignore
           await self._handle_detection_result(websocket, 'wakeword', sound, score)
 
           if sound:
-            if 'sound-detection' in request.features:
+            if consumer:
               consumer.reset_buffer()
             continue
 
-        if 'sound-detection' in request.features:
+        if consumer:
           sound, score = consumer.process_raw(chunk)  # type: ignore
           await self._handle_detection_result(websocket, 'sound', sound, score)
     except websockets.exceptions.ConnectionClosedOK as exception:
       self._handle_connection_close(websocket, exception)
     except Exception as exception:
-      error_message = f'Invalid Message: {exception}'
+      error_message = f"Invalid Message: {exception}"
       await websocket.close(code=1003, reason=error_message)
       self.logger.error(error_message)
       if self.verbose:
         traceback.print_exc()
     finally:
-      del consumer
-      if started and 'wakeword-detection' in request.features:
+      if consumer:
+        del consumer
+
+      if started and wakeword_engine:
         wakeword_engine.end_utt()
+        del wakeword_engine
 
   async def _handle_messages(
     self,
     websocket: websockets.legacy.server.WebSocketServerProtocol,
   ):
-    init_timeout_timer_handler = self._loop.call_later(5, lambda: self._loop.create_task(
-      websocket.close(code=1002, reason='Init Timeout'),
-      name='Init Timeout Task',
-    ))
+    init_timeout_timer_handler = self._loop.call_later(
+      5,
+      lambda: self._loop.create_task(
+        websocket.close(code=1002, reason='Init Timeout'),
+        name='Init Timeout Task',
+      ),
+    )
 
     try:
       message = await websocket.recv()
       init_timeout_timer_handler.cancel()
-      request = InitMessage.from_json(message)  # type: ignore
+      request = InitMessage.create(message)  # type: ignore
       wakeword_setting = self.config[request.language]
 
       await self._handle_audio_data(websocket, wakeword_setting, request)
     except (ValueError, TypeError):
-      error_message = f'Invalid Init Message: {message}'
+      error_message = f"Invalid Init Message: {message}"
       self.logger.error(error_message)
       await websocket.close(code=1003, reason=error_message)
