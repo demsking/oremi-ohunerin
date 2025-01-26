@@ -216,14 +216,14 @@ typing-inspect = ">=0.4.0,<1"
 
 [[package]]
 name = "flatbuffers"
-version = "25.1.21"
+version = "25.1.24"
 description = "The FlatBuffers serialization format for Python"
 optional = false
 python-versions = "*"
 groups = ["main"]
 files = [
-    {file = "flatbuffers-25.1.21-py2.py3-none-any.whl", hash = "sha256:0e9736098ba8f4e48246a0640390f4992c0b1a734e7322a9463d5c3eea00558b"},
-    {file = "flatbuffers-25.1.21.tar.gz", hash = "sha256:e24a34dcd9fb4e0ea8cc0fc8ef9c5cd61c9d21527a6d536967587a37a4ff9676"},
+    {file = "flatbuffers-25.1.24-py2.py3-none-any.whl", hash = "sha256:1abfebaf4083117225d0723087ea909896a34e3fec933beedb490d595ba24145"},
+    {file = "flatbuffers-25.1.24.tar.gz", hash = "sha256:e0f7b7d806c0abdf166275492663130af40c11f89445045fbef0aa3c9a8643ad"},
 ]
 
 [[package]]
@@ -780,4 +780,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<3.12"
-content-hash = "9eefd31e371a539659a19b5b5a8b2cc349bffe938d1a01a0dec293bc45394b7a"
+content-hash = "f7e476a2c27c3df82286e89047acc9ae622a75e84ba23fe22513c8a184e22a23"

@@ -15,4 +15,4 @@ select = ["E", "F", "W", "RUF"]
 
 [lint.flake8-quotes]
 docstring-quotes = "double"
-inline-quotes = "double"
+inline-quotes = "single"
