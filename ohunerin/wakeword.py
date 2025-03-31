@@ -1,4 +1,4 @@
-# Copyright 2023 Sébastien Demanou. All Rights Reserved.
+# Copyright 2023-2025 Sébastien Demanou. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,8 +24,8 @@ from .models import WakewordSetting
 from .package import APP_NAME
 
 __all__ = [
-  'WakewordSetting',
   'WakewordEngine',
+  'WakewordSetting',
 ]
 
 
@@ -50,10 +50,10 @@ class WakewordEngine:
     temp_dir = tempfile.mkdtemp()
     filename = os.path.join(temp_dir, 'keyphrases.list')
 
-    self._logger.info(f'Creating keyphrases file {filename}')
+    self._logger.info(f"Creating keyphrases file {filename}")
     with open(filename, 'w', encoding='utf-8') as file:
       for entry in self._setting.wakewords + self._setting.discriminants:
-        file.write(f'{entry.word}\n')
+        file.write(f"{entry.word}\n")
         self._add_dictionary_entry(entry)
 
     self._decoder.add_kws(APP_NAME, filename)
@@ -69,7 +69,7 @@ class WakewordEngine:
     for index, phone in enumerate(entry.phones):
       self._logger.info(f'Adding new word "{entry.word}" to the dictionary')
 
-      word = entry.word if index == 0 else f'{entry.word}({index + 1})'
+      word = entry.word if index == 0 else f"{entry.word}({index + 1})"
 
       try:
         self._decoder.add_word(word, phone)
@@ -94,9 +94,7 @@ class WakewordEngine:
       bool: True if the word is a discriminant, otherwise False.
     """
     # Check against predefined discriminants
-    result = any(
-      item for item in self._setting.discriminants if item.word == word
-    )
+    result = any(item for item in self._setting.discriminants if item.word == word)
 
     if not result:
       # Check for space and equality of parts
@@ -128,6 +126,6 @@ class WakewordEngine:
       if not is_discriminant:
         return hypothesis.hypstr, hypothesis.score
 
-      self._logger.warning(f'Discriminant wakeword detected: {hypothesis.hypstr}, score {hypothesis.score:.2f}')
+      self._logger.warning(f"Discriminant wakeword detected: {hypothesis.hypstr}, score {hypothesis.score:.2f}")
 
     return None, 0.0

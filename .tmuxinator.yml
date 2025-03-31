@@ -1,31 +1,28 @@
 name: oremi-ohunerin
 root: .
 
-# Optional tmux socket
-socket_name: oremi-ohunerin
-
 # Note that the pre and post options have been deprecated and will be replaced by
 # project hooks.
 
 # Project hooks
 
 # Runs on project start, always
-# on_project_start: make up
+on_project_start: make up
 
 # Run on project start, the first time
-# on_project_first_start: make install
+on_project_first_start: make pull
 
 # Run on project start, after the first time
-# on_project_restart: command
+on_project_restart: make pull
 
 # Run on project exit ( detaching from tmux session )
-# on_project_exit: make down
+on_project_exit: make down
 
 # Run on project stop
-# on_project_stop: command
+on_project_stop: make down
 
 # Runs in each window and pane before window/pane specific commands. Useful for setting up interpreter versions.
-# pre_window: rbenv shell 2.0.0-p247
+pre_window: devbox shell
 
 # Pass command line options to tmux. Useful for specifying a different tmux.conf.
 tmux_options: -f .tmux.conf
@@ -37,7 +34,7 @@ tmux_options: -f .tmux.conf
 startup_window: workspace
 
 # Specifies (by index) which pane of the specified window will be selected on project startup. If not set, the first pane is used.
-startup_pane: 0
+startup_pane: 1
 
 # Controls whether the tmux session should be attached to automatically. Defaults to true.
 attach: true
@@ -49,4 +46,5 @@ windows:
       # 'before' represents legacy functionality and will be deprecated in a future release, in favour of 'after'
       # synchronize: after
       panes:
+        - make logs
         - git status

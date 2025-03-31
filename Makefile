@@ -13,36 +13,6 @@ shell:
 stop:
 	tmux kill-session -t oremi-ohunerin
 
-pull:
-	docker compose pull
-
-up:
-	docker compose up -d --remove-orphans
-
-watch:
-	docker compose watch detector
-
-config:
-	docker compose config
-
-stats:
-	docker compose stats
-
-ps:
-	docker compose ps
-
-restart:
-	docker compose restart
-
-down:
-	docker compose down
-
-exec:
-	docker compose exec detector bash
-
-logs:
-	docker compose logs -f
-
 clean:
 	rm -rf dist/ build/ models/*.tflite
 

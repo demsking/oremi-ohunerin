@@ -25,15 +25,18 @@ RUN poetry install --no-root --no-interaction --no-ansi --only=main
 ## Stage 2: Runtime environment
 FROM python:3.11-slim
 
-RUN addgroup --system --gid 1000 olumulo \
-  && adduser --system --no-create-home --uid 1000 olumulo
-
 # Set the shell to /bin/bash and enable pipefail
 SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
 
-# Install dependencies
+RUN addgroup --system --gid 1000 olumulo \
+  && adduser --system --no-create-home --uid 1000 olumulo
+
+# Install runtime dependencies
 RUN apt-get update \
-  && apt-get install --no-install-recommends -y libusb-1.0-0-dev \
+  && apt-get install -y --no-install-recommends tzdata libusb-1.0-0-dev \
+  && ln -fs /usr/share/zoneinfo/UTC /etc/localtime \
+  && echo "UTC" > /etc/timezone \
+  && dpkg-reconfigure -f noninteractive tzdata \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
@@ -57,7 +60,8 @@ USER olumulo
 ENV PATH="/opt/oremi/bin:$PATH"
 ENV PYTHONPATH="/opt/oremi:$PYTHONUSERBASE:$PYTHONPATH"
 
-ENV TZ="Africa/Douala"
+# Ensure the server uses UTC
+ENV TZ="UTC"
 ENV THRESHOLD="0.1"
 
 ENV LOG_LEVEL="info"

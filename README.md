@@ -109,10 +109,10 @@ options:
 The following environment variables can be used to configure the Oremi Ohunerin
 Docker containers:
 
-| Variable        | Description                     | Default Value |
-|-----------------|---------------------------------|---------------|
-| LOG_LEVEL       | Logging level                   | "info"        |
-| LOG_FILE        | Log file path                   |               |
+| Variable  | Description   | Default Value |
+| --------- | ------------- | ------------- |
+| LOG_LEVEL | Logging level | "info"        |
+| LOG_FILE  | Log file path |               |
 
 ## Starting Ohunerin with Certificates
 
@@ -195,39 +195,46 @@ build their applications accordingly.
 
 **1. Client**
 
-When a client connects to the server, it must send an initial
-[JSON initiation message](https://gitlab.com/demsking/oremi-ohunerin/blob/main/schemas/InitMessage.json)
-**within 5 seconds** or else the connection will be closed with code `1002`
-and reason `Init Timeout`.
+When a client establishes a connection, it first waits for the server's
+initialization message:
+
+```py
+server_init_message = await websocket.recv()
+print(server_init_message)
+```
+
+This message contains the server's version and a list of supported models:
+
+```json
+{
+  "type": "init",
+  "server": "oremi-andika/2.0.0b9",
+  "available_languages": ["fr", "en"]
+}
+```
+
+Once received, the client sends an initial JSON initiation message to the
+server:
 
 ```json
 {
   "type": "init",
   "language": "fr",
-  "features": [
-    { "name": "wakeword-detection" },
-    { "name": "sound-detection" }
-  ]
+  "features": [{ "name": "wakeword-detection" }, { "name": "sound-detection" }]
 }
 ```
+
+The client then waits for the server's readiness message.
 
 **2. Server**
 
-The server responds with an initialization acknowledgment, providing details
-about available languages for wakeword detection:
+The server then sends ready message:
 
 ```json
 {
-  "type": "init",
-  "server": "oremi-ohunerin/1.0.0",
-  "status": "ready",
-  "languages": ["en", "fr"]
+  "type": "ready"
 }
 ```
-
-**Note:** If the client doesn't send the initialization message within **5
-seconds**, the server will close the connection with code `1002` and reason
-`Init Timeout`.
 
 ### Sound Detection
 

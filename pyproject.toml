@@ -45,8 +45,8 @@ pocketsphinx = "^5.0.4"
 numpy = "^2.2.2"
 tflite-runtime = "^2.13.0"
 tflite-support = "^0.4.4"
-oremi-core = "^1.2.1"
-dataclasses-json = "^0.6.4"
+oremi-core = "^2.5.3"
+pydantic = "^2.11.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.4"

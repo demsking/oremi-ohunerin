@@ -1,4 +1,4 @@
-# Copyright 2023 Sébastien Demanou. All Rights Reserved.
+# Copyright 2023-2025 Sébastien Demanou. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,35 +19,35 @@ from .args import parse_arguments
 from .logger import logger
 from .package import APP_NAME
 from .package import APP_VERSION
+from .server import ClientInitMessage
 from .server import DetectedSound
 from .server import DetectorConsumer
 from .server import DetectorEngine
-from .server import InitMessage
 from .server import Server
 from .server import WakewordEngine
 from .server import WakewordSetting
 
 __all__ = [
+  'ClientInitMessage',
+  'DetectedSound',
   'DetectorConsumer',
   'DetectorEngine',
-  'DetectedSound',
-  'InitMessage',
+  'Server',
   'WakewordEngine',
   'WakewordSetting',
-  'Server',
-  'start',
   'main',
+  'start',
 ]
 
 
 async def start() -> None:
   args = parse_arguments()
 
-  logger.info(f'Starting {APP_NAME} {APP_VERSION}')
-  logger.info(f'Log level: {"DEBUG" if logger.level == logging.DEBUG else "INFO"}')
-  logger.info(f'Model: {args.model}')
-  logger.info(f'Threshold: {args.threshold}')
-  logger.info(f'Config: {args.config}')
+  logger.info(f"Starting {APP_NAME} {APP_VERSION}")
+  logger.info(f"Log level: {'DEBUG' if logger.level == logging.DEBUG else 'INFO'}")
+  logger.info(f"Model: {args.model}")
+  logger.info(f"Threshold: {args.threshold}")
+  logger.info(f"Config: {args.config}")
 
   server = Server(
     logger=logger,

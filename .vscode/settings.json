@@ -1,17 +1,19 @@
 {
-  "editor.tabSize": 2,
-  "editor.insertSpaces": true,
-  "editor.detectIndentation": false,
-  "files.insertFinalNewline": true,
-  "files.trimFinalNewlines": true,
+  "python.defaultInterpreterPath": "/home/devuser/.local/venv/bin/python",
+  "pylint.importStrategy": "fromEnvironment",
+  "editor.formatOnPaste": false,
+  "editor.formatOnSave": true,
+  "editor.formatOnType": true,
   "files.trimTrailingWhitespace": true,
   "files.exclude": {
-    "venv": true,
+    "**/.devbox": true,
     "**/.directory": true,
+    "**/.poetry": true,
     "**/.coverage": true,
     "**/.direnv": true,
     "**/.nix-node": true,
     "**/.ruff_cache": true,
+    "**/.venv": true,
     "**/.pytest_cache": true,
     "**/*.egg-info": true,
     "**/__pycache__": true,
@@ -23,7 +25,7 @@
     "reportPrivateImportUsage": "none"
   },
   "python.analysis.exclude": [
-    "venv/**"
+    ".venv/**"
   ],
   "python.analysis.autoImportCompletions": true,
   "python.analysis.completeFunctionParens": true,
@@ -34,16 +36,18 @@
   "python.analysis.inlayHints.variableTypes": true,
   "python.analysis.fixAll": ["source.convertImportFormat"],
   "python.testing.pytestEnabled": true,
-  "python.linting.pylintArgs": [],
-  "python.linting.ignorePatterns": [
-    "**/site-packages/**/*.py",
-    ".vscode/*.py",
-    ".*_test.py",
-    "typings/**/*.py"
-  ],
   "python.testing.pytestArgs": [
     "tests"
   ],
   "python.testing.unittestEnabled": false,
-  "makefile.configureOnOpen": false
+  "python.terminal.activateEnvInCurrentTerminal": true,
+  "terminal.integrated.profiles.linux": {
+    "bash": {
+      "path": "/bin/bash"
+    }
+  },
+  "terminal.integrated.defaultProfile.linux": "bash",
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff"
+  }
 }

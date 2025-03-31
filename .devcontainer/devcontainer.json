@@ -1,9 +1,9 @@
 {
-	"name": "Oremi Ohunerin",
+  "name": "Oremi Ohunerin",
   "context": "..",
   "dockerFile": "../Dockerfile.dev",
-	"features": {},
-	"forwardPorts": [5023],
+  "features": {},
+  "forwardPorts": [5023],
   "runArgs": [
     "--device=/dev/snd:/dev/snd"
   ],
@@ -12,7 +12,7 @@
     "source=${localEnv:XDG_RUNTIME_DIR}/pulse/native,target=/var/config/pulse/native,type=bind,consistency=cached",
     "source=${localEnv:HOME}/.config/pulse/cookie,target=/var/config/pulse/cookie,type=bind,consistency=cached"
   ],
-	"postCreateCommand": "poetry install",
+  "postCreateCommand": "poetry install",
   "customizations": {
     "vscode": {
       "extensions": [
