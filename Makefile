@@ -22,37 +22,38 @@ $(TSLITE_FILE):
 model: $(TSLITE_FILE)
 
 install: model
-	poetry install
+	rm -rf .venv
+	uv venv --python 3.11
+	uv sync
 
 help:
-	poetry run oremi-ohunerin -h
+	uv run oremi-ohunerin -h
 
 lint:
-	pre-commit run --all-files
+	devbox run pre-commit run --all-files
 
 fix:
-	ruff check . --fix
+	devbox run ruff check . --fix
 
 test:
-	pytest
+	devbox run pytest
 
 coverage:
-	pytest --cov=ohunerin
+	devbox run pytest --cov=ohunerin
 
 coverage-html:
-	pytest --cov=ohunerin --cov-report=html
+	devbox run pytest --cov=ohunerin --cov-report=html
 
 outdated:
-	poetry show --outdated
+	uv pip list --outdated
 
 update:
-	poetry update
-	nix flake update
-	pre-commit autoupdate
+	uv lock --upgrade
+	devbox run pre-commit autoupdate
 
 package:
 	rm -rf dist/*
-	poetry build --no-cache --format=wheel
+	uv build --wheel
 	twine check dist/*
 
 pypi: package
@@ -91,6 +92,3 @@ image-test:
 	  --tag $(IMAGE_NAME):test
 
 publish: image pypi
-	git commit pyproject.toml -m "Release $(APP_VERSION)"
-	git tag v$(APP_VERSION)
-	git push --tags origin main

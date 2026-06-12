@@ -1,5 +1,4 @@
 {
-  "python.defaultInterpreterPath": "/home/devuser/.local/venv/bin/python",
   "pylint.importStrategy": "fromEnvironment",
   "editor.formatOnPaste": false,
   "editor.formatOnSave": true,
@@ -34,7 +33,9 @@
   "python.analysis.inlayHints.functionReturnTypes": true,
   "python.analysis.inlayHints.pytestParameters": true,
   "python.analysis.inlayHints.variableTypes": true,
-  "python.analysis.fixAll": ["source.convertImportFormat"],
+  "python.analysis.fixAll": [
+    "source.convertImportFormat"
+  ],
   "python.testing.pytestEnabled": true,
   "python.testing.pytestArgs": [
     "tests"
@@ -49,5 +50,8 @@
   "terminal.integrated.defaultProfile.linux": "bash",
   "[python]": {
     "editor.defaultFormatter": "charliermarsh.ruff"
-  }
+  },
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+  "python.envFile": "${workspaceFolder}/.devcontainer/.env",
+  "python.terminal.shellIntegration.enabled": false
 }

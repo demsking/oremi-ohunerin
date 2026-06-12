@@ -1,9 +1,7 @@
 FROM python:3.11-slim
 
-# Set environment variables
-ENV PATH="/home/devuser/.local/bin:$PATH"
-ENV POETRY_HOME="/home/devuser/.local"
-ENV POETRY_VIRTUALENVS_IN_PROJECT=true
+# Copy the uv binary
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 # Set the shell to /bin/bash and enable pipefail
 SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
@@ -19,12 +17,6 @@ RUN apt-get update \
     pulseaudio-utils \
   && rm -rf /var/lib/apt/lists/*
 
-# Install Poetry for the root user (temporarily)
-RUN curl -sSL https://install.python-poetry.org | python -
-
-# Install Poetry Plugin: Shell
-RUN poetry self add poetry-plugin-shell
-
 # Create a non-root user without a password
 RUN useradd --create-home --shell /bin/bash devuser \
   && chown -R devuser:devuser /home/devuser
@@ -32,11 +24,10 @@ RUN useradd --create-home --shell /bin/bash devuser \
 # Switch to the devuser
 USER devuser
 WORKDIR /workspaces
-ENV POETRY_VIRTUALENVS_IN_PROJECT=false
-RUN poetry completions bash >> ~/.bash_completion
+RUN uv --generate-shell-completion bash >> ~/.bash_completion
 
 # Install Python dependencies
-COPY poetry.lock pyproject.toml ./
-RUN poetry install --no-root --no-interaction
+COPY uv.lock pyproject.toml ./
+RUN uv sync
 
 CMD ["bash"]

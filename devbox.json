@@ -1,31 +1,27 @@
 {
   "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/0.10.5/.schema/devbox.schema.json",
   "packages": {
-    "python": {
-      "version":        "3.11",
-      "disable_plugin": true
-    },
-    "poetry":                                   "latest",
-    "tmux":                                     "latest",
-    "gitmux":                                   "latest",
-    "tmuxinator":                               "latest",
-    "gnumake":                                  "latest",
-    "pre-commit":                               "latest",
-    "hadolint":                                 "latest",
-    "shellcheck":                               "latest",
-    "ruff":                                     "latest",
-    "skjold":                                   "latest",
-    "python311Packages.autopep8":               "latest",
-    "python311Packages.bandit":                 "latest",
-    "python311Packages.reorder-python-imports": "latest",
-    "python311Packages.pyroma":                 "latest",
-    "python311Packages.pytest":                 "latest",
-    "python311Packages.twine":                  "latest",
-    "yamllint":                                 "latest",
-    "nodejs":                                   "latest"
+    "uv": "latest",
+    "tmux": "latest",
+    "gitmux": "latest",
+    "tmuxinator": "latest",
+    "gnumake": "latest",
+    "pre-commit": "latest",
+    "hadolint": "latest",
+    "shellcheck": "latest",
+    "ruff": "latest",
+    "skjold": "latest",
+    "yamllint": "latest"
+  },
+  "env": {
+    "UV_MANAGED_PYTHON": "1",
+    "PYTHONPATH": ".:.venv/lib/python3.11/site-packages:$PYTHONPATH"
   },
   "shell": {
-    "init_hook": ["pre-commit install -f"],
-    "scripts":   {}
+    "init_hook": [
+      "pre-commit install -f",
+      "export PATH=.venv/bin:$PATH"
+    ],
+    "scripts": {}
   }
 }

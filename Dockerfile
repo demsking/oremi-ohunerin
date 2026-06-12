@@ -2,23 +2,16 @@
 ## Stage 1: Build environment
 FROM python:3.11-slim AS install-dependencies-stage
 
-ENV PATH="/root/.local/bin:$PATH"
-ENV POETRY_HOME='/usr/local'
-ENV POETRY_VIRTUALENVS_CREATE=false
+# Copy the uv binary
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 # Set the shell to /bin/bash and enable pipefail
 SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
 
-# Install build dependencies
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends curl \
-  && curl -sSL https://install.python-poetry.org | python - \
-  && rm -rf /var/lib/apt/lists/*
-
 # Copy and install Python dependencies
 WORKDIR /src
-COPY poetry.lock pyproject.toml ./
-RUN poetry install --no-root --no-interaction --no-ansi --only=main
+COPY uv.lock pyproject.toml ./
+RUN uv pip install --system --no-cache -r pyproject.toml
 
 
 #

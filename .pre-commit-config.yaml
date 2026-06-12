@@ -3,7 +3,7 @@
 exclude: ^(tests)/.*
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
         name: 'Trailing Whitespace Remover'
@@ -42,31 +42,46 @@ repos:
       - id: double-quote-string-fixer
         name: 'Double Quote String Fixer'
         description: 'Ensures all strings in Python files use double quotes.'
-      - id: name-tests-test
+      # - id: name-tests-test
       - id: requirements-txt-fixer
         name: 'Requirements.txt Fixer'
         description: 'Sorts entries in requirements.txt files and removes duplicates.'
 
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    rev: 0.11.21
+    hooks:
+      - id: uv-lock
+
   - repo: https://github.com/Lucas-C/pre-commit-hooks
-    rev: v1.5.5
+    rev: v1.5.6
     hooks:
       - id: insert-license
         name: 'Insert License Header'
         description: 'Inserts license headers into Python files.'
         files: \.py$
-        args: [
-          '--license-filepath', 'LICENSE_HEADER.txt',
-          '--comment-style', '',
-          '--use-current-year',
-          '--no-extra-eol',
-        ]
+        args:
+          [
+            '--license-filepath',
+            'LICENSE_HEADER.txt',
+            '--comment-style',
+            '',
+            '--use-current-year',
+            '--no-extra-eol',
+          ]
 
   - repo: https://github.com/asottile/reorder-python-imports
-    rev: v3.14.0
+    rev: v3.16.0
     hooks:
       - id: reorder-python-imports
         name: 'Reorder Python Imports'
         description: 'Automatically sorts and groups Python imports.'
+
+  - repo: https://github.com/hhatto/autopep8
+    rev: v2.3.2
+    name: 'Fix Python Code Style using AutoPEP8'
+    description: 'Runs `autopep8` to format Python code according to PEP 8 standards.'
+    hooks:
+      - id: autopep8
 
   - repo: local
     hooks:
@@ -76,33 +91,9 @@ repos:
         entry: hadolint
         language: system
         files: Dockerfile
-      - id: gimtoc
-        name: 'Generate Table of Contents'
-        description: 'Runs `gimtoc` to generate a Table of Contents in README.md.'
-        entry: npx
-        language: node
-        files: README.md
-        args: [
-          'gimtoc',
-            '--file', 'README.md',
-            '--section', 'Table of Contents',
-            '--output', 'README.md',
-        ]
-      - id: autopep8
-        name: 'Fix Python Code Style using AutoPEP8'
-        description: 'Runs `autopep8` to format Python code according to PEP 8 standards.'
-        entry: autopep8
-        language: system
-        files: '\.py$'
-        args: [
-          '--in-place',
-          '--recursive',
-          # Error codes: https://pycodestyle.pycqa.org/en/latest/intro.html#error-codes
-          '--ignore', 'E1,E501',
-        ]
 
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.9.3
+    rev: v0.15.17
     hooks:
       - id: ruff
         name: 'Ruff Linter'
@@ -125,15 +116,16 @@ repos:
         description: 'Ensures Python functions and methods use type annotations.'
 
   - repo: https://github.com/PyCQA/bandit
-    rev: 1.8.2
+    rev: 1.9.4
     hooks:
       - id: bandit
         name: 'Bandit Security Linter'
         description: 'Runs Bandit to find common security issues in Python code.'
         args: [-c, bandit.yaml]
+        exclude: ^tests/
 
   - repo: https://github.com/PyCQA/doc8
-    rev: v1.1.2
+    rev: v2.0.0
     hooks:
       - id: doc8
         name: 'Doc8 Documentation Linter'

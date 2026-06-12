@@ -1,4 +1,4 @@
-# Copyright 2024 Sébastien Demanou. All Rights Reserved.
+# Copyright 2024-2026 Sébastien Demanou. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@ import os
 import tomllib
 
 __all__ = [
-  'APP_NAME',
   'APP_DESCRIPTION',
+  'APP_NAME',
   'APP_VERSION',
 ]
 
@@ -25,9 +25,9 @@ _current_dir = os.path.dirname(os.path.abspath(__file__))
 _pyproject_path = os.path.join(_current_dir, '..', 'pyproject.toml')
 
 with open(_pyproject_path, 'rb') as file:
-  package = tomllib.load(file)['tool']['poetry']
-  APP_NAME = package['name']
-  APP_DESCRIPTION = package['description']
-  APP_VERSION = package['version']
-  del package
+  project = tomllib.load(file)['project']
+  APP_NAME = project['name']
+  APP_DESCRIPTION = project['description']
+  APP_VERSION = project['version']
+  del project
   del tomllib
