@@ -75,10 +75,9 @@ Example `config.json`:
 
 ## Environment Variables
 
-| Variable  | Description   | Default Value |
-| --------- | ------------- | ------------- |
-| LOG_LEVEL | Logging level | "INFO"        |
-| LOG_FILE  | Log file path |               |
+- **`THRESHOLD`**: Detection threshold for filtering predictions. (Default: `"0.1"`)
+- **`LOG_LEVEL`**: Logging level. (Default: `"INFO"`)
+- **`LOG_FILE`**: Log file path.
 
 ---
 
