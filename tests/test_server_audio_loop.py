@@ -151,11 +151,47 @@ async def test_handle_messages_invalid_params(config_file, logger):
 async def test_handle_messages_no_features(config_file, logger):
   server = Server(config_file=config_file, threshold=0.1, logger=logger)
   
+  # When no features are provided, it defaults to both, which requires language.
+  # So without language, it should raise a parsing error.
   websocket = MockWebSocket(path="/ws")
+  await server._handle_messages(websocket)
+  
+  assert websocket.closed_code == 1003
+  assert "language query parameter is required" in websocket.closed_reason
+
+
+@pytest.mark.asyncio
+async def test_handle_messages_invalid_features(config_file, logger):
+  server = Server(config_file=config_file, threshold=0.1, logger=logger)
+  
+  # When invalid features are provided, it doesn't default, and since no valid features are enabled,
+  # it should fail with "No feature provided".
+  websocket = MockWebSocket(path="/ws?features=invalid")
   await server._handle_messages(websocket)
   
   assert websocket.closed_code is not None
   assert "No feature provided in the query parameters" in websocket.closed_reason
+
+
+@pytest.mark.asyncio
+async def test_handle_messages_default_features_valid(config_file, logger):
+  server = Server(config_file=config_file, threshold=0.1, logger=logger)
+  
+  # When no features are provided but language is, it should default to both features
+  websocket = MockWebSocket(path="/ws?language=fr", chunks=[b"\x00" * 100])
+  
+  async def mock_handle_audio_fn(ws, ww, dc):
+    pass
+
+  with patch.object(server, "_handle_audio_data", side_effect=mock_handle_audio_fn) as mock_handle_audio:
+    await server._handle_messages(websocket)
+    mock_handle_audio.assert_called_once()
+    
+    # Verify mock_handle_audio arguments
+    args, kwargs = mock_handle_audio.call_args
+    assert args[0] is websocket
+    assert args[1] is not None  # wakeword engine is initialized
+    assert args[2] is not None  # detector consumer is initialized
 
 
 @pytest.mark.asyncio

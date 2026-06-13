@@ -85,6 +85,19 @@ async def test_parse_query_params_both_features(config_file, logger):
 
 
 @pytest.mark.asyncio
+async def test_parse_query_params_no_features_defaults_to_both(config_file, logger):
+  server = Server(config_file=config_file, threshold=0.1, logger=logger)
+
+  # When features param is not provided, it should default to both features
+  path = "/ws?language=fr"
+  wk_engine, dt_consumer = server._parse_query_params(path)
+  
+  assert wk_engine is not None
+  assert dt_consumer is not None
+  assert wk_engine.is_discriminant("rémi") is True
+
+
+@pytest.mark.asyncio
 async def test_parse_query_params_missing_language(config_file, logger):
   server = Server(config_file=config_file, threshold=0.1, logger=logger)
 
