@@ -123,7 +123,7 @@ class Server(WebSocketServer):
 
       return http.HTTPStatus.OK, headers, body
 
-    if clean_path == '/':
+    if clean_path == '/info':
       self.logger.info(f"Serving server info for HTTP request from {request_headers.get('User-Agent', 'unknown')}")
 
       body = json.dumps(self.get_server_info(), ensure_ascii=False).encode('utf-8')
@@ -134,6 +134,17 @@ class Server(WebSocketServer):
       ]
 
       return http.HTTPStatus.OK, headers, body
+
+    if clean_path == '/':
+      self.logger.info(f"Redirecting root path to /info for HTTP request from {request_headers.get('User-Agent', 'unknown')}")
+
+      body = b''
+      headers = [
+        ('Location', '/info'),
+        ('Content-Length', '0'),
+      ]
+
+      return http.HTTPStatus.FOUND, headers, body
 
     if clean_path == '/ws':
       return None

@@ -42,7 +42,16 @@ async def test_server_info_endpoint(config_file, logger):
   )
 
   headers = Headers()
+  # Test redirection of / to /info
   response = await server.process_http_request("/", headers)
+  assert response is not None
+  status, resp_headers, body = response
+  assert status == http.HTTPStatus.FOUND
+  headers_dict = dict(resp_headers)
+  assert headers_dict["Location"] == "/info"
+
+  # Test info endpoint
+  response = await server.process_http_request("/info", headers)
   assert response is not None
   status, resp_headers, body = response
 

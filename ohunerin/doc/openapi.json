@@ -616,7 +616,7 @@
         ]
       }
     },
-    "/": {
+    "/info": {
       "get": {
         "summary": "Get Server Information",
         "description": "Returns details about the server, including name, version, configured detection threshold, and supported wake words by language.",
