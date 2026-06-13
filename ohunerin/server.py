@@ -54,7 +54,7 @@ __all__ = [
 SERVER_NAME = f"{APP_NAME}/{APP_VERSION}"
 MAX_REASON_LENGTH = 123
 
-BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+BASE_DIR = os.path.dirname(__file__)
 DOC_DIR = os.path.join(BASE_DIR, 'doc')
 DOCUMENTATION_PATH = os.path.join(BASE_DIR, 'DOCUMENTATION.md')
 OPENAPI_PATH = os.path.join(DOC_DIR, 'openapi.json')
@@ -65,9 +65,9 @@ class Server(WebSocketServer):
   def __init__(
     self,
     *,
-    model_path: str,
     config_file: str,
     threshold: float,
+    model_path: str | None = None,
     cert_file: str | None = None,
     key_file: str | None = None,
     password: str | None = None,
@@ -85,7 +85,7 @@ class Server(WebSocketServer):
     self.config: dict[str, WakewordSetting] = {}
     self.num_threads = os.cpu_count() or 1
     self.threshold = threshold
-    self.model_path = model_path
+    self.model_path = model_path or os.path.join(os.path.dirname(__file__), 'models', 'yamnet.tflite')
 
     self.pool = concurrent.futures.ThreadPoolExecutor(
       max_workers=self.num_threads,
@@ -188,12 +188,20 @@ class Server(WebSocketServer):
 
   def _load_config_file(self, config_file: str):
     self.logger.info(f"Loading wakeword config from {config_file}")
+    config_dir = os.path.dirname(os.path.abspath(config_file))
 
     with open(config_file, encoding='utf-8') as file:
       config_content = json.load(file)
 
       if isinstance(config_content, dict):
         for language, locale_config in config_content.items():
+          # Resolve relative model and dictionary paths relative to the config file location
+          for path_key in ('model', 'dictionary'):
+            if path_key in locale_config:
+              p = locale_config[path_key]
+              if not os.path.isabs(p):
+                locale_config[path_key] = os.path.abspath(os.path.join(config_dir, p))
+
           self.logger.info(f'Loading wakeword config for language "{language}": {locale_config["wakewords"]}')
           self.config[language] = WakewordSetting.model_validate(locale_config)
       else:

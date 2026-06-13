@@ -22,8 +22,8 @@ def main() -> None:
 
   # Paths
   pyproject_path = os.path.join(base_dir, 'pyproject.toml')
-  openapi_path = os.path.join(base_dir, 'doc/openapi.json')
-  documentation_path = os.path.join(base_dir, 'DOCUMENTATION.md')
+  openapi_path = os.path.join(base_dir, 'ohunerin/doc/openapi.json')
+  documentation_path = os.path.join(base_dir, 'ohunerin/DOCUMENTATION.md')
   public_dir = os.path.join(base_dir, 'public')
   output_path = os.path.join(public_dir, 'openapi.json')
 

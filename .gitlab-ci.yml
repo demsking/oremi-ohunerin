@@ -31,7 +31,7 @@ pages:
     - cp -r integrations/home-assistant/oremi-ohunerin/* /tmp/oremi-ohunerin/
     - cd /tmp && zip -r oremi-ohunerin-homeassistant.zip oremi-ohunerin && cd -
     - cp /tmp/oremi-ohunerin-homeassistant.zip public/
-    - cp -r DOCUMENTATION.md doc/* public/
+    - cp -r ohunerin/DOCUMENTATION.md ohunerin/doc/* public/
     - python3 scripts/generate_openapi.py
     - ls -lah public/
     - echo "The documentation site will be deployed to $CI_PAGES_URL"

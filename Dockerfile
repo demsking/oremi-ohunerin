@@ -33,9 +33,6 @@ RUN apt-get update \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
-COPY models/ /var/oremi/models
-COPY models/yamnet.tflite /var/oremi/models/
-
 # Copy built Python dependencies from the install-dependencies-stage stage
 COPY --from=install-dependencies-stage /usr/local/lib/python3.11/site-packages/ /usr/local/lib/python3.11/site-packages/
 COPY --from=install-dependencies-stage /usr/local/bin/ /usr/local/bin/
@@ -45,7 +42,7 @@ COPY bin/* /opt/oremi/bin/
 RUN chmod +x /opt/oremi/bin/*
 
 # Copy application files
-COPY pyproject.toml config.json LICENSE /opt/oremi/
+COPY pyproject.toml LICENSE /opt/oremi/
 COPY ohunerin/ /opt/oremi/ohunerin
 
 USER olumulo
@@ -54,10 +51,9 @@ ENV PATH="/opt/oremi/bin:$PATH"
 ENV PYTHONPATH="/opt/oremi:$PYTHONUSERBASE:$PYTHONPATH"
 
 # Ensure the server uses UTC
-ENV TZ="UTC"
 ENV THRESHOLD="0.1"
 
-ENV LOG_LEVEL="info"
+ENV LOG_LEVEL="INFO"
 ENV LOG_FILE=
 
 EXPOSE 5023

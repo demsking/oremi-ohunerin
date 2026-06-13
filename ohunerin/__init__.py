@@ -14,6 +14,7 @@
 # ==============================================================================
 import asyncio
 import logging
+import os
 
 from .args import parse_arguments
 from .logger import logger
@@ -41,21 +42,24 @@ __all__ = [
 async def start() -> None:
   args = parse_arguments()
 
+  package_dir = os.path.dirname(__file__)
+  config_file = args.config or os.path.join(package_dir, 'config.json')
+
   logger.info(f"Starting {APP_NAME} {APP_VERSION}")
   logger.info(f"Log level: {'DEBUG' if logger.level == logging.DEBUG else 'INFO'}")
-  logger.info(f"Model: {args.model}")
   logger.info(f"Threshold: {args.threshold}")
-  logger.info(f"Config: {args.config}")
+  logger.info(f"Config: {config_file}")
 
   server = Server(
     logger=logger,
-    model_path=args.model,
-    config_file=args.config,
+    config_file=config_file,
     threshold=args.threshold,
     cert_file=args.cert_file,
     key_file=args.key_file,
     password=args.password,
   )
+
+  logger.info(f"Model: {server.model_path}")
 
   await server.listen(args.host, args.port)
   logger.info('E ku ore mi')  # https://translate.google.com/?sl=yo&tl=en&text=E%20ku%20ore%20mi&op=translate

@@ -60,10 +60,7 @@ dev = [
 packages = ["ohunerin"]
 
 [tool.hatch.build]
-include = [
-  "config.json",
-  "models/**/*",
-]
+ignore-vcs = true
 
 [tool.pytest.ini_options]
 # Function starting with the following pattern are considered for test cases.

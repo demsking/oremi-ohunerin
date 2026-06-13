@@ -5,7 +5,6 @@ services:
     build: .
     image: demsking/oremi-ohunerin:test
     volumes:
-      # - ~/.cache/tensorflow/models/yamnet.tflite:/var/oremi/models/yamnet.tflite:ro
       - ~/.config/oremi/ssl:/etc/ssl:ro
     ports:
       - 35023:5023
@@ -25,9 +24,3 @@ services:
         - action: rebuild
           path: bin/
           target: /opt/oremi/bin
-        - action: sync+restart
-          path: models
-          target: /var/oremi/models
-        - action: sync+restart
-          path: config.json
-          target: /opt/oremi/config.json

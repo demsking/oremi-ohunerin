@@ -2,7 +2,7 @@ APP_NAME := $(shell python metadata.py name)
 APP_VERSION := $(shell python metadata.py version)
 IMAGE_NAME := demsking/$(APP_NAME)
 
-TSLITE_FILE := ./models/yamnet.tflite
+TSLITE_FILE := ./ohunerin/models/yamnet.tflite
 
 .PHONY: all clean build dist image model publish-image test
 
@@ -14,7 +14,7 @@ stop:
 	tmux kill-session -t oremi-ohunerin
 
 clean:
-	rm -rf dist/ build/ models/*.tflite
+	rm -rf dist/ build/ ohunerin/models/*.tflite
 
 $(TSLITE_FILE):
 	./scripts/install-model.sh $@
@@ -51,7 +51,7 @@ update:
 	uv lock --upgrade
 	devbox run pre-commit autoupdate
 
-package:
+package: model
 	rm -rf dist/*
 	uv build --wheel
 	twine check dist/*

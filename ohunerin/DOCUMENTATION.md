@@ -23,11 +23,16 @@ Derived from the Yoruba term _"ohun erin"_, meaning _"sound detection"_, Ohuneri
 Use the official Docker image [`demsking/oremi-ohunerin`](https://hub.docker.com/r/demsking/oremi-ohunerin) to run Oremi Ohunerin:
 
 ```sh
+docker run -d -p 5023:5023 demsking/oremi-ohunerin
+```
+
+To run the container with a custom configuration file (`config.json`), mount the file inside the container and pass it via the `--config` option:
+
+```sh
 docker run -d \
-  --name oremi-ohunerin \
   -p 5023:5023 \
-  -v ~/.cache/tensorflow/models/yamnet.tflite:/var/oremi/models/yamnet.tflite \
-  demsking/oremi-ohunerin
+  -v /path/to/custom/config.json:/var/oremi/config.json:ro \
+  demsking/oremi-ohunerin --config /var/oremi/config.json
 ```
 
 Once deployed, the documentation site can be accessed at `http://localhost:5023/docs`.
@@ -36,23 +41,15 @@ Once deployed, the documentation site can be accessed at `http://localhost:5023/
 
 If you prefer installing Oremi Ohunerin directly:
 
-1. Download the installation script to fetch the YAMNet model:
-
-   ```sh
-   curl -O https://gitlab.com/demsking/oremi-ohunerin/-/raw/main/scripts/install-model.sh
-   chmod +x install-model.sh
-   ./install-model.sh ~/.cache/tensorflow/models/yamnet.tflite
-   ```
-
-2. Install the package from PyPI:
+1. Install the package from PyPI:
 
    ```sh
    pip install oremi-ohunerin
    ```
 
-3. Start the server:
+2. Start the server:
    ```sh
-   oremi-ohunerin --model ~/.cache/tensorflow/models/yamnet.tflite
+   oremi-ohunerin
    ```
 
 ---

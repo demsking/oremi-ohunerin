@@ -23,13 +23,6 @@ def parse_arguments():
   parser = argparse.ArgumentParser(prog=APP_NAME, description=APP_DESCRIPTION)
 
   parser.add_argument(
-    '-m', '--model',
-    type=str,
-    required=True,
-    help='Path to the TensorFlow Lite model filename (required).'
-  )
-
-  parser.add_argument(
     '-t', '--threshold',
     type=float,
     default=0.1,
@@ -39,8 +32,8 @@ def parse_arguments():
   parser.add_argument(
     '-c', '--config',
     type=str,
-    default='config.json',
-    help='Path to the configuration file (default: config.json).'
+    default=None,
+    help='Path to the configuration file.'
   )
 
   parser.add_argument(

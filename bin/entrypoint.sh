@@ -18,6 +18,4 @@ set -e
 oremi-ohunerin \
   --host 0.0.0.0 \
   --port 5023 \
-  --threshold $THRESHOLD \
-  --config /opt/oremi/config.json \
-  --model /var/oremi/models/yamnet.tflite $@
+  --threshold $THRESHOLD $@
