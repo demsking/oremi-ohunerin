@@ -54,6 +54,7 @@ dev = [
   "python-slugify>=8.0.4",
   "reorder-python-imports>=3.14.0",
   "sounddevice>=0.5.5",
+  "twine>=6.2.0",
 ]
 
 [tool.hatch.build.targets.wheel]
