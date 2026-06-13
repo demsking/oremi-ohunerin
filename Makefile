@@ -92,3 +92,4 @@ image-test:
 	  --tag $(IMAGE_NAME):test
 
 publish: image pypi
+	git push --tags origin main
