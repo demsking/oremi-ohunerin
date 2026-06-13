@@ -615,6 +615,27 @@
           }
         ]
       }
+    },
+    "/": {
+      "get": {
+        "summary": "Get Server Information",
+        "description": "Returns details about the server, including name, version, configured detection threshold, and supported wake words by language.",
+        "responses": {
+          "200": {
+            "description": "Server information retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerInfo"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Oremi Ohunerin Endpoints"
+        ]
+      }
     }
   },
   "components": {
@@ -774,6 +795,54 @@
           "model",
           "dictionary",
           "discriminants",
+          "wakewords"
+        ]
+      },
+      "ServerInfo": {
+        "type": "object",
+        "description": "Information about the running server.",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The name of the application.",
+            "example": "oremi-ohunerin"
+          },
+          "version": {
+            "type": "string",
+            "description": "The version of the running server.",
+            "example": "3.0.0"
+          },
+          "threshold": {
+            "type": "number",
+            "format": "float",
+            "description": "The configured detection threshold for filtering predictions.",
+            "example": 0.1
+          },
+          "wakewords": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "description": "Map of supported language codes to their default wake words.",
+            "example": {
+              "fr": [
+                "oremi",
+                "dikomlam"
+              ],
+              "en": [
+                "oremi",
+                "dikomlam"
+              ]
+            }
+          }
+        },
+        "required": [
+          "name",
+          "version",
+          "threshold",
           "wakewords"
         ]
       }

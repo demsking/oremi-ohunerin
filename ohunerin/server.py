@@ -42,12 +42,12 @@ from .package import APP_VERSION
 from .wakeword import WakewordEngine
 
 __all__ = [
-  'DetectedSound',
-  'DetectorConsumer',
-  'DetectorEngine',
-  'Server',
-  'WakewordEngine',
-  'WakewordSetting',
+  "DetectedSound",
+  "DetectorConsumer",
+  "DetectorEngine",
+  "Server",
+  "WakewordEngine",
+  "WakewordSetting",
 ]
 
 
@@ -55,10 +55,10 @@ SERVER_NAME = f"{APP_NAME}/{APP_VERSION}"
 MAX_REASON_LENGTH = 123
 
 BASE_DIR = os.path.dirname(__file__)
-DOC_DIR = os.path.join(BASE_DIR, 'doc')
-DOCUMENTATION_PATH = os.path.join(BASE_DIR, 'DOCUMENTATION.md')
-OPENAPI_PATH = os.path.join(DOC_DIR, 'openapi.json')
-INDEX_PATH = os.path.join(DOC_DIR, 'index.html')
+DOC_DIR = os.path.join(BASE_DIR, "doc")
+DOCUMENTATION_PATH = os.path.join(BASE_DIR, "DOCUMENTATION.md")
+OPENAPI_PATH = os.path.join(DOC_DIR, "openapi.json")
+INDEX_PATH = os.path.join(DOC_DIR, "index.html")
 
 
 class Server(WebSocketServer):
@@ -85,7 +85,7 @@ class Server(WebSocketServer):
     self.config: dict[str, WakewordSetting] = {}
     self.num_threads = os.cpu_count() or 1
     self.threshold = threshold
-    self.model_path = model_path or os.path.join(os.path.dirname(__file__), 'models', 'yamnet.tflite')
+    self.model_path = model_path or os.path.join(os.path.dirname(__file__), "models", "yamnet.tflite")
 
     self.pool = concurrent.futures.ThreadPoolExecutor(
       max_workers=self.num_threads,
@@ -99,59 +99,80 @@ class Server(WebSocketServer):
     self, path: str, request_headers: websockets.datastructures.Headers
   ) -> tuple[http.HTTPStatus, list[tuple[str, str]], bytes] | None:
     """Process incoming HTTP requests before WebSocket handshake, serving documentation and OpenAPI files."""
-    clean_path = path.split('?')[0]
+    clean_path = path.split("?")[0]
 
-    if clean_path == '/openapi.json':
+    if clean_path == "/openapi.json":
       self.logger.info(f"Serving OpenAPI JSON for HTTP request from {request_headers.get('User-Agent', 'unknown')}")
-      body = json.dumps(self.get_openapi_spec(), ensure_ascii=False).encode('utf-8')
+      body = json.dumps(self.get_openapi_spec(), ensure_ascii=False).encode("utf-8")
       headers = [
-        ('Content-Type', 'application/json; charset=utf-8'),
-        ('Content-Length', str(len(body))),
-        ('Access-Control-Allow-Origin', '*'),
+        ("Content-Type", "application/json; charset=utf-8"),
+        ("Content-Length", str(len(body))),
+        ("Access-Control-Allow-Origin", "*"),
       ]
 
       return http.HTTPStatus.OK, headers, body
 
-    if clean_path == '/docs':
+    if clean_path == "/docs":
       self.logger.info(f"Serving API documentation HTML for HTTP request from {request_headers.get('User-Agent', 'unknown')}")
       html_content = self.get_index_html()
-      body = html_content.encode('utf-8')
+      body = html_content.encode("utf-8")
       headers = [
-        ('Content-Type', 'text/html; charset=utf-8'),
-        ('Content-Length', str(len(body))),
+        ("Content-Type", "text/html; charset=utf-8"),
+        ("Content-Length", str(len(body))),
       ]
 
       return http.HTTPStatus.OK, headers, body
 
-    if clean_path == '/ws':
+    if clean_path == "/":
+      self.logger.info(f"Serving server info for HTTP request from {request_headers.get('User-Agent', 'unknown')}")
+
+      body = json.dumps(self.get_server_info(), ensure_ascii=False).encode("utf-8")
+      headers = [
+        ("Content-Type", "application/json; charset=utf-8"),
+        ("Content-Length", str(len(body))),
+        ("Access-Control-Allow-Origin", "*"),
+      ]
+
+      return http.HTTPStatus.OK, headers, body
+
+    if clean_path == "/ws":
       return None
 
     # Reject any other path with 404 Not Found
-    body = b'Not Found'
+    body = b"Not Found"
     headers = [
-      ('Content-Type', 'text/plain; charset=utf-8'),
-      ('Content-Length', str(len(body))),
+      ("Content-Type", "text/plain; charset=utf-8"),
+      ("Content-Length", str(len(body))),
     ]
     return http.HTTPStatus.NOT_FOUND, headers, body
 
+  def get_server_info(self) -> dict:
+    """Return information about the server."""
+    return {
+      "name": APP_NAME,
+      "version": APP_VERSION,
+      "threshold": self.threshold,
+      "wakewords": {lang: [w.word for w in setting.wakewords] for lang, setting in self.config.items()},
+    }
+
   def get_documentation(self) -> str:
     """Read the DOCUMENTATION.md markdown content from the project root."""
-    with open(DOCUMENTATION_PATH, encoding='utf-8') as f:
+    with open(DOCUMENTATION_PATH, encoding="utf-8") as f:
       return f.read()
 
   def get_openapi_spec(self) -> dict:
     """Generate the OpenAPI specification by loading the external openapi.json template."""
-    with open(OPENAPI_PATH, encoding='utf-8') as f:
+    with open(OPENAPI_PATH, encoding="utf-8") as f:
       spec = json.load(f)
 
-    spec['info']['description'] = self.get_documentation()
-    spec['info']['version'] = APP_VERSION
+    spec["info"]["description"] = self.get_documentation()
+    spec["info"]["version"] = APP_VERSION
 
     return spec
 
   def get_index_html(self) -> str:
     """Generate the Scalar HTML markup by loading the external index.html template."""
-    with open(INDEX_PATH, encoding='utf-8') as index_file:
+    with open(INDEX_PATH, encoding="utf-8") as index_file:
       return index_file.read()
 
   @property
@@ -161,7 +182,7 @@ class Server(WebSocketServer):
   @staticmethod
   def truncate_reason(reason: str) -> str:
     if len(reason) > MAX_REASON_LENGTH:
-      return reason[: MAX_REASON_LENGTH - 3] + '...'
+      return reason[: MAX_REASON_LENGTH - 3] + "..."
     return reason
 
   def _create_ssl_context(
@@ -190,13 +211,13 @@ class Server(WebSocketServer):
     self.logger.info(f"Loading wakeword config from {config_file}")
     config_dir = os.path.dirname(os.path.abspath(config_file))
 
-    with open(config_file, encoding='utf-8') as file:
+    with open(config_file, encoding="utf-8") as file:
       config_content = json.load(file)
 
       if isinstance(config_content, dict):
         for language, locale_config in config_content.items():
           # Resolve relative model and dictionary paths relative to the config file location
-          for path_key in ('model', 'dictionary'):
+          for path_key in ("model", "dictionary"):
             if path_key in locale_config:
               p = locale_config[path_key]
               if not os.path.isabs(p):
@@ -205,7 +226,7 @@ class Server(WebSocketServer):
           self.logger.info(f'Loading wakeword config for language "{language}": {locale_config["wakewords"]}')
           self.config[language] = WakewordSetting.model_validate(locale_config)
       else:
-        raise ValueError('Invalid config file format: expected a dictionary')
+        raise ValueError("Invalid config file format: expected a dictionary")
 
   def _handle_connection_close(
     self,
@@ -241,32 +262,32 @@ class Server(WebSocketServer):
     query_params = parse_qs(parsed_url.query)
 
     features = []
-    for f in query_params.get('features', []):
-      features.extend([x.strip() for x in f.split(',') if x.strip()])
+    for f in query_params.get("features", []):
+      features.extend([x.strip() for x in f.split(",") if x.strip()])
 
-    language = query_params.get('language', [''])[0]
+    language = query_params.get("language", [""])[0]
 
     wakeword_engine: WakewordEngine | None = None
     detector_consumer: DetectorConsumer | None = None
 
     for feature_name in features:
-      if feature_name == 'wakeword-detection':
+      if feature_name == "wakeword-detection":
         if not language:
-          raise ValueError('language query parameter is required for wakeword-detection')
+          raise ValueError("language query parameter is required for wakeword-detection")
 
         wakewords = []
-        if 'wakewords' in query_params:
+        if "wakewords" in query_params:
           try:
-            wakewords_data = json.loads(query_params['wakewords'][0])
+            wakewords_data = json.loads(query_params["wakewords"][0])
             wakewords = TypeAdapter(list[DictionaryEntry]).validate_python(wakewords_data)
           except Exception as err:
             self.logger.error(f"Failed to parse wakewords: {err}")
             raise ValueError(f"Invalid wakewords: {err}") from err
 
         discriminants = []
-        if 'discriminants' in query_params:
+        if "discriminants" in query_params:
           try:
-            discriminants_data = json.loads(query_params['discriminants'][0])
+            discriminants_data = json.loads(query_params["discriminants"][0])
             discriminants = TypeAdapter(list[DictionaryEntry]).validate_python(discriminants_data)
           except Exception as err:
             self.logger.error(f"Failed to parse discriminants: {err}")
@@ -283,29 +304,29 @@ class Server(WebSocketServer):
           wakeword_setting.wakewords += wakewords
           wakeword_setting.discriminants += discriminants
         else:
-          self.logger.info('Initializing wakeword detection feature')
+          self.logger.info("Initializing wakeword detection feature")
           if language not in self.config:
             raise ValueError(f"Unsupported language: {language}")
           wakeword_setting = self.config[language]
 
         wakeword_engine = WakewordEngine(wakeword_setting, self.logger)
 
-      elif feature_name == 'sound-detection':
+      elif feature_name == "sound-detection":
         allowlist = []
-        if 'allowlist' in query_params:
-          val = query_params['allowlist'][0]
-          if val.startswith('['):
+        if "allowlist" in query_params:
+          val = query_params["allowlist"][0]
+          if val.startswith("["):
             try:
               allowlist = json.loads(val)
             except Exception:
               pass
           else:
-            allowlist = [x.strip() for x in val.split(',') if x.strip()]
+            allowlist = [x.strip() for x in val.split(",") if x.strip()]
 
         if allowlist:
           self.logger.info(f"Initializing sound detection feature and allowlist {', '.join(allowlist)}")
         else:
-          self.logger.info('Initializing sound detection feature')
+          self.logger.info("Initializing sound detection feature")
 
         detector = DetectorEngine(
           model=self.model_path,
@@ -340,7 +361,7 @@ class Server(WebSocketServer):
           sound, score = await self._loop.run_in_executor(self.pool, wakeword_engine.process_raw, chunk)  # type: ignore
 
           if sound:
-            await self._handle_detection_result(websocket, 'wakeword', sound, score)
+            await self._handle_detection_result(websocket, "wakeword", sound, score)
 
             if detector_consumer:
               detector_consumer.reset_buffer()
@@ -351,7 +372,7 @@ class Server(WebSocketServer):
           sound, score = detector_consumer.process_raw(chunk)  # type: ignore
 
           if sound:
-            await self._handle_detection_result(websocket, 'sound', sound, score)
+            await self._handle_detection_result(websocket, "sound", sound, score)
     except websockets.exceptions.ConnectionClosedOK as exception:
       self._handle_connection_close(websocket, exception)
     except Exception as exception:
@@ -372,7 +393,7 @@ class Server(WebSocketServer):
   async def _handle_messages(self, websocket: WebSocketConnection) -> None:
     parsed_url = urlparse(websocket.path)
 
-    if parsed_url.path != '/ws':
+    if parsed_url.path != "/ws":
       error_message = f"Only '/ws' endpoint is supported, but received '{parsed_url.path}'"
       self.logger.error(error_message)
       await websocket.close(code=1008, reason=Server.truncate_reason(error_message))
@@ -389,7 +410,7 @@ class Server(WebSocketServer):
     if wakeword_engine is None and detector_consumer is None:
       await websocket.close(
         websockets.legacy.protocol.CloseCode.INVALID_DATA,
-        'No feature provided in the query parameters, which is required to start listening',
+        "No feature provided in the query parameters, which is required to start listening",
       )
       return
 
