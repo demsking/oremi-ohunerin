@@ -22,10 +22,10 @@ interaction.
 - [Environment Variables](#environment-variables)
 - [Starting Ohunerin with Certificates](#starting-ohunerin-with-certificates)
 - [Oremi Ohunerin Protocol](#oremi-ohunerin-protocol)
-  * [Initialization](#initialization)
-  * [Sound Detection](#sound-detection)
-  * [Connection Closure Codes](#connection-closure-codes)
-  * [Example Implementation](#example-implementation)
+  - [Initialization](#initialization)
+  - [Sound Detection](#sound-detection)
+  - [Connection Closure Codes](#connection-closure-codes)
+  - [Example Implementation](#example-implementation)
 - [Oremi Ohunerin Listener](#oremi-ohunerin-listener)
 - [Contribute](#contribute)
 - [Versioning](#versioning)
@@ -111,7 +111,7 @@ Docker containers:
 
 | Variable  | Description   | Default Value |
 | --------- | ------------- | ------------- |
-| LOG_LEVEL | Logging level | "info"        |
+| LOG_LEVEL | Logging level | "INFO"        |
 | LOG_FILE  | Log file path |               |
 
 ## Starting Ohunerin with Certificates
@@ -173,7 +173,7 @@ Additionally, if your private key is password-protected, you can use the
 
 ## Oremi Ohunerin Protocol
 
-Oremi Ohunerin websocket server listens on port `5023` for incoming connections
+Oremi Ohunerin websocket server listens on port `5023` at the `/ws` endpoint for incoming connections
 from clients, which can continuously stream audio data. Once connected, clients
 can send audio data in `bytes`, and the server will process it in real-time,
 detecting sounds and sending JSON messages back to the client when a sound is

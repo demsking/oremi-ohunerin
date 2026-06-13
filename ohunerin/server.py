@@ -1,4 +1,4 @@
-# Copyright 2023-2025 Sébastien Demanou. All Rights Reserved.
+# Copyright 2023-2026 Sébastien Demanou. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -265,6 +265,12 @@ class Server(WebSocketServer):
         del wakeword_engine
 
   async def _handle_messages(self, websocket: WebSocketConnection) -> None:
+    if websocket.path != '/ws':
+      error_message = f"Only '/ws' endpoint is supported, but received '{websocket.path}'"
+      self.logger.error(error_message)
+      await websocket.close(code=1008, reason=Server.truncate_reason(error_message))
+      return
+
     try:
       await self._send_init_message(websocket)
       await self._handle_audio_data(websocket)

@@ -45,8 +45,9 @@ class CannotConnect(HomeAssistantError):
 
 async def async_get_languages(url: str) -> list[str]:
   """Fetch available languages from the Ohunerin server via WebSocket."""
+  ws_url = f'{url.rstrip("/")}/ws' if not url.endswith('/ws') else url
   try:
-    async with websockets.connect(url, open_timeout=5) as websocket:
+    async with websockets.connect(ws_url, open_timeout=5) as websocket:
       # The server immediately sends the ServerInitMessage
       msg = await websocket.recv()
       data = json.loads(msg)
