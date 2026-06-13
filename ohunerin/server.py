@@ -261,12 +261,15 @@ class Server(WebSocketServer):
     parsed_url = urlparse(path)
     query_params = parse_qs(parsed_url.query)
 
+    if 'features' not in query_params:
+      raise ValueError('features query parameter is required')
+
     features = []
     for f in query_params.get('features', []):
       features.extend([x.strip() for x in f.split(',') if x.strip()])
 
     if not features:
-      features = ['wakeword-detection', 'sound-detection']
+      raise ValueError('At least one feature must be specified in the features query parameter')
 
     language = query_params.get('language', [''])[0]
 

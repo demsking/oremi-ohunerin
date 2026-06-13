@@ -28,11 +28,11 @@
           {
             "name": "features",
             "in": "query",
-            "required": false,
-            "description": "Comma-separated list of features to enable. Defaults to enabling both features (`wakeword-detection`, `sound-detection`) if omitted. Supported values: `wakeword-detection`, `sound-detection`.",
+            "required": true,
+            "description": "Comma-separated list of features to enable. Supported values: `wakeword-detection`, `sound-detection`.",
             "schema": {
               "type": "string",
-              "default": "wakeword-detection,sound-detection"
+              "example": "wakeword-detection,sound-detection"
             }
           },
           {
@@ -680,13 +680,13 @@
           "sound": {
             "type": "string",
             "description": "The name of the detected sound or wake word.",
-            "example": "oremi"
+            "example": "cough"
           },
           "score": {
             "type": "number",
             "format": "float",
             "description": "The confidence score of the detection.",
-            "example": 0.85
+            "example": 0.6677674
           },
           "datetime": {
             "type": "string",
