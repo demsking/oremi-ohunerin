@@ -24,17 +24,19 @@
       Scalar.createApiReference('#app', {
         url: '/openapi.json',
         title: 'Oremi Ohunerin Documentation',
-        agent: {
-          disabled: true,
-        },
+        expandAllModelSections: true,
+        defaultOpenAllTags: true,
+        hideTestRequestButton: window.location.hostname !== 'localhost',
         hideClientButton: true,
-        expandAllModelSections: false,
         showSidebar: true,
         showDeveloperTools: 'localhost',
+        showToolbar: 'localhost',
         operationTitleSource: 'summary',
         theme: 'default',
         persistAuth: false,
         telemetry: false,
+        externalUrls: {},
+        default: false,
         layout: 'modern',
         isEditable: false,
         isLoading: false,
@@ -44,11 +46,15 @@
         showOperationId: false,
         hideDarkModeToggle: false,
         withDefaultFonts: true,
-        defaultOpenAllTags: false,
+        defaultOpenFirstTag: true,
         expandAllResponses: false,
         orderSchemaPropertiesBy: 'alpha',
         orderRequiredPropertiesFirst: true,
-        default: false,
+        agent: {
+          disabled: true,
+        },
+        modelsSectionLabel: 'Models',
+        slug: 'oremi-ohunerin-documentation',
       });
     </script>
   </body>
