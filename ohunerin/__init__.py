@@ -1,4 +1,4 @@
-# Copyright 2023-2025 Sébastien Demanou. All Rights Reserved.
+# Copyright 2023-2026 Sébastien Demanou. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ from .args import parse_arguments
 from .logger import logger
 from .package import APP_NAME
 from .package import APP_VERSION
-from .server import ClientInitMessage
 from .server import DetectedSound
 from .server import DetectorConsumer
 from .server import DetectorEngine
@@ -28,7 +27,6 @@ from .server import WakewordEngine
 from .server import WakewordSetting
 
 __all__ = [
-  'ClientInitMessage',
   'DetectedSound',
   'DetectorConsumer',
   'DetectorEngine',

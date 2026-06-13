@@ -106,35 +106,15 @@ class OhunerinWakeWordEntity(wake_word.WakeWordDetectionEntity):
     language = self._language
 
     # Build WebSocket URL
-    ws_url = f'{url.rstrip("/")}/ws' if not url.endswith('/ws') else url
+    base_url = url.rstrip('/')
+    if base_url.endswith('/ws'):
+      ws_url = f'{base_url}?language={language}&features=wakeword-detection'
+    else:
+      ws_url = f'{base_url}/ws?language={language}&features=wakeword-detection'
 
     try:
       async with websockets.connect(ws_url, open_timeout=5) as websocket:
-        # 1. Read server init message
-        server_init_msg = await websocket.recv()
-        server_init = json.loads(server_init_msg)
-        _LOGGER.debug('Received Ohunerin server init: %s', server_init)
-
-        # 2. Send client init message
-        client_init = {
-          'type': 'init',
-          'features': [
-            {
-              'name': 'wakeword-detection',
-              'language': language,
-            }
-          ]
-        }
-        await websocket.send(json.dumps(client_init))
-
-        # 3. Read server ready message
-        ready_msg = await websocket.recv()
-        ready_data = json.loads(ready_msg)
-        if ready_data.get('type') != 'ready':
-          _LOGGER.error('Oremi Ohunerin server not ready: %s', ready_data)
-          return None
-
-        # 4. Stream audio chunks and monitor detection response concurrently
+        # Stream audio chunks and monitor detection response concurrently
         result_queue = asyncio.Queue()
 
         async def read_responses():

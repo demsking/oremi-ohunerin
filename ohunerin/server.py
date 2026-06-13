@@ -18,20 +18,21 @@ import json
 import logging
 import os
 import traceback
+from urllib.parse import parse_qs
+from urllib.parse import urlparse
 
 import websockets.exceptions
 import websockets.legacy.protocol
 import websockets.legacy.server
 from oremi_core.wsserver import WebSocketConnection
 from oremi_core.wsserver import WebSocketServer
+from pydantic import TypeAdapter
 
 from .detector import DetectorConsumer
 from .detector import DetectorEngine
-from .models import ClientInitMessage
 from .models import create_detected_sound_object
 from .models import DetectedSound
-from .models import ServerInitMessage
-from .models import ServerReadyMessage
+from .models import DictionaryEntry
 from .models import SoundType
 from .models import WakewordSetting
 from .package import APP_NAME
@@ -39,13 +40,12 @@ from .package import APP_VERSION
 from .wakeword import WakewordEngine
 
 __all__ = [
-  'ClientInitMessage',
-  'DetectedSound',
-  'DetectorConsumer',
-  'DetectorEngine',
-  'Server',
-  'WakewordEngine',
-  'WakewordSetting',
+  "DetectedSound",
+  "DetectorConsumer",
+  "DetectorEngine",
+  "Server",
+  "WakewordEngine",
+  "WakewordSetting",
 ]
 
 
@@ -93,7 +93,7 @@ class Server(WebSocketServer):
   @staticmethod
   def truncate_reason(reason: str) -> str:
     if len(reason) > MAX_REASON_LENGTH:
-      return reason[: MAX_REASON_LENGTH - 3] + '...'
+      return reason[: MAX_REASON_LENGTH - 3] + "..."
     return reason
 
   def _create_ssl_context(
@@ -121,7 +121,7 @@ class Server(WebSocketServer):
   def _load_config_file(self, config_file: str):
     self.logger.info(f"Loading wakeword config from {config_file}")
 
-    with open(config_file, encoding='utf-8') as file:
+    with open(config_file, encoding="utf-8") as file:
       config_content = json.load(file)
 
       if isinstance(config_content, dict):
@@ -129,7 +129,7 @@ class Server(WebSocketServer):
           self.logger.info(f'Loading wakeword config for language "{language}": {locale_config["wakewords"]}')
           self.config[language] = WakewordSetting.model_validate(locale_config)
       else:
-        raise ValueError('Invalid config file format: expected a dictionary')
+        raise ValueError("Invalid config file format: expected a dictionary")
 
   def _handle_connection_close(
     self,
@@ -160,67 +160,96 @@ class Server(WebSocketServer):
   ):
     return super()._process_request(websocket, message)
 
-  def _parse_client_init_message(self, request: ClientInitMessage) -> tuple[WakewordEngine | None, DetectorConsumer | None]:
+  def _parse_query_params(self, path: str) -> tuple[WakewordEngine | None, DetectorConsumer | None]:
+    parsed_url = urlparse(path)
+    query_params = parse_qs(parsed_url.query)
+
+    features = []
+    for f in query_params.get("features", []):
+      features.extend([x.strip() for x in f.split(",") if x.strip()])
+
+    language = query_params.get("language", [""])[0]
+
     wakeword_engine: WakewordEngine | None = None
     detector_consumer: DetectorConsumer | None = None
 
-    for feature in request.features:
-      if feature.name == 'wakeword-detection':
-        if feature.wakewords:
+    for feature_name in features:
+      if feature_name == "wakeword-detection":
+        if not language:
+          raise ValueError("language query parameter is required for wakeword-detection")
+
+        wakewords = []
+        if "wakewords" in query_params:
+          try:
+            wakewords_data = json.loads(query_params["wakewords"][0])
+            wakewords = TypeAdapter(list[DictionaryEntry]).validate_python(wakewords_data)
+          except Exception as err:
+            self.logger.error(f"Failed to parse wakewords: {err}")
+            raise ValueError(f"Invalid wakewords: {err}") from err
+
+        discriminants = []
+        if "discriminants" in query_params:
+          try:
+            discriminants_data = json.loads(query_params["discriminants"][0])
+            discriminants = TypeAdapter(list[DictionaryEntry]).validate_python(discriminants_data)
+          except Exception as err:
+            self.logger.error(f"Failed to parse discriminants: {err}")
+            raise ValueError(f"Invalid discriminants: {err}") from err
+
+        if wakewords:
           self.logger.info(
-            f"Initializing wakeword detection feature with additional {feature.wakewords} and discriminants {feature.discriminants}"
+            f"Initializing wakeword detection feature with additional {wakewords} and discriminants {discriminants}"
           )
 
-          wakeword_setting = self.config[feature.language].copy()
-          wakeword_setting.wakewords += feature.wakewords
-          wakeword_setting.discriminants += feature.discriminants
+          if language not in self.config:
+            raise ValueError(f"Unsupported language: {language}")
+          wakeword_setting = self.config[language].copy()
+          wakeword_setting.wakewords += wakewords
+          wakeword_setting.discriminants += discriminants
         else:
-          self.logger.info('Initializing wakeword detection feature')
-          wakeword_setting = self.config[feature.language]
+          self.logger.info("Initializing wakeword detection feature")
+          if language not in self.config:
+            raise ValueError(f"Unsupported language: {language}")
+          wakeword_setting = self.config[language]
 
         wakeword_engine = WakewordEngine(wakeword_setting, self.logger)
-      elif feature.name == 'sound-detection':
-        if feature.allowlist:
-          self.logger.info(f"Initializing sound detection feature and allowlist {', '.join(feature.allowlist)}")
+
+      elif feature_name == "sound-detection":
+        allowlist = []
+        if "allowlist" in query_params:
+          val = query_params["allowlist"][0]
+          if val.startswith("["):
+            try:
+              allowlist = json.loads(val)
+            except Exception:
+              pass
+          else:
+            allowlist = [x.strip() for x in val.split(",") if x.strip()]
+
+        if allowlist:
+          self.logger.info(f"Initializing sound detection feature and allowlist {', '.join(allowlist)}")
         else:
-          self.logger.info('Initializing sound detection feature')
+          self.logger.info("Initializing sound detection feature")
 
         detector = DetectorEngine(
           model=self.model_path,
           score_threshold=self.threshold,
           num_threads=self.num_threads,
           logger=self.logger,
-          allowlist=feature.allowlist,
+          allowlist=allowlist,
         )
 
         detector_consumer = DetectorConsumer(detector, logger=self.logger)
 
     return wakeword_engine, detector_consumer
 
-  async def _handle_audio_data(self, websocket: WebSocketConnection) -> None:
-    try:
-      message = await websocket.recv()
-      request = ClientInitMessage.model_validate_json(message)
-      wakeword_engine, detector_consumer = self._parse_client_init_message(request)
-    except (ValueError, AttributeError, TypeError) as error:
-      error_message = f"Invalid Init Message: {message}. Error: {error}"
-      await websocket.close(code=1003, reason=Server.truncate_reason(error_message))
-      self.logger.error(error_message)
-
-      if self.verbose:
-        traceback.print_exc()
-
-      return
-
-    if wakeword_engine is None and detector_consumer is None:
-      await websocket.close(
-        websockets.legacy.protocol.CloseCode.INVALID_DATA,
-        'No feature provided in the init message, which is required to start listening',
-      )
-      return
-
-    self.logger.info(f"Connection from {websocket.remote_address} {websocket.request_headers['User-Agent']}")
-    await self._send_ready_message(websocket)
+  async def _handle_audio_data(
+    self,
+    websocket: WebSocketConnection,
+    wakeword_engine: WakewordEngine | None,
+    detector_consumer: DetectorConsumer | None,
+  ) -> None:
+    self.logger.info(f"Connection from {websocket.remote_address} {websocket.request_headers.get('User-Agent', '')}")
 
     started = False
 
@@ -235,7 +264,7 @@ class Server(WebSocketServer):
           sound, score = await self._loop.run_in_executor(self.pool, wakeword_engine.process_raw, chunk)  # type: ignore
 
           if sound:
-            await self._handle_detection_result(websocket, 'wakeword', sound, score)
+            await self._handle_detection_result(websocket, "wakeword", sound, score)
 
             if detector_consumer:
               detector_consumer.reset_buffer()
@@ -246,7 +275,7 @@ class Server(WebSocketServer):
           sound, score = detector_consumer.process_raw(chunk)  # type: ignore
 
           if sound:
-            await self._handle_detection_result(websocket, 'sound', sound, score)
+            await self._handle_detection_result(websocket, "sound", sound, score)
     except websockets.exceptions.ConnectionClosedOK as exception:
       self._handle_connection_close(websocket, exception)
     except Exception as exception:
@@ -265,32 +294,32 @@ class Server(WebSocketServer):
         del wakeword_engine
 
   async def _handle_messages(self, websocket: WebSocketConnection) -> None:
-    if websocket.path != '/ws':
-      error_message = f"Only '/ws' endpoint is supported, but received '{websocket.path}'"
+    parsed_url = urlparse(websocket.path)
+
+    if parsed_url.path != "/ws":
+      error_message = f"Only '/ws' endpoint is supported, but received '{parsed_url.path}'"
       self.logger.error(error_message)
       await websocket.close(code=1008, reason=Server.truncate_reason(error_message))
       return
 
     try:
-      await self._send_init_message(websocket)
-      await self._handle_audio_data(websocket)
+      wakeword_engine, detector_consumer = self._parse_query_params(websocket.path)
+    except Exception as exception:
+      error_message = f"Failed to parse query parameters: {exception}"
+      self.logger.error(error_message)
+      await websocket.close(code=1003, reason=Server.truncate_reason(error_message))
+      return
+
+    if wakeword_engine is None and detector_consumer is None:
+      await websocket.close(
+        websockets.legacy.protocol.CloseCode.INVALID_DATA,
+        "No feature provided in the query parameters, which is required to start listening",
+      )
+      return
+
+    try:
+      await self._handle_audio_data(websocket, wakeword_engine, detector_consumer)
     except Exception as exception:
       error_message = f"Unexpected error: {exception}"
       self.logger.error(error_message)
       await websocket.close(code=1003, reason=Server.truncate_reason(error_message))
-
-  async def _send_init_message(self, websocket: WebSocketConnection) -> None:
-    message = ServerInitMessage(
-      type='init',
-      server=SERVER_NAME,
-      available_languages=self.supported_languages,
-    )
-
-    await websocket.send(message.model_dump_json())
-
-  async def _send_ready_message(self, websocket: WebSocketConnection) -> None:
-    message = ServerReadyMessage(
-      type='ready',
-    )
-
-    await websocket.send(message.model_dump_json())

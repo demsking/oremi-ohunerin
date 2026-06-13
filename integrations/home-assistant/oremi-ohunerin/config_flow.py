@@ -15,7 +15,6 @@
 """Config flow for Oremi Ohunerin wake word integration."""
 from __future__ import annotations
 
-import json
 import logging
 from typing import Any
 
@@ -45,15 +44,15 @@ class CannotConnect(HomeAssistantError):
 
 async def async_get_languages(url: str) -> list[str]:
   """Fetch available languages from the Ohunerin server via WebSocket."""
-  ws_url = f'{url.rstrip("/")}/ws' if not url.endswith('/ws') else url
+  base_url = url.rstrip('/')
+  ws_url = f"{base_url}/ws" if not base_url.endswith('/ws') else base_url
+  ws_url = f"{ws_url}?features=wakeword-detection&language=fr"
+
   try:
-    async with websockets.connect(ws_url, open_timeout=5) as websocket:
-      # The server immediately sends the ServerInitMessage
-      msg = await websocket.recv()
-      data = json.loads(msg)
-      return data.get('available_languages', FALLBACK_LANGUAGES)
+    async with websockets.connect(ws_url, open_timeout=5):
+      return FALLBACK_LANGUAGES
   except Exception as err:
-    _LOGGER.error('Error fetching languages from Ohunerin server at %s: %s', url, err)
+    _LOGGER.error('Error connecting to Ohunerin server at %s: %s', url, err)
     raise CannotConnect from err
 
 
@@ -72,12 +71,16 @@ class OhunerinConfigFlow(ConfigFlow, domain=DOMAIN):
     errors = {}
     if user_input is not None:
       url = user_input[CONF_URL].rstrip('/')
+
       try:
         languages = await async_get_languages(url)
+
         if not languages:
           languages = FALLBACK_LANGUAGES
+
         self._url = url
         self._languages = languages
+
         return await self.async_step_language_settings()
       except CannotConnect:
         errors['base'] = 'cannot_connect'
@@ -87,15 +90,18 @@ class OhunerinConfigFlow(ConfigFlow, domain=DOMAIN):
 
     return self.async_show_form(
       step_id='user',
-      data_schema=vol.Schema({
-        vol.Required(CONF_URL, default=DEFAULT_URL): str,
-      }),
+      data_schema=vol.Schema(
+        {
+          vol.Required(CONF_URL, default=DEFAULT_URL): str,
+        }
+      ),
       errors=errors,
     )
 
   async def async_step_language_settings(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
     """Handle the second step (Language selection)."""
     errors = {}
+
     if user_input is not None:
       return self.async_create_entry(
         title=f"Oremi Ohunerin ({self._url})",
@@ -111,9 +117,11 @@ class OhunerinConfigFlow(ConfigFlow, domain=DOMAIN):
 
     return self.async_show_form(
       step_id='language_settings',
-      data_schema=vol.Schema({
-        vol.Required(CONF_LANGUAGE, default=default_lang): vol.In(lang_options),
-      }),
+      data_schema=vol.Schema(
+        {
+          vol.Required(CONF_LANGUAGE, default=default_lang): vol.In(lang_options),
+        }
+      ),
       errors=errors,
     )
 
@@ -137,15 +145,14 @@ class OhunerinOptionsFlowHandler(OptionsFlow):
       return self.async_create_entry(title='', data=user_input)
 
     url = self.config_entry.data.get(CONF_URL, DEFAULT_URL)
+
     try:
       languages = await async_get_languages(url)
     except Exception:
       languages = FALLBACK_LANGUAGES
 
     lang_list = sorted(languages) if languages else FALLBACK_LANGUAGES
-    current_language = self.config_entry.options.get(
-      CONF_LANGUAGE, self.config_entry.data.get(CONF_LANGUAGE, DEFAULT_LANGUAGE)
-    )
+    current_language = self.config_entry.options.get(CONF_LANGUAGE, self.config_entry.data.get(CONF_LANGUAGE, DEFAULT_LANGUAGE))
 
     if current_language not in lang_list:
       lang_list.append(current_language)
@@ -155,7 +162,9 @@ class OhunerinOptionsFlowHandler(OptionsFlow):
 
     return self.async_show_form(
       step_id='init',
-      data_schema=vol.Schema({
-        vol.Required(CONF_LANGUAGE, default=current_language): vol.In(lang_options),
-      }),
+      data_schema=vol.Schema(
+        {
+          vol.Required(CONF_LANGUAGE, default=current_language): vol.In(lang_options),
+        }
+      ),
     )

@@ -1,4 +1,4 @@
-# Copyright 2023-2025 Sébastien Demanou. All Rights Reserved.
+# Copyright 2023-2026 Sébastien Demanou. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -57,21 +57,6 @@ class WakewordDetectionFeature(BaseModel):
 class SoundDetectionFeature(BaseModel):
   name: Literal['sound-detection']
   allowlist: list[str] = Field(default_factory=list)
-
-
-class ClientInitMessage(BaseModel):
-  type: Literal['init']
-  features: list[WakewordDetectionFeature | SoundDetectionFeature]
-
-
-class ServerInitMessage(BaseModel):
-  type: Literal['init']
-  server: str
-  available_languages: list[str]
-
-
-class ServerReadyMessage(BaseModel):
-  type: Literal['ready']
 
 
 class WakewordSetting(BaseModel):

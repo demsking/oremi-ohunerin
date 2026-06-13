@@ -179,61 +179,28 @@ can send audio data in `bytes`, and the server will process it in real-time,
 detecting sounds and sending JSON messages back to the client when a sound is
 recognized.
 
-The protocol involves an initialization step where the client provides essential
-details such as the number of audio channels, sample rate, block size, language,
-and features to enable. Once the session is initialized, the client can
-continuously stream audio data to the server. The server processes the audio in
-real-time and sends JSON messages back to the client when it detects specific
-sounds, such as wake words or predefined songs.
+The protocol initializes the session by using query parameters on the connection URL (`/ws`).
+Once connected, the client can immediately start streaming audio data to the server.
+The server processes the audio in real-time and sends JSON messages back to the client
+when it detects specific sounds, such as wake words or predefined sounds.
 
-The section outlines the message structures, initialization process, sound
-detection mechanism, and possible connection closure codes. Developers can use
-this protocol documentation as a reference to interact with the server and
-build their applications accordingly.
+This section outlines the query parameters, sound detection mechanism, and possible connection closure codes.
 
 ### Initialization
 
-**1. Client**
+**Connecting with Query Parameters**
 
-When a client establishes a connection, it first waits for the server's
-initialization message:
+Clients specify the wanted features, language, and other optional settings as query parameters in the connection URL:
 
-```py
-server_init_message = await websocket.recv()
-print(server_init_message)
+- `features`: Comma-separated list of features to enable. Supported values: `wakeword-detection`, `sound-detection`. (Required to start listening)
+- `language`: Target language code. Supported values: `fr`, `en`. (Required for `wakeword-detection`)
+- `wakewords`: JSON array of custom wake words dictionary entries. (Optional)
+- `discriminants`: JSON array of custom discriminants dictionary entries. (Optional)
+- `allowlist`: Comma-separated list (or JSON array) of sounds to allow for `sound-detection`. (Optional)
+
+**Example Connection URL:**
 ```
-
-This message contains the server's version and a list of supported models:
-
-```json
-{
-  "type": "init",
-  "server": "oremi-andika/2.0.0b9",
-  "available_languages": ["fr", "en"]
-}
-```
-
-Once received, the client sends an initial JSON initiation message to the
-server:
-
-```json
-{
-  "type": "init",
-  "language": "fr",
-  "features": [{ "name": "wakeword-detection" }, { "name": "sound-detection" }]
-}
-```
-
-The client then waits for the server's readiness message.
-
-**2. Server**
-
-The server then sends ready message:
-
-```json
-{
-  "type": "ready"
-}
+ws://localhost:5023/ws?features=wakeword-detection,sound-detection&language=fr
 ```
 
 ### Sound Detection

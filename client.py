@@ -99,7 +99,38 @@ async def main():
     list_input_devices()
     return
 
-  uri = f"wss://{args.host}:{args.port}/ws" if args.cert_file else f"ws://{args.host}:{args.port}/ws"
+  import urllib.parse
+
+  params = {
+    'language': args.language,
+    'features': 'wakeword-detection,sound-detection',
+    'wakewords': json.dumps([
+      {'word': 'alexa', 'phones': ['aa ll ei kk ss aa']},
+      {'word': 'ok google', 'phones': ['oh k eh g uw g ah l']},
+    ]),
+    'discriminants': json.dumps([
+      {'word': 'alex', 'phones': ['aa ll ai kk ss']},
+      {'word': 'google', 'phones': ['g uw g ah l']},
+    ]),
+    'allowlist': ','.join([
+      'Shout',  # Cri
+      'Bellows',  # Sonner
+      'Children shouting',  # Cris d'enfants
+      'Laughter',  # Rire
+      'Baby laughter',  # Rire de bébé
+      'Crying, sobbing',  # Pleurer, sangloter
+      'Baby cry, infant cry',  # Cri de bébé, pleurs d'enfant
+      'Whistling',  # Siffler
+      'Wheeze',  # Wheeze
+      'Snoring',  # Ronfler
+      'Cough',  # Tousserq
+      'Sneeze',  # Éternuer
+      'Burping',  # Roter
+      'Hiccup',  # Hoqueter
+    ])
+  }
+  query_string = urllib.parse.urlencode(params)
+  uri = f"wss://{args.host}:{args.port}/ws?{query_string}" if args.cert_file else f"ws://{args.host}:{args.port}/ws?{query_string}"
   stream = sd.RawInputStream(
     dtype='int16',
     samplerate=16000,
@@ -133,53 +164,6 @@ async def main():
     loop.add_signal_handler(signal.SIGTERM, stop_recording)
     loop.add_signal_handler(signal.SIGINT, lambda: loop.create_task(websocket.close(), name='SIGINT Signal Task'))
     loop.add_signal_handler(signal.SIGTERM, lambda: loop.create_task(websocket.close(), name='SIGTERM Signal Task'))
-
-    logger.info('Waiting server init message')
-    server_init_message = await websocket.recv()
-    logger.info(server_init_message)
-
-    logger.info('Sending init message')
-    await websocket.send(
-      json.dumps(
-        {
-          'type': 'init',
-          'features': [
-            {
-              'name': 'wakeword-detection',
-              'language': args.language,
-              'wakewords': [
-                {'word': 'alexa', 'phones': ['aa ll ei kk ss aa']},
-                {'word': 'ok google', 'phones': ['oh k eh g uw g ah l']},
-              ],
-              'discriminants': [{'word': 'alex', 'phones': ['aa ll ai kk ss']}, {'word': 'google', 'phones': ['g uw g ah l']}],
-            },
-            {
-              'name': 'sound-detection',
-              'allowlist': [
-                'Shout',  # Cri
-                'Bellows',  # Sonner
-                'Children shouting',  # Cris d'enfants
-                'Laughter',  # Rire
-                'Baby laughter',  # Rire de bébé
-                'Crying, sobbing',  # Pleurer, sangloter
-                'Baby cry, infant cry',  # Cri de bébé, pleurs d'enfant
-                'Whistling',  # Siffler
-                'Wheeze',  # Wheeze
-                'Snoring',  # Ronfler
-                'Cough',  # Tousserq
-                'Sneeze',  # Éternuer
-                'Burping',  # Roter
-                'Hiccup',  # Hoqueter
-              ],
-            },
-          ],
-        },
-      )
-    )
-
-    logger.info('Waiting server ready message')
-    server_ready_message = await websocket.recv()
-    logger.info(server_ready_message)
 
     async def listen():
       logger.info('Listening detection messages...')
