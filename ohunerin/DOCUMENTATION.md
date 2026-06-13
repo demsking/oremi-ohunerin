@@ -87,8 +87,17 @@ You can integrate Oremi Ohunerin as a wake word detection engine in Home Assista
 
 ### Installation
 
-1. Copy the `oremi-ohunerin` folder from the `integrations/home-assistant` directory to your Home Assistant configuration directory under `custom_components/oremi_ohunerin`.
-2. Restart Home Assistant.
+1. **Download the archive**: Download the latest pre-packaged integration from [here](https://demsking.gitlab.io/oremi-ohunerin/oremi-ohunerin-homeassistant.zip).
+
+2. Extract the archive and copy the `oremi-ohunerin` folder to your Home Assistant configuration directory under `custom_components/oremi_ohunerin` (ensure the target folder uses an underscore, not a hyphen).
+
+   Alternatively, you can copy it manually from the cloned repository:
+
+   ```bash
+   cp -r integrations/home-assistant/oremi-ohunerin /path/to/your/homeassistant/config/custom_components/oremi_ohunerin
+   ```
+
+3. Restart Home Assistant.
 
 ### Configuration
 
