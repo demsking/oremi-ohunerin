@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import http
-import json
 import logging
 import os
 import pytest
+import pytest_asyncio
+from ohunerin import parse_config_file
 from ohunerin.server import Server
 
 
@@ -25,122 +25,118 @@ def logger():
   return logging.getLogger("test_server_query_params")
 
 
-@pytest.fixture
-def config_file():
+@pytest_asyncio.fixture
+async def server(logger):
   base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-  return os.path.join(base_dir, "ohunerin", "config.json")
+  config_file = os.path.join(base_dir, "ohunerin", "config.json")
+  config = parse_config_file(config_file)
+  return Server(config=config, logger=logger)
 
+
+# ---------------------------------------------------------------------------
+# Wakeword detection
+# ---------------------------------------------------------------------------
 
 @pytest.mark.asyncio
-async def test_parse_query_params_wakeword_only(config_file, logger):
-  server = Server(config_file=config_file, threshold=0.1, logger=logger)
-
-  # Check standard wakeword-detection feature
+async def test_parse_query_params_wakeword_only(server):
   path = "/ws?features=wakeword-detection&language=en"
   wk_engine, dt_consumer = server._parse_query_params(path)
-  
+
   assert wk_engine is not None
   assert dt_consumer is None
-  
-  # Check is_discriminant on the generated engine
   assert wk_engine.is_discriminant("hello hello") is True
 
 
 @pytest.mark.asyncio
-async def test_parse_query_params_sound_only(config_file, logger):
-  server = Server(config_file=config_file, threshold=0.1, logger=logger)
-
-  # Check sound-detection feature with csv allowlist
-  path = "/ws?features=sound-detection&allowlist=Dog,Cat"
+async def test_parse_query_params_wakeword_fr_discriminants(server):
+  path = "/ws?features=wakeword-detection&language=fr"
   wk_engine, dt_consumer = server._parse_query_params(path)
-  
-  assert wk_engine is None
-  assert dt_consumer is not None
-  assert dt_consumer._detector.classifier is not None
 
-
-@pytest.mark.asyncio
-async def test_parse_query_params_sound_only_json_allowlist(config_file, logger):
-  server = Server(config_file=config_file, threshold=0.1, logger=logger)
-
-  # Check sound-detection feature with JSON allowlist
-  path = '/ws?features=sound-detection&allowlist=["Dog","Cat"]'
-  wk_engine, dt_consumer = server._parse_query_params(path)
-  
-  assert wk_engine is None
-  assert dt_consumer is not None
-
-
-@pytest.mark.asyncio
-async def test_parse_query_params_both_features(config_file, logger):
-  server = Server(config_file=config_file, threshold=0.1, logger=logger)
-
-  # Check both features
-  path = "/ws?features=wakeword-detection,sound-detection&language=fr"
-  wk_engine, dt_consumer = server._parse_query_params(path)
-  
   assert wk_engine is not None
-  assert dt_consumer is not None
-  assert wk_engine.is_discriminant("rémi") is True
+  # "remi" is the configured discriminant (accent stripped for pocketsphinx)
+  assert wk_engine.is_discriminant("remi") is True
+  assert wk_engine.is_discriminant("oremi") is False
 
 
 @pytest.mark.asyncio
-async def test_parse_query_params_no_features_raises_error(config_file, logger):
-  server = Server(config_file=config_file, threshold=0.1, logger=logger)
-
-  # When features param is not provided, it should raise ValueError since features is required
-  path = "/ws?language=fr"
-  with pytest.raises(ValueError, match="features query parameter is required"):
-    server._parse_query_params(path)
-
-
-@pytest.mark.asyncio
-async def test_parse_query_params_missing_language(config_file, logger):
-  server = Server(config_file=config_file, threshold=0.1, logger=logger)
-
+async def test_parse_query_params_missing_language(server):
   path = "/ws?features=wakeword-detection"
   with pytest.raises(ValueError, match="language query parameter is required"):
     server._parse_query_params(path)
 
 
 @pytest.mark.asyncio
-async def test_parse_query_params_unsupported_language(config_file, logger):
-  server = Server(config_file=config_file, threshold=0.1, logger=logger)
-
+async def test_parse_query_params_unsupported_language(server):
   path = "/ws?features=wakeword-detection&language=de"
   with pytest.raises(ValueError, match="Unsupported language: de"):
     server._parse_query_params(path)
 
 
-@pytest.mark.asyncio
-async def test_parse_query_params_custom_wakewords(config_file, logger):
-  server = Server(config_file=config_file, threshold=0.1, logger=logger)
+# ---------------------------------------------------------------------------
+# Sound detection
+# ---------------------------------------------------------------------------
 
-  # Valid custom wakeword and discriminant entries JSON string
-  wakewords_json = json.dumps([{"word": "computer", "phones": ["K AH M P Y UW T ER"]}])
-  discriminants_json = json.dumps([{"word": "commuter", "phones": ["K AH M Y UW T ER"]}])
-  path = f"/ws?features=wakeword-detection&language=en&wakewords={wakewords_json}&discriminants={discriminants_json}"
-  
+@pytest.mark.asyncio
+async def test_parse_query_params_sound_only_no_filter(server):
+  """No sounds param → uses the full server-side sound list."""
+  path = "/ws?features=sound-detection"
   wk_engine, dt_consumer = server._parse_query_params(path)
+
+  assert wk_engine is None
+  assert dt_consumer is not None
+  assert dt_consumer._detector.classifier is not None
+
+
+@pytest.mark.asyncio
+async def test_parse_query_params_sound_csv_filter(server):
+  """sounds param (CSV) is intersected with the server's configured list."""
+  path = "/ws?features=sound-detection&sounds=Shout,Laughter"
+  wk_engine, dt_consumer = server._parse_query_params(path)
+
+  assert wk_engine is None
+  assert dt_consumer is not None
+
+
+@pytest.mark.asyncio
+async def test_parse_query_params_sound_json_filter(server):
+  """sounds param (JSON array) is intersected with the server's configured list."""
+  path = '/ws?features=sound-detection&sounds=["Shout","Laughter"]'
+  wk_engine, dt_consumer = server._parse_query_params(path)
+
+  assert wk_engine is None
+  assert dt_consumer is not None
+
+
+@pytest.mark.asyncio
+async def test_parse_query_params_sound_filter_ignores_unknown(server):
+  """Sounds not in the server config are silently dropped from the allowlist."""
+  # "Dog" and "Cat" are not in config.json sounds → filtered out; only "Shout" passes
+  path = "/ws?features=sound-detection&sounds=Shout,Dog,Cat"
+  _, dt_consumer = server._parse_query_params(path)
+
+  # Consumer should still be created (Shout is a valid server sound)
+  assert dt_consumer is not None
+
+
+# ---------------------------------------------------------------------------
+# Combined features
+# ---------------------------------------------------------------------------
+
+@pytest.mark.asyncio
+async def test_parse_query_params_both_features(server):
+  path = "/ws?features=wakeword-detection,sound-detection&language=fr"
+  wk_engine, dt_consumer = server._parse_query_params(path)
+
   assert wk_engine is not None
-  # Ensure the custom discriminant was added and is correctly matched
-  assert wk_engine.is_discriminant("commuter") is True
-  assert wk_engine.is_discriminant("computer") is False
+  assert dt_consumer is not None
 
 
-@pytest.mark.asyncio
-async def test_parse_query_params_invalid_wakewords_json(config_file, logger):
-  server = Server(config_file=config_file, threshold=0.1, logger=logger)
-
-  path = "/ws?features=wakeword-detection&language=en&wakewords=invalid"
-  with pytest.raises(ValueError, match="Invalid wakewords"):
-    server._parse_query_params(path)
-
+# ---------------------------------------------------------------------------
+# Error cases
+# ---------------------------------------------------------------------------
 
 @pytest.mark.asyncio
-async def test_parse_query_params_invalid_discriminants_json(config_file, logger):
-  server = Server(config_file=config_file, threshold=0.1, logger=logger)
-
-  path = "/ws?features=wakeword-detection&language=en&discriminants=invalid"
-  with pytest.raises(ValueError, match="Invalid discriminants"):
+async def test_parse_query_params_no_features_raises_error(server):
+  path = "/ws?language=fr"
+  with pytest.raises(ValueError, match="features query parameter is required"):
     server._parse_query_params(path)

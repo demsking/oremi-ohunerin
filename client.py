@@ -14,10 +14,10 @@
 # ==============================================================================
 import argparse
 import asyncio
-import json
 import logging
 import signal
 import ssl
+import urllib.parse
 
 import sounddevice as sd
 import websockets.exceptions
@@ -99,37 +99,13 @@ async def main():
     list_input_devices()
     return
 
-  import urllib.parse
+  query_string = urllib.parse.urlencode(
+    {
+      'language': args.language,
+      'features': 'wakeword-detection,sound-detection',
+    }
+  )
 
-  params = {
-    'language': args.language,
-    'features': 'wakeword-detection,sound-detection',
-    'wakewords': json.dumps([
-      {'word': 'alexa', 'phones': ['aa ll ei kk ss aa']},
-      {'word': 'ok google', 'phones': ['oh k eh g uw g ah l']},
-    ]),
-    'discriminants': json.dumps([
-      {'word': 'alex', 'phones': ['aa ll ai kk ss']},
-      {'word': 'google', 'phones': ['g uw g ah l']},
-    ]),
-    'allowlist': ','.join([
-      'Shout',  # Cri
-      'Bellows',  # Sonner
-      'Children shouting',  # Cris d'enfants
-      'Laughter',  # Rire
-      'Baby laughter',  # Rire de bébé
-      'Crying, sobbing',  # Pleurer, sangloter
-      'Baby cry, infant cry',  # Cri de bébé, pleurs d'enfant
-      'Whistling',  # Siffler
-      'Wheeze',  # Wheeze
-      'Snoring',  # Ronfler
-      'Cough',  # Tousserq
-      'Sneeze',  # Éternuer
-      'Burping',  # Roter
-      'Hiccup',  # Hoqueter
-    ])
-  }
-  query_string = urllib.parse.urlencode(params)
   uri = f"wss://{args.host}:{args.port}/ws?{query_string}" if args.cert_file else f"ws://{args.host}:{args.port}/ws?{query_string}"
   stream = sd.RawInputStream(
     dtype='int16',

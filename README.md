@@ -15,9 +15,8 @@ events.
 ## Documentation
 
 All project documentation—including features, deployment steps, the audio
-detection WebSocket protocol details, the complete API Reference, and the Home
-Assistant integration guide can be found at:
-https://demsking.gitlab.io/oremi-ohunerin
+detection WebSocket protocol details and the complete API Reference can be
+found at: https://demsking.gitlab.io/oremi-ohunerin
 
 ## License
 

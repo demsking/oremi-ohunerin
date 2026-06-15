@@ -20,7 +20,6 @@ from ohunerin.args import parse_arguments
 def test_parse_arguments_defaults():
   with patch.object(sys, 'argv', ['oremi-ohunerin']):
     args = parse_arguments()
-    assert args.threshold == 0.1
     assert args.config is None
     assert args.host == '127.0.0.1'
     assert args.port == 5023
@@ -32,7 +31,6 @@ def test_parse_arguments_defaults():
 def test_parse_arguments_custom():
   with patch.object(sys, 'argv', [
     'oremi-ohunerin',
-    '-t', '0.25',
     '-c', 'my_config.json',
     '--host', '0.0.0.0',
     '-p', '8080',
@@ -41,7 +39,6 @@ def test_parse_arguments_custom():
     '--password', 'secret'
   ]):
     args = parse_arguments()
-    assert args.threshold == 0.25
     assert args.config == 'my_config.json'
     assert args.host == '0.0.0.0'
     assert args.port == 8080

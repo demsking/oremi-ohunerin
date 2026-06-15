@@ -78,8 +78,8 @@ def config_data() -> dict[str, WakewordSetting]:
 def test_wakeword_engine_is_discriminant_fr(config_data, logger):
   engine = WakewordEngine(config_data["fr"], logger)
 
-  # "rémi" is a predefined discriminant in the French config
-  assert engine.is_discriminant("rémi") is True
+  # "remi" is a predefined discriminant in the French config (stored without accent)
+  assert engine.is_discriminant("remi") is True
 
   # "oremi" is the wakeword, not a discriminant
   assert engine.is_discriminant("oremi") is False

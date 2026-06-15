@@ -9,7 +9,7 @@
       ],
       "discriminants": [
         {
-          "word": "rémi",
+          "word": "remi",
           "phones": [
             "rr ei mm ii"
           ]
@@ -24,36 +24,6 @@
       ]
     },
     {
-      "language": "fr",
-      "word": "alexa",
-      "phones": [
-        "aa ll ei kk ss aa"
-      ],
-      "discriminants": [
-        {
-          "word": "alex",
-          "phones": [
-            "aa ll ai kk ss"
-          ]
-        }
-      ]
-    },
-    {
-      "language": "fr",
-      "word": "ok google",
-      "phones": [
-        "oh k eh g uw g ah l"
-      ],
-      "discriminants": [
-        {
-          "word": "google",
-          "phones": [
-            "g uw g ah l"
-          ]
-        }
-      ]
-    },
-    {
       "language": "en",
       "word": "oremi",
       "phones": [
@@ -65,20 +35,6 @@
       "word": "dikomlam",
       "phones": [
         "TH IH K AA M L AA M"
-      ]
-    },
-    {
-      "language": "en",
-      "word": "alexa",
-      "phones": [
-        "AH L EH K S AH"
-      ]
-    },
-    {
-      "language": "en",
-      "word": "ok google",
-      "phones": [
-        "OW K G UW G AH G AH L"
       ]
     }
   ],

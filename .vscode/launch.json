@@ -17,11 +17,20 @@
       "justMyCode": true
     },
     {
-      "name": "Run Test Listener",
+      "name": "Run Client",
       "type": "debugpy",
       "request": "launch",
       "module": "client",
       "args": [],
+      "cwd": "${workspaceFolder}",
+      "justMyCode": true
+    },
+    {
+      "name": "List Devices",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "client",
+      "args": ["--list-devices"],
       "cwd": "${workspaceFolder}",
       "justMyCode": true
     }

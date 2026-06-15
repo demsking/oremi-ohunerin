@@ -67,7 +67,7 @@ def test_wakeword_entry_with_discriminants():
 
 def test_ohunerin_config_defaults():
   config = OhunerinConfig()
-  assert config.threshold == 0.25
+  assert config.threshold == 0.65
   assert config.wakewords == []
   assert config.sounds == []
 

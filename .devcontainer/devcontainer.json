@@ -1,7 +1,7 @@
 {
   "name": "Oremi Ohunerin",
   "context": "..",
-  "dockerFile": "../Dockerfile.dev",
+  "dockerFile": "Dockerfile",
   "features": {},
   "forwardPorts": [5023],
   "runArgs": [

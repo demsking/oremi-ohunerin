@@ -15,7 +15,4 @@
 # ==============================================================================
 set -e
 
-oremi-ohunerin \
-  --host 0.0.0.0 \
-  --port 5023 \
-  --threshold $THRESHOLD $@
+oremi-ohunerin --host 0.0.0.0 --port 5023 $@

@@ -12,13 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import asyncio
 import http
 import json
 import logging
 import os
 import pytest
+import pytest_asyncio
 from websockets.datastructures import Headers
+from ohunerin import parse_config_file
 from ohunerin.server import Server
 
 
@@ -27,20 +28,16 @@ def logger():
   return logging.getLogger("test_server")
 
 
-@pytest.fixture
-def config_file():
+@pytest_asyncio.fixture
+async def server(logger):
   base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-  return os.path.join(base_dir, "ohunerin", "config.json")
+  config_file = os.path.join(base_dir, "ohunerin", "config.json")
+  config = parse_config_file(config_file)
+  return Server(config=config, logger=logger)
 
 
 @pytest.mark.asyncio
-async def test_server_info_endpoint(config_file, logger):
-  server = Server(
-    config_file=config_file,
-    threshold=0.1,
-    logger=logger,
-  )
-
+async def test_server_info_endpoint(server):
   headers = Headers()
   # Test redirection of / to /info
   response = await server.process_http_request("/", headers)
@@ -66,7 +63,7 @@ async def test_server_info_endpoint(config_file, logger):
   data = json.loads(body.decode("utf-8"))
   assert data["name"] == "oremi-ohunerin"
   assert "version" in data
-  assert data["threshold"] == 0.25
+  assert data["threshold"] == 0.65
   assert "languages" not in data
   assert "wakewords" in data
   assert "oremi" in data["wakewords"]["fr"]
@@ -74,13 +71,7 @@ async def test_server_info_endpoint(config_file, logger):
 
 
 @pytest.mark.asyncio
-async def test_other_endpoints(config_file, logger):
-  server = Server(
-    config_file=config_file,
-    threshold=0.1,
-    logger=logger,
-  )
-
+async def test_other_endpoints(server):
   # Test openapi.json
   response = await server.process_http_request("/openapi.json", Headers())
   assert response is not None

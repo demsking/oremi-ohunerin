@@ -19,6 +19,10 @@ import json
 import logging
 import os
 import traceback
+from collections import defaultdict
+from functools import lru_cache
+from itertools import chain
+from pathlib import Path
 from urllib.parse import parse_qs
 from urllib.parse import urlparse
 
@@ -27,7 +31,6 @@ import websockets.exceptions
 import websockets.legacy.protocol
 from oremi_core.wsserver import WebSocketConnection
 from oremi_core.wsserver import WebSocketServer
-from pydantic import TypeAdapter
 
 from .detector import DetectorConsumer
 from .detector import DetectorEngine
@@ -36,6 +39,7 @@ from .models import DetectedSound
 from .models import DictionaryEntry
 from .models import OhunerinConfig
 from .models import SoundType
+from .models import WakewordEntry
 from .models import WakewordSetting
 from .package import APP_NAME
 from .package import APP_VERSION
@@ -54,22 +58,26 @@ __all__ = [
 SERVER_NAME = f"{APP_NAME}/{APP_VERSION}"
 MAX_REASON_LENGTH = 123
 
-BASE_DIR = os.path.dirname(__file__)
-DOC_DIR = os.path.join(BASE_DIR, 'doc')
-DOCUMENTATION_PATH = os.path.join(BASE_DIR, 'DOCUMENTATION.md')
-OPENAPI_PATH = os.path.join(DOC_DIR, 'openapi.json')
-INDEX_PATH = os.path.join(DOC_DIR, 'index.html')
+
+BASE_DIR = Path(__file__).resolve().parent
+
+DOC_DIR = BASE_DIR / 'doc'
+DOCUMENTATION_PATH = BASE_DIR / 'DOCUMENTATION.md'
+OPENAPI_PATH = DOC_DIR / 'openapi.json'
+INDEX_PATH = DOC_DIR / 'index.html'
+
+MODELS_DIR = BASE_DIR / 'models'
 
 
 # Default acoustic-model and dictionary paths per language (relative to the package dir).
 LANGUAGE_MODEL_PATHS: dict[str, tuple[str, str]] = {
   'fr': (
-    'models/wakeword-fr/cmusphinx-fr-ptm-8khz-5.2',
-    'models/wakeword-fr/pronounciation-dictionary.dict',
+    'wakeword-fr/cmusphinx-fr-ptm-8khz-5.2',
+    'wakeword-fr/pronounciation-dictionary.dict',
   ),
   'en': (
-    'models/wakeword-en/acoustic-model',
-    'models/wakeword-en/pronounciation-dictionary.dict',
+    'wakeword-en/acoustic-model',
+    'wakeword-en/pronounciation-dictionary.dict',
   ),
 }
 
@@ -78,8 +86,7 @@ class Server(WebSocketServer):
   def __init__(
     self,
     *,
-    config_file: str,
-    threshold: float,
+    config: OhunerinConfig,
     model_path: str | None = None,
     cert_file: str | None = None,
     key_file: str | None = None,
@@ -95,10 +102,8 @@ class Server(WebSocketServer):
       process_request=self.process_http_request,
     )
     self.verbose = logger.isEnabledFor(logging.DEBUG)
-    self.config: dict[str, WakewordSetting] = {}
-    self.sounds: list[str] = []
+    self.config: OhunerinConfig = config
     self.num_threads = os.cpu_count() or 1
-    self.threshold = threshold
     self.model_path = model_path or os.path.join(os.path.dirname(__file__), 'models', 'yamnet.tflite')
 
     self.pool = concurrent.futures.ThreadPoolExecutor(
@@ -107,7 +112,6 @@ class Server(WebSocketServer):
     )
 
     self._loop = asyncio.get_running_loop()
-    self._load_config_file(config_file)
 
   async def process_http_request(
     self, path: str, request_headers: websockets.datastructures.Headers
@@ -176,9 +180,9 @@ class Server(WebSocketServer):
     return {
       'name': APP_NAME,
       'version': APP_VERSION,
-      'threshold': self.threshold,
-      'wakewords': {lang: [w.word for w in setting.wakewords] for lang, setting in self.config.items()},
-      'sounds': self.sounds,
+      'threshold': self.config.threshold,
+      'wakewords': self.supported_wakewords,
+      'sounds': self.config.sounds,
     }
 
   def get_documentation(self) -> str:
@@ -202,8 +206,56 @@ class Server(WebSocketServer):
       return index_file.read()
 
   @property
+  def supported_wakewords(self):
+    result: dict[str, list[str]] = defaultdict(list)
+
+    for entry in self.config.wakewords:
+      result[entry.language].append(entry.word)
+
+    return result
+
+  @property
   def supported_languages(self) -> list[str]:
-    return list(self.config.keys())
+    return list(self.supported_wakewords.keys())
+
+  def get_wakewords_by_language(self, language: str) -> list[WakewordEntry]:
+    return [entry for entry in self.config.wakewords if entry.language == language]
+
+  @lru_cache
+  def get_wakeword_engine(self, language: str) -> WakewordEngine:
+    print('2--------------->>>')
+    model_rel, dict_rel = LANGUAGE_MODEL_PATHS.get(
+      language,
+      (f"wakeword-{language}/acoustic-model", f"wakeword-{language}/pronounciation-dictionary.dict"),
+    )
+
+    model_path = MODELS_DIR / model_rel
+    dict_path = MODELS_DIR / dict_rel
+
+    wakewords = self.get_wakewords_by_language(language)
+
+    self.logger.info(f'Loading wakeword config for language "{language}": {[w.word for w in wakewords]}')
+    wakewords = WakewordSetting(
+      model=str(model_path),
+      dictionary=str(dict_path),
+      wakewords=[DictionaryEntry(word=entry.word, phones=entry.phones) for entry in wakewords],
+      discriminants=list(chain.from_iterable([entry.discriminants for entry in wakewords])),
+    )
+
+    return WakewordEngine(wakewords, self.logger)
+
+  @lru_cache
+  def get_detector_consumer(self) -> DetectorConsumer:
+    print('1---------------->>>')
+    detector = DetectorEngine(
+      model=self.model_path,
+      score_threshold=self.config.threshold,
+      num_threads=self.num_threads,
+      logger=self.logger,
+      allowlist=self.config.sounds,
+    )
+
+    return DetectorConsumer(detector, logger=self.logger)
 
   @staticmethod
   def truncate_reason(reason: str) -> str:
@@ -233,56 +285,10 @@ class Server(WebSocketServer):
 
     return ssl_context
 
-  def _load_config_file(self, config_file: str):
-    self.logger.info(f"Loading wakeword config from {config_file}")
-    config_dir = os.path.dirname(os.path.abspath(config_file))
-
-    with open(config_file, encoding='utf-8') as file:
-      raw = json.load(file)
-
-    raw_config = OhunerinConfig.model_validate(raw)
-
-    # Use the threshold from the config file only when the caller did not
-    # override it explicitly (i.e. when it still holds the CLI default).
-    if raw_config.threshold:
-      self.threshold = raw_config.threshold
-
-    self.sounds = raw_config.sounds
-
-    # Group wakewords and their per-entry discriminants by language.
-    language_wakewords: dict[str, list[DictionaryEntry]] = {}
-    language_discriminants: dict[str, list[DictionaryEntry]] = {}
-
-    for entry in raw_config.wakewords:
-      lang = entry.language
-      wakeword = DictionaryEntry(word=entry.word, phones=entry.phones)
-      language_wakewords.setdefault(lang, []).append(wakeword)
-
-      for disc in entry.discriminants:
-        language_discriminants.setdefault(lang, []).append(disc)
-
-    for language, wakewords in language_wakewords.items():
-      model_rel, dict_rel = LANGUAGE_MODEL_PATHS.get(
-        language,
-        (f"models/wakeword-{language}/acoustic-model", f"models/wakeword-{language}/pronounciation-dictionary.dict"),
-      )
-      model_path = os.path.abspath(os.path.join(config_dir, model_rel))
-      dict_path = os.path.abspath(os.path.join(config_dir, dict_rel))
-
-      discriminants = language_discriminants.get(language, [])
-
-      self.logger.info(f'Loading wakeword config for language "{language}": {[w.word for w in wakewords]}')
-      self.config[language] = WakewordSetting(
-        model=model_path,
-        dictionary=dict_path,
-        wakewords=wakewords,
-        discriminants=discriminants,
-      )
-
   def _handle_connection_close(
     self,
     websocket: WebSocketConnection,
-    exception: websockets.exceptions.ConnectionClosedOK,
+    exception: websockets.exceptions.ConnectionClosedOK | websockets.exceptions.ConnectionClosedError,
   ):
     if exception.reason:
       self.logger.info(f"Connection closed {websocket.remote_address} with code {exception.code}. Reason: {exception.reason}")
@@ -332,68 +338,12 @@ class Server(WebSocketServer):
         if not language:
           raise ValueError('language query parameter is required for wakeword-detection')
 
-        wakewords = []
-        if 'wakewords' in query_params:
-          try:
-            wakewords_data = json.loads(query_params['wakewords'][0])
-            wakewords = TypeAdapter(list[DictionaryEntry]).validate_python(wakewords_data)
-          except Exception as err:
-            self.logger.error(f"Failed to parse wakewords: {err}")
-            raise ValueError(f"Invalid wakewords: {err}") from err
+        if language not in self.supported_languages:
+          raise ValueError(f"Unsupported language: {language}")
 
-        discriminants = []
-        if 'discriminants' in query_params:
-          try:
-            discriminants_data = json.loads(query_params['discriminants'][0])
-            discriminants = TypeAdapter(list[DictionaryEntry]).validate_python(discriminants_data)
-          except Exception as err:
-            self.logger.error(f"Failed to parse discriminants: {err}")
-            raise ValueError(f"Invalid discriminants: {err}") from err
-
-        if wakewords:
-          self.logger.info(
-            f"Initializing wakeword detection feature with additional {wakewords} and discriminants {discriminants}"
-          )
-
-          if language not in self.config:
-            raise ValueError(f"Unsupported language: {language}")
-          wakeword_setting = self.config[language].copy()
-          wakeword_setting.wakewords += wakewords
-          wakeword_setting.discriminants += discriminants
-        else:
-          self.logger.info('Initializing wakeword detection feature')
-          if language not in self.config:
-            raise ValueError(f"Unsupported language: {language}")
-          wakeword_setting = self.config[language]
-
-        wakeword_engine = WakewordEngine(wakeword_setting, self.logger)
-
+        wakeword_engine = self.get_wakeword_engine(language)
       elif feature_name == 'sound-detection':
-        allowlist = []
-        if 'allowlist' in query_params:
-          val = query_params['allowlist'][0]
-          if val.startswith('['):
-            try:
-              allowlist = json.loads(val)
-            except Exception:
-              pass
-          else:
-            allowlist = [x.strip() for x in val.split(',') if x.strip()]
-
-        if allowlist:
-          self.logger.info(f"Initializing sound detection feature and allowlist {', '.join(allowlist)}")
-        else:
-          self.logger.info('Initializing sound detection feature')
-
-        detector = DetectorEngine(
-          model=self.model_path,
-          score_threshold=self.threshold,
-          num_threads=self.num_threads,
-          logger=self.logger,
-          allowlist=allowlist,
-        )
-
-        detector_consumer = DetectorConsumer(detector, logger=self.logger)
+        detector_consumer = self.get_detector_consumer()
 
     return wakeword_engine, detector_consumer
 
@@ -431,6 +381,8 @@ class Server(WebSocketServer):
           if sound:
             await self._handle_detection_result(websocket, 'sound', sound, score)
     except websockets.exceptions.ConnectionClosedOK as exception:
+      self._handle_connection_close(websocket, exception)
+    except websockets.exceptions.ConnectionClosedError as exception:
       self._handle_connection_close(websocket, exception)
     except Exception as exception:
       error_message = f"Invalid Message: {exception}"

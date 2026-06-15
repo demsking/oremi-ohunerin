@@ -23,13 +23,6 @@ def parse_arguments():
   parser = argparse.ArgumentParser(prog=APP_NAME, description=APP_DESCRIPTION)
 
   parser.add_argument(
-    '-t', '--threshold',
-    type=float,
-    default=0.1,
-    help='Detection threshold for filtering predictions (default: 0.1).'
-  )
-
-  parser.add_argument(
     '-c', '--config',
     type=str,
     default=None,

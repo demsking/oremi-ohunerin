@@ -17,6 +17,8 @@ import logging
 import os
 from unittest.mock import MagicMock, patch
 import pytest
+import pytest_asyncio
+from ohunerin import parse_config_file
 from ohunerin.server import Server
 
 
@@ -54,16 +56,16 @@ def logger():
   return logging.getLogger("test_server_audio_loop")
 
 
-@pytest.fixture
-def config_file():
+@pytest_asyncio.fixture
+async def server(logger):
   base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-  return os.path.join(base_dir, "ohunerin", "config.json")
+  config_file = os.path.join(base_dir, "ohunerin", "config.json")
+  config = parse_config_file(config_file)
+  return Server(config=config, logger=logger)
 
 
 @pytest.mark.asyncio
-async def test_handle_audio_data_wakeword_detection(config_file, logger):
-  server = Server(config_file=config_file, threshold=0.1, logger=logger)
-
+async def test_handle_audio_data_wakeword_detection(server):
   mock_wakeword = MagicMock()
   # First chunk returns no detection, second chunk detects "oremi"
   mock_wakeword.process_raw.side_effect = [(None, 0.0), ("oremi", 0.95)]
@@ -84,9 +86,7 @@ async def test_handle_audio_data_wakeword_detection(config_file, logger):
 
 
 @pytest.mark.asyncio
-async def test_handle_audio_data_sound_detection(config_file, logger):
-  server = Server(config_file=config_file, threshold=0.1, logger=logger)
-
+async def test_handle_audio_data_sound_detection(server):
   mock_detector = MagicMock()
   mock_detector.process_raw.side_effect = [
     (None, 0.0),
@@ -105,9 +105,7 @@ async def test_handle_audio_data_sound_detection(config_file, logger):
 
 
 @pytest.mark.asyncio
-async def test_handle_audio_data_exception(config_file, logger):
-  server = Server(config_file=config_file, threshold=0.1, logger=logger)
-
+async def test_handle_audio_data_exception(server):
   mock_detector = MagicMock()
   # Simulate unexpected error during processing
   mock_detector.process_raw.side_effect = RuntimeError("Processing error")
@@ -122,9 +120,7 @@ async def test_handle_audio_data_exception(config_file, logger):
 
 
 @pytest.mark.asyncio
-async def test_handle_messages_invalid_path(config_file, logger):
-  server = Server(config_file=config_file, threshold=0.1, logger=logger)
-
+async def test_handle_messages_invalid_path(server):
   websocket = MockWebSocket(path="/invalid_endpoint")
   await server._handle_messages(websocket)  # type: ignore
 
@@ -133,9 +129,7 @@ async def test_handle_messages_invalid_path(config_file, logger):
 
 
 @pytest.mark.asyncio
-async def test_handle_messages_invalid_params(config_file, logger):
-  server = Server(config_file=config_file, threshold=0.1, logger=logger)
-
+async def test_handle_messages_invalid_params(server):
   # wakeword-detection without language raises ValueError
   websocket = MockWebSocket(path="/ws?features=wakeword-detection")
   await server._handle_messages(websocket)  # type: ignore
@@ -145,9 +139,7 @@ async def test_handle_messages_invalid_params(config_file, logger):
 
 
 @pytest.mark.asyncio
-async def test_handle_messages_no_features(config_file, logger):
-  server = Server(config_file=config_file, threshold=0.1, logger=logger)
-
+async def test_handle_messages_no_features(server):
   # When no features are provided, it should fail since features is required.
   websocket = MockWebSocket(path="/ws")
   await server._handle_messages(websocket)  # type: ignore
@@ -157,9 +149,7 @@ async def test_handle_messages_no_features(config_file, logger):
 
 
 @pytest.mark.asyncio
-async def test_handle_messages_invalid_features(config_file, logger):
-  server = Server(config_file=config_file, threshold=0.1, logger=logger)
-
+async def test_handle_messages_invalid_features(server):
   # When invalid features are provided, it doesn't default, and since no valid features are enabled,
   # it should fail with "No feature provided".
   websocket = MockWebSocket(path="/ws?features=invalid")
@@ -170,9 +160,7 @@ async def test_handle_messages_invalid_features(config_file, logger):
 
 
 @pytest.mark.asyncio
-async def test_handle_messages_default_features_valid(config_file, logger):
-  server = Server(config_file=config_file, threshold=0.1, logger=logger)
-
+async def test_handle_messages_default_features_valid(server):
   # When no features are provided but language is, it should still fail because features is required
   websocket = MockWebSocket(path="/ws?language=fr", chunks=[b"\x00" * 100])
   await server._handle_messages(websocket)  # type: ignore
@@ -182,9 +170,7 @@ async def test_handle_messages_default_features_valid(config_file, logger):
 
 
 @pytest.mark.asyncio
-async def test_handle_messages_valid_flow(config_file, logger):
-  server = Server(config_file=config_file, threshold=0.1, logger=logger)
-
+async def test_handle_messages_valid_flow(server):
   websocket = MockWebSocket(path="/ws?features=sound-detection&allowlist=Dog", chunks=[b"\x00" * 100])
 
   async def mock_handle_audio_fn(ws, ww, dc):

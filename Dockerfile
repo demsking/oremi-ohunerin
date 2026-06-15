@@ -50,9 +50,6 @@ USER olumulo
 ENV PATH="/opt/oremi/bin:$PATH"
 ENV PYTHONPATH="/opt/oremi:$PYTHONUSERBASE:$PYTHONPATH"
 
-# Ensure the server uses UTC
-ENV THRESHOLD="0.1"
-
 ENV LOG_LEVEL="INFO"
 ENV LOG_FILE=
 
