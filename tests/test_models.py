@@ -18,7 +18,9 @@ from pydantic import ValidationError
 from ohunerin.models import (
   create_detected_sound_object,
   DictionaryEntry,
+  OhunerinConfig,
   WakewordDetectionFeature,
+  WakewordEntry,
   SoundDetectionFeature,
   WakewordSetting,
 )
@@ -29,7 +31,7 @@ def test_create_detected_sound_object():
   assert obj["type"] == "wakeword"
   assert obj["sound"] == "oremi"
   assert obj["score"] == 0.95
-  
+
   # Validate datetime is in correct ISO format
   dt = datetime.datetime.fromisoformat(obj["datetime"])
   assert isinstance(dt, datetime.datetime)
@@ -41,7 +43,62 @@ def test_dictionary_entry_validation():
   assert entry.phones == ["H", "EH", "L", "OW"]
 
   with pytest.raises(ValidationError):
-    DictionaryEntry(word="hello")  # Missing phones
+    DictionaryEntry.model_validate({"word": "hello"})  # Missing required field: phones
+
+
+def test_wakeword_entry_no_discriminants():
+  entry = WakewordEntry(language="en", word="oremi", phones=["AO R EY M E"])
+  assert entry.language == "en"
+  assert entry.word == "oremi"
+  assert entry.phones == ["AO R EY M E"]
+  assert entry.discriminants == []
+
+
+def test_wakeword_entry_with_discriminants():
+  disc = DictionaryEntry(word="rémi", phones=["rr ei mm ii"])
+  entry = WakewordEntry(
+    language="fr",
+    word="oremi",
+    phones=["oo rr ei mm ii"],
+    discriminants=[disc],
+  )
+  assert entry.discriminants == [disc]
+
+
+def test_ohunerin_config_defaults():
+  config = OhunerinConfig()
+  assert config.threshold == 0.25
+  assert config.wakewords == []
+  assert config.sounds == []
+
+
+def test_ohunerin_config_full():
+  raw = {
+    "threshold": 0.4,
+    "wakewords": [
+      {
+        "language": "fr",
+        "word": "oremi",
+        "phones": ["oo rr ei mm ii"],
+        "discriminants": [{"word": "rémi", "phones": ["rr ei mm ii"]}],
+      },
+      {
+        "language": "en",
+        "word": "oremi",
+        "phones": ["AO R EY M E"],
+      },
+    ],
+    "sounds": ["Shout", "Laughter"],
+  }
+  config = OhunerinConfig.model_validate(raw)
+  assert config.threshold == 0.4
+  assert len(config.wakewords) == 2
+  assert config.wakewords[0].language == "fr"
+  assert config.wakewords[0].word == "oremi"
+  assert len(config.wakewords[0].discriminants) == 1
+  assert config.wakewords[0].discriminants[0].word == "rémi"
+  assert config.wakewords[1].language == "en"
+  assert config.sounds == ["Shout", "Laughter"]
 
 
 def test_wakeword_detection_feature():

@@ -12,7 +12,7 @@ environmental sound classification and PocketSphinx for precise, localized wake
 word identification, Ohunerin ensures highly accurate recognition of acoustic
 events.
 
-## Interactive Documentation
+## Documentation
 
 All project documentation—including features, deployment steps, the audio
 detection WebSocket protocol details, the complete API Reference, and the Home

@@ -25,7 +25,6 @@ from urllib.parse import urlparse
 import websockets.datastructures
 import websockets.exceptions
 import websockets.legacy.protocol
-import websockets.legacy.server
 from oremi_core.wsserver import WebSocketConnection
 from oremi_core.wsserver import WebSocketServer
 from pydantic import TypeAdapter
@@ -35,6 +34,7 @@ from .detector import DetectorEngine
 from .models import create_detected_sound_object
 from .models import DetectedSound
 from .models import DictionaryEntry
+from .models import OhunerinConfig
 from .models import SoundType
 from .models import WakewordSetting
 from .package import APP_NAME
@@ -61,6 +61,19 @@ OPENAPI_PATH = os.path.join(DOC_DIR, 'openapi.json')
 INDEX_PATH = os.path.join(DOC_DIR, 'index.html')
 
 
+# Default acoustic-model and dictionary paths per language (relative to the package dir).
+LANGUAGE_MODEL_PATHS: dict[str, tuple[str, str]] = {
+  'fr': (
+    'models/wakeword-fr/cmusphinx-fr-ptm-8khz-5.2',
+    'models/wakeword-fr/pronounciation-dictionary.dict',
+  ),
+  'en': (
+    'models/wakeword-en/acoustic-model',
+    'models/wakeword-en/pronounciation-dictionary.dict',
+  ),
+}
+
+
 class Server(WebSocketServer):
   def __init__(
     self,
@@ -83,6 +96,7 @@ class Server(WebSocketServer):
     )
     self.verbose = logger.isEnabledFor(logging.DEBUG)
     self.config: dict[str, WakewordSetting] = {}
+    self.sounds: list[str] = []
     self.num_threads = os.cpu_count() or 1
     self.threshold = threshold
     self.model_path = model_path or os.path.join(os.path.dirname(__file__), 'models', 'yamnet.tflite')
@@ -164,6 +178,7 @@ class Server(WebSocketServer):
       'version': APP_VERSION,
       'threshold': self.threshold,
       'wakewords': {lang: [w.word for w in setting.wakewords] for lang, setting in self.config.items()},
+      'sounds': self.sounds,
     }
 
   def get_documentation(self) -> str:
@@ -223,21 +238,46 @@ class Server(WebSocketServer):
     config_dir = os.path.dirname(os.path.abspath(config_file))
 
     with open(config_file, encoding='utf-8') as file:
-      config_content = json.load(file)
+      raw = json.load(file)
 
-      if isinstance(config_content, dict):
-        for language, locale_config in config_content.items():
-          # Resolve relative model and dictionary paths relative to the config file location
-          for path_key in ('model', 'dictionary'):
-            if path_key in locale_config:
-              p = locale_config[path_key]
-              if not os.path.isabs(p):
-                locale_config[path_key] = os.path.abspath(os.path.join(config_dir, p))
+    raw_config = OhunerinConfig.model_validate(raw)
 
-          self.logger.info(f'Loading wakeword config for language "{language}": {locale_config["wakewords"]}')
-          self.config[language] = WakewordSetting.model_validate(locale_config)
-      else:
-        raise ValueError('Invalid config file format: expected a dictionary')
+    # Use the threshold from the config file only when the caller did not
+    # override it explicitly (i.e. when it still holds the CLI default).
+    if raw_config.threshold:
+      self.threshold = raw_config.threshold
+
+    self.sounds = raw_config.sounds
+
+    # Group wakewords and their per-entry discriminants by language.
+    language_wakewords: dict[str, list[DictionaryEntry]] = {}
+    language_discriminants: dict[str, list[DictionaryEntry]] = {}
+
+    for entry in raw_config.wakewords:
+      lang = entry.language
+      wakeword = DictionaryEntry(word=entry.word, phones=entry.phones)
+      language_wakewords.setdefault(lang, []).append(wakeword)
+
+      for disc in entry.discriminants:
+        language_discriminants.setdefault(lang, []).append(disc)
+
+    for language, wakewords in language_wakewords.items():
+      model_rel, dict_rel = LANGUAGE_MODEL_PATHS.get(
+        language,
+        (f"models/wakeword-{language}/acoustic-model", f"models/wakeword-{language}/pronounciation-dictionary.dict"),
+      )
+      model_path = os.path.abspath(os.path.join(config_dir, model_rel))
+      dict_path = os.path.abspath(os.path.join(config_dir, dict_rel))
+
+      discriminants = language_discriminants.get(language, [])
+
+      self.logger.info(f'Loading wakeword config for language "{language}": {[w.word for w in wakewords]}')
+      self.config[language] = WakewordSetting(
+        model=model_path,
+        dictionary=dict_path,
+        wakewords=wakewords,
+        discriminants=discriminants,
+      )
 
   def _handle_connection_close(
     self,

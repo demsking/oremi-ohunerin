@@ -16,7 +16,8 @@ import json
 import logging
 import os
 import pytest
-from ohunerin.wakeword import WakewordEngine, WakewordSetting
+from ohunerin.models import DictionaryEntry, OhunerinConfig, WakewordSetting
+from ohunerin.wakeword import WakewordEngine
 
 
 @pytest.fixture
@@ -25,43 +26,73 @@ def logger():
 
 
 @pytest.fixture
-def config_data():
+def config_data() -> dict[str, WakewordSetting]:
+  """Parse config.json into a language-keyed dict of WakewordSetting objects."""
   base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
   config_file = os.path.join(base_dir, "ohunerin", "config.json")
-  config_dir = os.path.dirname(config_file)
-  
+  config_dir = os.path.dirname(os.path.abspath(config_file))
+
+  language_model_paths: dict[str, tuple[str, str]] = {
+    'fr': (
+      'models/wakeword-fr/cmusphinx-fr-ptm-8khz-5.2',
+      'models/wakeword-fr/pronounciation-dictionary.dict',
+    ),
+    'en': (
+      'models/wakeword-en/acoustic-model',
+      'models/wakeword-en/pronounciation-dictionary.dict',
+    ),
+  }
+
   with open(config_file, encoding="utf-8") as f:
-    data = json.load(f)
-    
-  # Resolve paths relative to config file location
-  for lang, locale_config in data.items():
-    for key in ("model", "dictionary"):
-      if key in locale_config and not os.path.isabs(locale_config[key]):
-        locale_config[key] = os.path.abspath(os.path.join(config_dir, locale_config[key]))
-        
-  return data
+    raw = json.load(f)
+
+  ohunerin_config = OhunerinConfig.model_validate(raw)
+
+  language_wakewords: dict[str, list[DictionaryEntry]] = {}
+  language_discriminants: dict[str, list[DictionaryEntry]] = {}
+
+  for entry in ohunerin_config.wakewords:
+    lang = entry.language
+    language_wakewords.setdefault(lang, []).append(
+      DictionaryEntry(word=entry.word, phones=entry.phones)
+    )
+    for disc in entry.discriminants:
+      language_discriminants.setdefault(lang, []).append(disc)
+
+  settings: dict[str, WakewordSetting] = {}
+  for language, wakewords in language_wakewords.items():
+    model_rel, dict_rel = language_model_paths.get(
+      language,
+      (f'models/wakeword-{language}/acoustic-model', f'models/wakeword-{language}/pronounciation-dictionary.dict'),
+    )
+    settings[language] = WakewordSetting(
+      model=os.path.abspath(os.path.join(config_dir, model_rel)),
+      dictionary=os.path.abspath(os.path.join(config_dir, dict_rel)),
+      wakewords=wakewords,
+      discriminants=language_discriminants.get(language, []),
+    )
+
+  return settings
 
 
 def test_wakeword_engine_is_discriminant_fr(config_data, logger):
-  fr_setting = WakewordSetting.model_validate(config_data["fr"])
-  engine = WakewordEngine(fr_setting, logger)
-  
-  # "rémi" is a predefined discriminant in French config
+  engine = WakewordEngine(config_data["fr"], logger)
+
+  # "rémi" is a predefined discriminant in the French config
   assert engine.is_discriminant("rémi") is True
-  
-  # "oremi" is the wakeword, should not be discriminant
+
+  # "oremi" is the wakeword, not a discriminant
   assert engine.is_discriminant("oremi") is False
-  
-  # Word with space containing identical parts should be discriminant
+
+  # Repeated-word phrases are always discriminants
   assert engine.is_discriminant("test test") is True
   assert engine.is_discriminant("test hello") is False
 
 
 def test_wakeword_engine_is_discriminant_en(config_data, logger):
-  en_setting = WakewordSetting.model_validate(config_data["en"])
-  engine = WakewordEngine(en_setting, logger)
-  
-  # English config has no discriminants by default
+  engine = WakewordEngine(config_data["en"], logger)
+
+  # English config has no explicit discriminants
   assert engine.is_discriminant("rémi") is False
   assert engine.is_discriminant("oremi") is False
   assert engine.is_discriminant("hello hello") is True
@@ -69,17 +100,16 @@ def test_wakeword_engine_is_discriminant_en(config_data, logger):
 
 
 def test_wakeword_engine_process_raw_dummy(config_data, logger):
-  en_setting = WakewordSetting.model_validate(config_data["en"])
-  engine = WakewordEngine(en_setting, logger)
-  
+  engine = WakewordEngine(config_data["en"], logger)
+
   engine.start_utt()
-  
-  # Send 1 second of silent mono audio (16000Hz, 16-bit PCM -> 32000 bytes)
+
+  # Send 1 second of silent mono audio (16000 Hz, 16-bit PCM → 32000 bytes)
   dummy_chunk = b"\x00" * 32000
   sound, score = engine.process_raw(dummy_chunk)
-  
+
   # Silent/dummy input should not trigger any wakeword
   assert sound is None
   assert score == 0.0
-  
+
   engine.end_utt()

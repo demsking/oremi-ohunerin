@@ -63,21 +63,18 @@ def config_file():
 @pytest.mark.asyncio
 async def test_handle_audio_data_wakeword_detection(config_file, logger):
   server = Server(config_file=config_file, threshold=0.1, logger=logger)
-  
+
   mock_wakeword = MagicMock()
   # First chunk returns no detection, second chunk detects "oremi"
-  mock_wakeword.process_raw.side_effect = [
-    (None, 0.0),
-    ("oremi", 0.95)
-  ]
-  
+  mock_wakeword.process_raw.side_effect = [(None, 0.0), ("oremi", 0.95)]
+
   websocket = MockWebSocket(chunks=[b"\x00" * 100, b"\x00" * 100])
-  
-  await server._handle_audio_data(websocket, mock_wakeword, None)
-  
+
+  await server._handle_audio_data(websocket, mock_wakeword, None)  # type: ignore
+
   assert mock_wakeword.start_utt.called
   assert mock_wakeword.end_utt.called
-  
+
   # Ensure one detection result was sent
   assert len(websocket.sent_messages) == 1
   data = json.loads(websocket.sent_messages[0])
@@ -89,17 +86,17 @@ async def test_handle_audio_data_wakeword_detection(config_file, logger):
 @pytest.mark.asyncio
 async def test_handle_audio_data_sound_detection(config_file, logger):
   server = Server(config_file=config_file, threshold=0.1, logger=logger)
-  
+
   mock_detector = MagicMock()
   mock_detector.process_raw.side_effect = [
     (None, 0.0),
     ("bark", 0.85)
   ]
-  
+
   websocket = MockWebSocket(chunks=[b"\x00" * 100, b"\x00" * 100])
-  
-  await server._handle_audio_data(websocket, None, mock_detector)
-  
+
+  await server._handle_audio_data(websocket, None, mock_detector)  # type: ignore
+
   assert len(websocket.sent_messages) == 1
   data = json.loads(websocket.sent_messages[0])
   assert data["type"] == "sound"
@@ -110,95 +107,95 @@ async def test_handle_audio_data_sound_detection(config_file, logger):
 @pytest.mark.asyncio
 async def test_handle_audio_data_exception(config_file, logger):
   server = Server(config_file=config_file, threshold=0.1, logger=logger)
-  
+
   mock_detector = MagicMock()
   # Simulate unexpected error during processing
   mock_detector.process_raw.side_effect = RuntimeError("Processing error")
-  
+
   websocket = MockWebSocket(chunks=[b"\x00" * 100])
-  
-  await server._handle_audio_data(websocket, None, mock_detector)
-  
+
+  await server._handle_audio_data(websocket, None, mock_detector)  # type: ignore
+
   # Ensure connection was closed with code 1003
   assert websocket.closed_code == 1003
-  assert "Processing error" in websocket.closed_reason
+  assert "Processing error" in websocket.closed_reason  # type: ignore
 
 
 @pytest.mark.asyncio
 async def test_handle_messages_invalid_path(config_file, logger):
   server = Server(config_file=config_file, threshold=0.1, logger=logger)
-  
+
   websocket = MockWebSocket(path="/invalid_endpoint")
-  await server._handle_messages(websocket)
-  
+  await server._handle_messages(websocket)  # type: ignore
+
   assert websocket.closed_code == 1008
-  assert "Only '/ws' endpoint is supported" in websocket.closed_reason
+  assert "Only '/ws' endpoint is supported" in websocket.closed_reason  # type: ignore
 
 
 @pytest.mark.asyncio
 async def test_handle_messages_invalid_params(config_file, logger):
   server = Server(config_file=config_file, threshold=0.1, logger=logger)
-  
+
   # wakeword-detection without language raises ValueError
   websocket = MockWebSocket(path="/ws?features=wakeword-detection")
-  await server._handle_messages(websocket)
-  
+  await server._handle_messages(websocket)  # type: ignore
+
   assert websocket.closed_code == 1003
-  assert "Failed to parse query parameters" in websocket.closed_reason
+  assert "Failed to parse query parameters" in websocket.closed_reason  # type: ignore
 
 
 @pytest.mark.asyncio
 async def test_handle_messages_no_features(config_file, logger):
   server = Server(config_file=config_file, threshold=0.1, logger=logger)
-  
+
   # When no features are provided, it should fail since features is required.
   websocket = MockWebSocket(path="/ws")
-  await server._handle_messages(websocket)
-  
+  await server._handle_messages(websocket)  # type: ignore
+
   assert websocket.closed_code == 1003
-  assert "features query parameter is required" in websocket.closed_reason
+  assert "features query parameter is required" in websocket.closed_reason  # type: ignore
 
 
 @pytest.mark.asyncio
 async def test_handle_messages_invalid_features(config_file, logger):
   server = Server(config_file=config_file, threshold=0.1, logger=logger)
-  
+
   # When invalid features are provided, it doesn't default, and since no valid features are enabled,
   # it should fail with "No feature provided".
   websocket = MockWebSocket(path="/ws?features=invalid")
-  await server._handle_messages(websocket)
-  
+  await server._handle_messages(websocket)  # type: ignore
+
   assert websocket.closed_code is not None
-  assert "No feature provided in the query parameters" in websocket.closed_reason
+  assert "No feature provided in the query parameters" in websocket.closed_reason  # type: ignore
 
 
 @pytest.mark.asyncio
 async def test_handle_messages_default_features_valid(config_file, logger):
   server = Server(config_file=config_file, threshold=0.1, logger=logger)
-  
+
   # When no features are provided but language is, it should still fail because features is required
   websocket = MockWebSocket(path="/ws?language=fr", chunks=[b"\x00" * 100])
-  await server._handle_messages(websocket)
-  
+  await server._handle_messages(websocket)  # type: ignore
+
   assert websocket.closed_code == 1003
-  assert "features query parameter is required" in websocket.closed_reason
+  assert "features query parameter is required" in websocket.closed_reason  # type: ignore
 
 
 @pytest.mark.asyncio
 async def test_handle_messages_valid_flow(config_file, logger):
   server = Server(config_file=config_file, threshold=0.1, logger=logger)
-  
+
   websocket = MockWebSocket(path="/ws?features=sound-detection&allowlist=Dog", chunks=[b"\x00" * 100])
-  
+
   async def mock_handle_audio_fn(ws, ww, dc):
     pass
 
   with patch.object(server, "_handle_audio_data", side_effect=mock_handle_audio_fn) as mock_handle_audio:
-    await server._handle_messages(websocket)
+    await server._handle_messages(websocket)  # type: ignore
     mock_handle_audio.assert_called_once()
-    
+
     # Verify mock_handle_audio arguments
-    args, kwargs = mock_handle_audio.call_args
+    args, _kwargs = mock_handle_audio.call_args
     assert args[0] is websocket
     assert args[1] is None  # no wakeword engine
     assert args[2] is not None  # detector consumer is initialized

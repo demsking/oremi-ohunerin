@@ -4,8 +4,6 @@ Leveraging cutting-edge technologies like TensorFlow YAMNet for comprehensive en
 
 Derived from the Yoruba term _"ohun erin"_, meaning _"sound detection"_, Ohunerin enables seamless, privacy-first integration of auditory cues into the Oremi ecosystem, enhancing user experience and interaction.
 
----
-
 ## Features
 
 - **Real-Time Streaming**: Stream raw PCM audio bytes directly over WebSockets for immediate detection results.
@@ -13,8 +11,6 @@ Derived from the Yoruba term _"ohun erin"_, meaning _"sound detection"_, Ohuneri
 - **Wake Word Recognition**: Precise wake word detection utilizing PocketSphinx with support for multiple languages.
 - **Dynamic Configuration**: Extend wake words and discriminants dynamically per session.
 - **Home Assistant Integration**: Standard-compliant integration with Home Assistant's Assist voice pipeline.
-
----
 
 ## Deployment
 
@@ -52,34 +48,96 @@ If you prefer installing Oremi Ohunerin directly:
    oremi-ohunerin
    ```
 
----
-
 ## Configuration
 
-Ohunerin uses a JSON file (`config.json`) to define pre-configured acoustic models, dictionaries, wake words, and discriminants for each language. This configuration follows the [WakewordSetting](#models/WakewordSetting) schema.
+Ohunerin uses a JSON file (`config.json`) that is validated against the [`OhunerinConfig`](#models/OhunerinConfig) schema. The file defines the detection threshold, wake word entries (one per language/phrase pair), and an optional allowlist of sound labels for the sound-detection feature.
 
-Example `config.json`:
+### Schema
+
+| Field         | Type                | Required              | Description                                                       |
+|---------------|---------------------|-----------------------|-------------------------------------------------------------------|
+| `threshold`   | float               | No (default: 0.65)    | Score below which detections are discarded                        |
+| `wakewords`   | WakewordEntry[]     | No                    | Wake word definitions, one per language/phrase pair               |
+| `sounds`      | string[]            | No                    | Allowlist of sound labels the sound-detection feature may emit    |
+
+```python
+class WakewordEntry:
+  """A wakeword definition inside the config file."""
+
+  language: str
+  """BCP-47 language code (e.g. 'fr', 'en')."""
+
+  word: str
+  """The wakeword phrase."""
+
+  phones: list[str]
+  """One or more phonetic transcriptions for the wakeword."""
+
+  discriminants: list[DictionaryEntry] = Field(default_factory=list)
+  """Words that must NOT trigger detection (false-positive guards)."""
+
+class DictionaryEntry:
+  """A word and its phonetic pronunciations."""
+
+  word: str
+  """The word to recognise."""
+
+  phones: list[str]
+  """One or more phonetic transcriptions for the word."""
+```
+
+### Example `config.json`
 
 ```json
 {
-  "fr": {
-    "model": "models/wakeword-fr/cmusphinx-fr-ptm-8khz-5.2",
-    "dictionary": "models/wakeword-fr/pronounciation-dictionary.dict",
-    "wakewords": [{ "word": "oremi", "phones": ["oo rr ei mm ii"] }],
-    "discriminants": [{ "word": "rémi", "phones": ["rr ei mm ii"] }]
-  }
+  "threshold": 0.25,
+  "wakewords": [
+    {
+      "language": "fr",
+      "word": "oremi",
+      "phones": ["oo rr ei mm ii"],
+      "discriminants": [
+        { "word": "rémi", "phones": ["rr ei mm ii"] }
+      ]
+    },
+    {
+      "language": "fr",
+      "word": "dikomlam",
+      "phones": [
+        "dd ii kk oo mm ll aa mm"
+      ]
+    },
+    {
+      "language": "en",
+      "word": "oremi",
+      "phones": [
+        "AO R EY M E"
+      ]
+    },
+    {
+      "language": "en",
+      "word": "dikomlam",
+      "phones": [
+        "TH IH K AA M L AA M"
+      ]
+    }
+  ],
+  "sounds": [
+    "Shout",
+    "Laughter",
+    "Baby cry, infant cry",
+    "Cough",
+    "Sneeze"
+  ]
 }
 ```
 
----
+> **Note on acoustic models:** The acoustic model and pronunciation dictionary paths are resolved automatically from conventional locations relative to the config file (`models/wakeword-{lang}/`). They no longer need to be specified in the config file.
 
 ## Environment Variables
 
-- **`THRESHOLD`**: Detection threshold for filtering predictions. (Default: `"0.1"`)
 - **`LOG_LEVEL`**: Logging level. (Default: `"INFO"`)
 - **`LOG_FILE`**: Log file path.
-
----
 
 ## Home Assistant Integration
 

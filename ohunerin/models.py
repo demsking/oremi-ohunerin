@@ -43,8 +43,42 @@ def create_detected_sound_object(
 
 
 class DictionaryEntry(BaseModel):
+  """A word and its phonetic pronunciations."""
+
   word: str
+  """The word to recognise."""
+
   phones: list[str]
+  """One or more phonetic transcriptions for the word."""
+
+
+class WakewordEntry(BaseModel):
+  """A wakeword definition inside the config file."""
+
+  language: str
+  """BCP-47 language code (e.g. 'fr', 'en')."""
+
+  word: str
+  """The wakeword phrase."""
+
+  phones: list[str]
+  """One or more phonetic transcriptions for the wakeword."""
+
+  discriminants: list[DictionaryEntry] = Field(default_factory=list)
+  """Words that must NOT trigger detection (false-positive guards)."""
+
+
+class OhunerinConfig(BaseModel):
+  """Root configuration model for the ohunerin service."""
+
+  threshold: float = 0.65
+  """Score threshold below which detections are discarded."""
+
+  wakewords: list[WakewordEntry] = Field(default_factory=list)
+  """All wakeword definitions, grouped by language inside each entry."""
+
+  sounds: list[str] = Field(default_factory=list)
+  """Allowlist of sound labels that the sound-detection feature may emit."""
 
 
 class WakewordDetectionFeature(BaseModel):
@@ -60,7 +94,7 @@ class SoundDetectionFeature(BaseModel):
 
 
 class WakewordSetting(BaseModel):
-  """Settings for the wake word detection."""
+  """Resolved, language-specific settings used to initialise the wakeword engine."""
 
   model: str
   """Directory containing the acoustic model files."""
@@ -69,10 +103,10 @@ class WakewordSetting(BaseModel):
   """Dictionary filename."""
 
   discriminants: list[DictionaryEntry]
-  """List of Discriminant objects representing the discriminants."""
+  """Discriminant words that should NOT trigger detection."""
 
   wakewords: list[DictionaryEntry]
-  """List of Wakeword objects representing the wakewords."""
+  """Wakeword phrases that should trigger detection."""
 
   def copy(self) -> 'WakewordSetting':
     return WakewordSetting(

@@ -66,7 +66,7 @@ async def test_server_info_endpoint(config_file, logger):
   data = json.loads(body.decode("utf-8"))
   assert data["name"] == "oremi-ohunerin"
   assert "version" in data
-  assert data["threshold"] == 0.1
+  assert data["threshold"] == 0.25
   assert "languages" not in data
   assert "wakewords" in data
   assert "oremi" in data["wakewords"]["fr"]
