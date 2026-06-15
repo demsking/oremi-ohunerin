@@ -13,6 +13,7 @@ authors = [
   { name = "Sébastien Demanou", email = "demsking@gmail.com" }
 ]
 keywords = ["sound", "detection", "wakeword"]
+
 classifiers = [
   "Environment :: Console",
   "Intended Audience :: Developers",
@@ -21,6 +22,7 @@ classifiers = [
   "Topic :: Software Development :: Libraries :: Python Modules",
   "Programming Language :: Python :: 3.11",
 ]
+
 dependencies = [
   "pocketsphinx>=5.0.4,<6.0.0",
   "numpy>=2.2.2,<3.0.0",
