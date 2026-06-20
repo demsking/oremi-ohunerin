@@ -106,7 +106,9 @@ async def main():
     }
   )
 
-  uri = f"wss://{args.host}:{args.port}/ws?{query_string}" if args.cert_file else f"ws://{args.host}:{args.port}/ws?{query_string}"
+  uri = (
+    f"wss://{args.host}:{args.port}/ws?{query_string}" if args.cert_file else f"ws://{args.host}:{args.port}/ws?{query_string}"
+  )
   stream = sd.RawInputStream(
     dtype='int16',
     samplerate=16000,
@@ -147,7 +149,7 @@ async def main():
         async for message in websocket:
           logger.info(
             f"Detected: {message}"
-          )  # {"type": "sound", "sound": "snoring", "score": 0.109375, "datetime": "2023-08-16T14:42:46.424809"}
+          )  # {"type": "sound", "sound": "snoring", "score": 0.109375, "date": "2023-08-16T14:42:46.424809"}
       except asyncio.CancelledError:
         logger.info('Recording stopped')
         await websocket.close()

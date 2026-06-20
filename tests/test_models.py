@@ -33,7 +33,7 @@ def test_create_detected_sound_object():
   assert obj["score"] == 0.95
 
   # Validate datetime is in correct ISO format
-  dt = datetime.datetime.fromisoformat(obj["datetime"])
+  dt = datetime.datetime.fromisoformat(obj["date"])
   assert isinstance(dt, datetime.datetime)
 
 
@@ -109,12 +109,7 @@ def test_wakeword_detection_feature():
   assert feature.discriminants == []
 
   entry = DictionaryEntry(word="hello", phones=["H"])
-  feature2 = WakewordDetectionFeature(
-    name="wakeword-detection",
-    language="fr",
-    wakewords=[entry],
-    discriminants=[entry]
-  )
+  feature2 = WakewordDetectionFeature(name="wakeword-detection", language="fr", wakewords=[entry], discriminants=[entry])
   assert feature2.wakewords == [entry]
   assert feature2.discriminants == [entry]
 
@@ -133,10 +128,7 @@ def test_wakeword_setting_and_copy():
   entry_disc = DictionaryEntry(word="remi", phones=["R", "E", "M", "I"])
 
   setting = WakewordSetting(
-    model="/path/to/model",
-    dictionary="/path/to/dict",
-    discriminants=[entry_disc],
-    wakewords=[entry_wake]
+    model="/path/to/model", dictionary="/path/to/dict", discriminants=[entry_disc], wakewords=[entry_wake]
   )
 
   assert setting.model == "/path/to/model"

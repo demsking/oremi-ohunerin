@@ -124,7 +124,7 @@
             "description": "The confidence score of the detection.",
             "example": 0.6677674
           },
-          "datetime": {
+          "date": {
             "type": "string",
             "format": "date-time",
             "description": "The ISO 8601 timestamp of when the sound was detected.",
@@ -135,7 +135,7 @@
           "type",
           "sound",
           "score",
-          "datetime"
+          "date"
         ]
       },
       "WakewordDiscriminant": {
