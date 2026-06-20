@@ -48,7 +48,7 @@ COPY ohunerin/ /opt/oremi/ohunerin
 USER olumulo
 
 ENV PATH="/opt/oremi/bin:$PATH"
-ENV PYTHONPATH="/opt/oremi:$PYTHONUSERBASE:$PYTHONPATH"
+ENV PYTHONPATH="/opt/oremi"
 
 ENV LOG_LEVEL="INFO"
 ENV LOG_FILE=
