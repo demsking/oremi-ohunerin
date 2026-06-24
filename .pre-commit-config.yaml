@@ -39,10 +39,6 @@ repos:
       - id: detect-private-key
         name: 'Detect Private Keys'
         description: 'Prevents committing files that appear to contain private keys.'
-      - id: double-quote-string-fixer
-        name: 'Double Quote String Fixer'
-        description: 'Ensures all strings in Python files use double quotes.'
-      # - id: name-tests-test
       - id: requirements-txt-fixer
         name: 'Requirements.txt Fixer'
         description: 'Sorts entries in requirements.txt files and removes duplicates.'

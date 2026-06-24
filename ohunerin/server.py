@@ -383,7 +383,7 @@ class Server(WebSocketServer):
     except websockets.exceptions.ConnectionClosedError as exception:
       self._handle_connection_close(websocket, exception)
     except Exception as exception:
-      error_message = f"Invalid Message: {exception}"
+      error_message = str(exception)
       await websocket.close(code=1003, reason=error_message)
       self.logger.error(error_message)
 
