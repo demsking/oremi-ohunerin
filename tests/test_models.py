@@ -13,17 +13,17 @@
 # limitations under the License.
 # ==============================================================================
 import datetime
+
 import pytest
 from pydantic import ValidationError
-from ohunerin.models import (
-  create_detected_sound_object,
-  DictionaryEntry,
-  OhunerinConfig,
-  WakewordDetectionFeature,
-  WakewordEntry,
-  SoundDetectionFeature,
-  WakewordSetting,
-)
+
+from ohunerin.models import create_detected_sound_object
+from ohunerin.models import DictionaryEntry
+from ohunerin.models import OhunerinConfig
+from ohunerin.models import SoundDetectionFeature
+from ohunerin.models import WakewordDetectionFeature
+from ohunerin.models import WakewordEntry
+from ohunerin.models import WakewordSetting
 
 
 def test_create_detected_sound_object():
@@ -33,7 +33,7 @@ def test_create_detected_sound_object():
   assert obj["score"] == 0.95
 
   # Validate datetime is in correct ISO format
-  dt = datetime.datetime.fromisoformat(obj["date"])
+  dt = datetime.datetime.fromisoformat(obj["datetime"])
   assert isinstance(dt, datetime.datetime)
 
 

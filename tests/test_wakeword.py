@@ -15,8 +15,12 @@
 import json
 import logging
 import os
+
 import pytest
-from ohunerin.models import DictionaryEntry, OhunerinConfig, WakewordSetting
+
+from ohunerin.models import DictionaryEntry
+from ohunerin.models import OhunerinConfig
+from ohunerin.models import WakewordSetting
 from ohunerin.wakeword import WakewordEngine
 
 

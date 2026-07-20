@@ -15,9 +15,12 @@
 import json
 import logging
 import os
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
+from unittest.mock import patch
+
 import pytest
 import pytest_asyncio
+
 from ohunerin import parse_config_file
 from ohunerin.server import Server
 

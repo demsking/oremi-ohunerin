@@ -13,7 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 import numpy as np
-import pytest
+
 from ohunerin.audio import to_ndarray
 
 
@@ -26,9 +26,9 @@ def test_to_ndarray_mono():
   # -32768 -> \x00\x80
   # 16384 -> \x00\x40
   data = b"\x00\x00\xff\x7f\x00\x80\x00\x40"
-  
+
   result = to_ndarray(data, num_channels=1)
-  
+
   assert result.shape == (4, 1)
   assert np.isclose(result[0, 0], 0.0)
   assert np.isclose(result[1, 0], 32767.0 / 32768.0)
@@ -39,9 +39,9 @@ def test_to_ndarray_mono():
 def test_to_ndarray_stereo():
   # 4 samples, 2 channels -> shape (2, 2)
   data = b"\x00\x00\xff\x7f\x00\x80\x00\x40"
-  
+
   result = to_ndarray(data, num_channels=2)
-  
+
   assert result.shape == (2, 2)
   assert np.isclose(result[0, 0], 0.0)
   assert np.isclose(result[0, 1], 32767.0 / 32768.0)

@@ -12,10 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import sys
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
+from unittest.mock import patch
+
 import pytest
-from ohunerin import main, start
+
+from ohunerin import main
+from ohunerin import start
 
 
 @pytest.mark.asyncio

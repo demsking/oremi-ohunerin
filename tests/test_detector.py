@@ -14,8 +14,11 @@
 # ==============================================================================
 import logging
 import os
+
 import pytest
-from ohunerin.detector import DetectorConsumer, DetectorEngine
+
+from ohunerin.detector import DetectorConsumer
+from ohunerin.detector import DetectorEngine
 
 
 @pytest.fixture
