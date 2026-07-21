@@ -405,7 +405,7 @@ wheels = [
 
 [[package]]
 name = "oremi-ohunerin"
-version = "4.0.0b5"
+version = "4.0.0b6"
 source = { editable = "." }
 dependencies = [
     { name = "numpy" },
