@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""HTTP Request Handler for documentation and OpenAPI endpoints."""
 import http
 import json
 import logging
@@ -34,7 +33,6 @@ from ohunerin.engines.detector import DetectorConsumer
 from ohunerin.engines.detector import DetectorEngine
 from ohunerin.engines.wakeword import WakewordEngine
 from ohunerin.models.sound import SoundsConfig
-from ohunerin.models.sound import SUPPORTED_SOUNDS
 from ohunerin.models.wakeword import DictionaryEntry
 from ohunerin.models.wakeword import WakewordEntry
 from ohunerin.models.wakeword import WakewordsConfig
@@ -197,7 +195,7 @@ class HttpHandler:
 
   @property
   def supported_sounds(self) -> list[str]:
-    return SUPPORTED_SOUNDS
+    return self.sounds_config.effective_whitelist
 
   def get_wakewords_by_language(self, language: str) -> list[WakewordEntry]:
     return [entry for entry in self.wakewords_config.wakewords if entry.language == language]
