@@ -8,7 +8,7 @@ BUILD_DIR := build
 BUILDER_NAME := $(APP_NAME)
 
 IMAGE_NAME := demsking/$(APP_NAME)
-IMAGE_PLATFORMS := linux/amd64,linux/arm64
+IMAGE_PLATFORMS := linux/amd64
 IMAGE_REVISION := $(shell git rev-parse HEAD)
 IMAGE_CREATED := $(shell date --utc --iso-8601=seconds)
 

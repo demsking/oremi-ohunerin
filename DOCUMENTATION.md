@@ -17,9 +17,9 @@ Derived from the Yoruba term _"ohun erin"_, meaning _"sound detection"_, Ohuneri
 ### Docker Image
 
 The [`demsking/oremi-ohunerin`](https://hub.docker.com/r/demsking/oremi-ohunerin)
-Docker image is officially available on Docker Hub, supporting both
-`linux/amd64` and `linux/arm64` platforms. The image is configured to expose
-port `5023`, which serves the API and documentation endpoints.
+Docker image is officially available on Docker Hub, supporting `linux/amd64`
+platform. The image is configured to expose port `5023`, which serves the API
+and documentation endpoints.
 
 The local documentation can be accessed at `http://localhost:5023/docs` for easy
 reference on available endpoints and usage instructions.
