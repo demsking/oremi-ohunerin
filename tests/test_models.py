@@ -17,13 +17,9 @@ import datetime
 import pytest
 from pydantic import ValidationError
 
-from ohunerin.models import create_detected_sound_object
-from ohunerin.models import DictionaryEntry
-from ohunerin.models import OhunerinConfig
-from ohunerin.models import SoundDetectionFeature
-from ohunerin.models import WakewordDetectionFeature
-from ohunerin.models import WakewordEntry
-from ohunerin.models import WakewordSetting
+from ohunerin.models.sound import SoundsConfig, create_detected_sound_object
+from ohunerin.models.sound import SoundDetectionFeature
+from ohunerin.models.wakeword import DictionaryEntry, WakewordDetectionFeature, WakewordEntry, WakewordSetting, WakewordsConfig
 
 
 def test_create_detected_sound_object():
@@ -65,16 +61,13 @@ def test_wakeword_entry_with_discriminants():
   assert entry.discriminants == [disc]
 
 
-def test_ohunerin_config_defaults():
-  config = OhunerinConfig()
-  assert config.threshold == 0.65
+def test_wakewords_config_defaults():
+  config = WakewordsConfig()
   assert config.wakewords == []
-  assert config.sounds == []
 
 
-def test_ohunerin_config_full():
+def test_wakewords_config_full():
   raw = {
-    "threshold": 0.4,
     "wakewords": [
       {
         "language": "fr",
@@ -88,17 +81,34 @@ def test_ohunerin_config_full():
         "phones": ["AO R EY M E"],
       },
     ],
-    "sounds": ["Shout", "Laughter"],
   }
-  config = OhunerinConfig.model_validate(raw)
-  assert config.threshold == 0.4
+  config = WakewordsConfig.model_validate(raw)
   assert len(config.wakewords) == 2
   assert config.wakewords[0].language == "fr"
   assert config.wakewords[0].word == "oremi"
   assert len(config.wakewords[0].discriminants) == 1
   assert config.wakewords[0].discriminants[0].word == "rémi"
   assert config.wakewords[1].language == "en"
-  assert config.sounds == ["Shout", "Laughter"]
+
+
+def test_sound_filter_config():
+  # Test with list input
+  sf1 = SoundsConfig.model_validate(["Shout", "Laughter"])
+  assert sf1.whitelist == ["Shout", "Laughter"]
+  assert sf1.blacklist == []
+  assert sf1.allowlist == ["Shout", "Laughter"]
+
+  # Test with whitelist/blacklist dict input
+  sf2 = SoundsConfig.model_validate({"whitelist": ["Shout"], "blacklist": ["Snoring"]})
+  assert sf2.whitelist == ["Shout"]
+  assert sf2.blacklist == ["Snoring"]
+
+  # Test with allowlist/denylist dict input
+  sf3 = SoundsConfig.model_validate({"allowlist": ["Laughter"], "denylist": ["Crying"]})
+  assert sf3.whitelist == ["Laughter"]
+  assert sf3.blacklist == ["Crying"]
+  assert sf3.allowlist == ["Laughter"]
+  assert sf3.denylist == ["Crying"]
 
 
 def test_wakeword_detection_feature():

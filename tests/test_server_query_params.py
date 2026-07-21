@@ -18,7 +18,10 @@ import os
 import pytest
 import pytest_asyncio
 
-from ohunerin import parse_config_file
+from pathlib import Path
+
+from ohunerin.models.sound import SoundsConfig
+from ohunerin.models.wakeword import WakewordsConfig
 from ohunerin.server import Server
 
 
@@ -30,14 +33,22 @@ def logger():
 @pytest_asyncio.fixture
 async def server(logger):
   base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-  config_file = os.path.join(base_dir, "ohunerin", "config.json")
-  config = parse_config_file(config_file)
-  return Server(config=config, logger=logger)
+  wakewords_file = os.path.join(base_dir, "wakewords.json")
+  sounds_file = os.path.join(base_dir, "sounds.json")
+  model_file = os.path.join(base_dir, "models", "yamnet.tflite")
+
+  with open(wakewords_file, encoding="utf-8") as f:
+    wakewords_config = WakewordsConfig.model_validate_json(f.read())
+  with open(sounds_file, encoding="utf-8") as f:
+    sounds_config = SoundsConfig.model_validate_json(f.read())
+
+  return Server(wakewords_config=wakewords_config, sounds_config=sounds_config, threshold=0.65, model=Path(model_file))
 
 
 # ---------------------------------------------------------------------------
 # Wakeword detection
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_parse_query_params_wakeword_only(server):
@@ -52,7 +63,7 @@ async def test_parse_query_params_wakeword_only(server):
 @pytest.mark.asyncio
 async def test_parse_query_params_wakeword_fr_discriminants(server):
   path = "/ws?features=wakeword-detection&language=fr"
-  wk_engine, dt_consumer = server._parse_query_params(path)
+  wk_engine, _dt_consumer = server._parse_query_params(path)
 
   assert wk_engine is not None
   # "remi" is the configured discriminant (accent stripped for pocketsphinx)
@@ -77,6 +88,7 @@ async def test_parse_query_params_unsupported_language(server):
 # ---------------------------------------------------------------------------
 # Sound detection
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_parse_query_params_sound_only_no_filter(server):
@@ -124,6 +136,7 @@ async def test_parse_query_params_sound_filter_ignores_unknown(server):
 # Combined features
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_parse_query_params_both_features(server):
   path = "/ws?features=wakeword-detection,sound-detection&language=fr"
@@ -136,6 +149,7 @@ async def test_parse_query_params_both_features(server):
 # ---------------------------------------------------------------------------
 # Error cases
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_parse_query_params_no_features_raises_error(server):

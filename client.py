@@ -21,61 +21,64 @@ import urllib.parse
 
 import sounddevice as sd
 import websockets.exceptions
-from oremi_core.logger import Logger
 from websockets.asyncio.client import connect
+
+from ohunerin.core.logger import configure_logging
+
+logger = logging.Logger(__name__)
 
 
 def parse_arguments() -> argparse.Namespace:
-  parser = argparse.ArgumentParser(description='Oremi SDS Client')
+  parser = argparse.ArgumentParser(description="Oremi SDS Client")
 
   parser.add_argument(
-    '-l',
-    '--language',
+    "-l",
+    "--language",
     type=str,
-    default='fr',
+    default="fr",
   )
 
   parser.add_argument(
-    '-i',
-    '--device-index',
+    "-i",
+    "--device-index",
     type=int,
     default=-1,
-    help='Index of the audio device to be used for recording audio.',
+    help="Index of the audio device to be used for recording audio.",
   )
 
   parser.add_argument(
-    '-d',
-    '--device',
+    "-d",
+    "--device",
     type=str,
-    default='',
-    help='Name of the device.',
+    default="",
+    help="Name of the device.",
   )
 
   parser.add_argument(
-    '--list-devices',
-    action='store_true',
-    help='List available input devices.',
+    "--list-devices",
+    action="store_true",
+    help="List available input devices.",
   )
 
   parser.add_argument(
-    '--host',
+    "--host",
     type=str,
-    default='localhost',
-    help='Host address to connect to (default: localhost).',
+    default="localhost",
+    help="Host address to connect to (default: localhost).",
   )
 
   parser.add_argument(
-    '-p',
-    '--port',
+    "-p",
+    "--port",
     type=int,
     default=5023,
-    help='Port number to connect to (default: 5023).',
+    help="Port number to connect to (default: 5023).",
   )
 
   parser.add_argument(
-    '--cert-file',
+    "--cert-file",
     type=str,
-    help='Path to the certificate file for secure connection.',
+    help="Path to the certificate file for secure connection.",
   )
 
   return parser.parse_args()
@@ -83,9 +86,9 @@ def parse_arguments() -> argparse.Namespace:
 
 def list_input_devices():
   devices = sd.query_devices()
-  print('Available input devices:')
+  print("Available input devices:")
   for i, device in enumerate(devices):
-    if device['max_input_channels'] > 0:  # type: ignore
+    if device["max_input_channels"] > 0:  # type: ignore
       print(
         f"{i + 1}. {device['name']} - {device['max_input_channels']} channel(s) - Sample rate: {device['default_samplerate']} Hz"  # type: ignore
       )
@@ -99,10 +102,12 @@ async def main():
     list_input_devices()
     return
 
+  configure_logging("DEBUG", None)
+
   query_string = urllib.parse.urlencode(
     {
-      'language': args.language,
-      'features': 'wakeword-detection,sound-detection',
+      "language": args.language,
+      "features": "wakeword-detection,sound-detection",
     }
   )
 
@@ -110,7 +115,7 @@ async def main():
     f"wss://{args.host}:{args.port}/ws?{query_string}" if args.cert_file else f"ws://{args.host}:{args.port}/ws?{query_string}"
   )
   stream = sd.RawInputStream(
-    dtype='int16',
+    dtype="int16",
     samplerate=16000,
     blocksize=4000,
     device=args.device or (args.device_index - 1 if args.device_index > 0 else None),
@@ -118,8 +123,7 @@ async def main():
     callback=lambda indata, frames, time, status: loop.call_soon_threadsafe(audio_queue.put_nowait, bytes(indata)),
   )
 
-  device_info = sd.query_devices(stream.device, 'input')
-  logger = Logger.create('sds-client', level=logging.DEBUG)
+  device_info = sd.query_devices(stream.device, "input")
   stream_open = True
   ssl_context = None
 
@@ -129,32 +133,32 @@ async def main():
     ssl_context.load_verify_locations(args.cert_file)
 
   def stop_recording():
-    print('Ctrl+C received, closing stream...')
+    print("Ctrl+C received, closing stream...")
     if stream_open:
       stream.stop()
       stream.close()
-      print('Stream closed.')
+      print("Stream closed.")
 
-  async with connect(uri, ssl=ssl_context, user_agent_header='sds-client/1.0.0') as websocket:
+  async with connect(uri, ssl=ssl_context, user_agent_header="sds-client/1.0.0") as websocket:
     loop = asyncio.get_running_loop()
 
     loop.add_signal_handler(signal.SIGINT, stop_recording)
     loop.add_signal_handler(signal.SIGTERM, stop_recording)
-    loop.add_signal_handler(signal.SIGINT, lambda: loop.create_task(websocket.close(), name='SIGINT Signal Task'))
-    loop.add_signal_handler(signal.SIGTERM, lambda: loop.create_task(websocket.close(), name='SIGTERM Signal Task'))
+    loop.add_signal_handler(signal.SIGINT, lambda: loop.create_task(websocket.close(), name="SIGINT Signal Task"))
+    loop.add_signal_handler(signal.SIGTERM, lambda: loop.create_task(websocket.close(), name="SIGTERM Signal Task"))
 
     async def listen():
-      logger.info('Listening detection messages...')
+      logger.info("Listening detection messages...")
       try:
         async for message in websocket:
           logger.info(
             f"Detected: {message}"
           )  # {"type": "sound", "sound": "snoring", "score": 0.109375, "date": "2023-08-16T14:42:46.424809"}
       except asyncio.CancelledError:
-        logger.info('Recording stopped')
+        logger.info("Recording stopped")
         await websocket.close()
       except websockets.exceptions.ConnectionClosedOK:
-        logger.info('Connection closed')
+        logger.info("Connection closed")
       except websockets.exceptions.ConnectionClosedError as error:
         logger.info(error)
 
@@ -166,7 +170,7 @@ async def main():
             data = await audio_queue.get()
             await websocket.send(data)
           except websockets.exceptions.ConnectionClosedOK:
-            logger.info('Connection closed')
+            logger.info("Connection closed")
             break
           except websockets.exceptions.ConnectionClosedError as error:
             logger.info(error)
@@ -174,7 +178,7 @@ async def main():
           except sd.PortAudioError as error:
             logger.info(error)
             break
-      logger.info('Stream closed.')
+      logger.info("Stream closed.")
 
     def handle_task_done(task: asyncio.Task):
       if task.done():
@@ -188,8 +192,8 @@ async def main():
         except (asyncio.CancelledError, asyncio.InvalidStateError) as error:
           logger.info(error)
 
-    listening_task = loop.create_task(listen(), name='Listening Task')
-    recording_task = loop.create_task(recording(), name='Recording Task')
+    listening_task = loop.create_task(listen(), name="Listening Task")
+    recording_task = loop.create_task(recording(), name="Recording Task")
 
     listening_task.add_done_callback(handle_task_done)
     recording_task.add_done_callback(handle_task_done)

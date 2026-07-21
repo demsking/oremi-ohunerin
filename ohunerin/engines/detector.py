@@ -13,32 +13,40 @@
 # limitations under the License.
 # ==============================================================================
 import logging
+from pathlib import Path
 
 from tflite_support.task import audio
 from tflite_support.task import core
 from tflite_support.task import processor
 
-from .audio import to_ndarray
+from ohunerin.audio.processing import to_ndarray
+
+logger = logging.getLogger(__name__)
+
+__all__ = [
+  "DetectorConsumer",
+  "DetectorEngine",
+]
 
 
 class DetectorEngine:
+  """Engine for sound classification using TFLite audio task classifier."""
+
   def __init__(
     self,
-    model: str,
+    model: Path,
     *,
     score_threshold: float = 0.1,
     num_threads: int = -1,
-    logger: logging.Logger,
     allowlist: list[str] | None = None,
-  ):
-    if (score_threshold < 0) or (score_threshold > 1.0):
-      raise ValueError('Score threshold must be between (inclusive) 0 and 1.')
-
-    self._logger = logger
+    denylist: list[str] | None = None,
+  ) -> None:
+    if score_threshold < 0 or score_threshold > 1.0:
+      raise ValueError("Score threshold must be between (inclusive) 0 and 1.")
 
     # Initialize the audio classification model.
     base_options = core.BaseOptions(
-      file_name=model,
+      file_name=str(model),
       use_coral=False,
       num_threads=num_threads,
     )
@@ -46,7 +54,8 @@ class DetectorEngine:
     classification_options = processor.ClassificationOptions(
       max_results=1,
       score_threshold=score_threshold,
-      category_name_allowlist=allowlist,
+      category_name_allowlist=allowlist if allowlist else None,
+      category_name_denylist=denylist if denylist else None,
     )
 
     options = audio.AudioClassifierOptions(
@@ -59,34 +68,27 @@ class DetectorEngine:
 
 
 class DetectorConsumer:
-  """
-  Consumes audio data from a detector engine and performs sound classification.
-  """
+  """Consumes audio data from a detector engine and performs sound classification."""
 
-  def __init__(self, detector: DetectorEngine, logger: logging.Logger) -> None:
-    """
-    Initialize the DetectorConsumer.
+  def __init__(self, detector: DetectorEngine) -> None:
+    """Initialize the DetectorConsumer.
 
     Args:
       detector (DetectorEngine): The audio detector engine.
-      logger (logging.Logger): The logger instance for logging.
+      logger (logging.Logger | None): Optional logger instance.
     """
-    self._logger = logger
     self._detector = detector
 
     # Initialize the audio classification buffer.
     self._buffer = bytearray(15600)
     self._buffer_index = 0
 
-  def reset_buffer(self):
-    """
-    Reset the audio classification buffer index to 0.
-    """
+  def reset_buffer(self) -> None:
+    """Reset the audio classification buffer index to 0."""
     self._buffer_index = 0
 
   def _classify_audio(self, chunk: bytes) -> tuple[str | None, float]:
-    """
-    Classify audio data and process detected sounds.
+    """Classify audio data and process detected sounds.
 
     Args:
       chunk (bytes): The audio chunk in bytes format.
@@ -98,13 +100,13 @@ class DetectorConsumer:
     if len(result.classifications) > 0 and len(result.classifications[0].categories) > 0:
       sound = result.classifications[0].categories[0]
 
-      self._logger.debug(f"Sound {sound.category_name} detected with score {sound.score:.2f}")
+      logger.debug(sound)
       return sound.category_name.lower(), sound.score
+
     return None, 0.0
 
   def process_raw(self, chunk: bytes) -> tuple[str | None, float]:
-    """
-    Process raw mono audio data and perform sound classification.
+    """Process raw mono audio data and perform sound classification.
 
     Args:
       chunk (bytes): The raw mono audio data chunk to process.
@@ -112,8 +114,10 @@ class DetectorConsumer:
     for byte in chunk:
       self._buffer[self._buffer_index] = byte
       self._buffer_index += 1
+
       if self._buffer_index == len(self._buffer):
         result = self._classify_audio(bytes(self._buffer))
         self.reset_buffer()
         return result
+
     return None, 0.0

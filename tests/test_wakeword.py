@@ -12,16 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import json
 import logging
 import os
 
 import pytest
 
-from ohunerin.models import DictionaryEntry
-from ohunerin.models import OhunerinConfig
-from ohunerin.models import WakewordSetting
-from ohunerin.wakeword import WakewordEngine
+from ohunerin.engines.wakeword import WakewordEngine
+from ohunerin.models.wakeword import DictionaryEntry
+from ohunerin.models.wakeword import WakewordsConfig
+from ohunerin.models.wakeword import WakewordSetting
 
 
 @pytest.fixture
@@ -31,47 +30,42 @@ def logger():
 
 @pytest.fixture
 def config_data() -> dict[str, WakewordSetting]:
-  """Parse config.json into a language-keyed dict of WakewordSetting objects."""
+  """Parse wakewords.json into a language-keyed dict of WakewordSetting objects."""
   base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-  config_file = os.path.join(base_dir, "ohunerin", "config.json")
-  config_dir = os.path.dirname(os.path.abspath(config_file))
+  wakewords_file = os.path.join(base_dir, "wakewords.json")
 
-  language_model_paths: dict[str, tuple[str, str]] = {
-    'fr': (
-      'models/wakeword-fr/cmusphinx-fr-ptm-8khz-5.2',
-      'models/wakeword-fr/pronounciation-dictionary.dict',
+  language_data_paths: dict[str, tuple[str, str]] = {
+    "fr": (
+      "models/wakeword-fr/cmusphinx-fr-ptm-8khz-5.2",
+      "models/wakeword-fr/pronounciation-dictionary.dict",
     ),
-    'en': (
-      'models/wakeword-en/acoustic-model',
-      'models/wakeword-en/pronounciation-dictionary.dict',
+    "en": (
+      "models/wakeword-en/acoustic-model",
+      "models/wakeword-en/pronounciation-dictionary.dict",
     ),
   }
 
-  with open(config_file, encoding="utf-8") as f:
-    raw = json.load(f)
-
-  ohunerin_config = OhunerinConfig.model_validate(raw)
+  with open(wakewords_file, encoding="utf-8") as f:
+    wakewords_config = WakewordsConfig.model_validate_json(f.read())
 
   language_wakewords: dict[str, list[DictionaryEntry]] = {}
   language_discriminants: dict[str, list[DictionaryEntry]] = {}
 
-  for entry in ohunerin_config.wakewords:
+  for entry in wakewords_config.wakewords:
     lang = entry.language
-    language_wakewords.setdefault(lang, []).append(
-      DictionaryEntry(word=entry.word, phones=entry.phones)
-    )
+    language_wakewords.setdefault(lang, []).append(DictionaryEntry(word=entry.word, phones=entry.phones))
     for disc in entry.discriminants:
       language_discriminants.setdefault(lang, []).append(disc)
 
   settings: dict[str, WakewordSetting] = {}
   for language, wakewords in language_wakewords.items():
-    model_rel, dict_rel = language_model_paths.get(
+    model_rel, dict_rel = language_data_paths.get(
       language,
-      (f'models/wakeword-{language}/acoustic-model', f'models/wakeword-{language}/pronounciation-dictionary.dict'),
+      (f"models/wakeword-{language}/acoustic-model", f"models/wakeword-{language}/pronounciation-dictionary.dict"),
     )
     settings[language] = WakewordSetting(
-      model=os.path.abspath(os.path.join(config_dir, model_rel)),
-      dictionary=os.path.abspath(os.path.join(config_dir, dict_rel)),
+      model=os.path.abspath(os.path.join(base_dir, model_rel)),
+      dictionary=os.path.abspath(os.path.join(base_dir, dict_rel)),
       wakewords=wakewords,
       discriminants=language_discriminants.get(language, []),
     )
@@ -79,8 +73,8 @@ def config_data() -> dict[str, WakewordSetting]:
   return settings
 
 
-def test_wakeword_engine_is_discriminant_fr(config_data, logger):
-  engine = WakewordEngine(config_data["fr"], logger)
+def test_wakeword_engine_is_discriminant_fr(config_data):
+  engine = WakewordEngine(config_data["fr"])
 
   # "remi" is a predefined discriminant in the French config (stored without accent)
   assert engine.is_discriminant("remi") is True
@@ -93,8 +87,8 @@ def test_wakeword_engine_is_discriminant_fr(config_data, logger):
   assert engine.is_discriminant("test hello") is False
 
 
-def test_wakeword_engine_is_discriminant_en(config_data, logger):
-  engine = WakewordEngine(config_data["en"], logger)
+def test_wakeword_engine_is_discriminant_en(config_data):
+  engine = WakewordEngine(config_data["en"])
 
   # English config has no explicit discriminants
   assert engine.is_discriminant("rémi") is False
@@ -103,8 +97,8 @@ def test_wakeword_engine_is_discriminant_en(config_data, logger):
   assert engine.is_discriminant("hello world") is False
 
 
-def test_wakeword_engine_process_raw_dummy(config_data, logger):
-  engine = WakewordEngine(config_data["en"], logger)
+def test_wakeword_engine_process_raw_dummy(config_data):
+  engine = WakewordEngine(config_data["en"])
 
   engine.start_utt()
 

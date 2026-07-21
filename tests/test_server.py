@@ -16,12 +16,14 @@ import http
 import json
 import logging
 import os
+from pathlib import Path
 
 import pytest
 import pytest_asyncio
 from websockets.datastructures import Headers
 
-from ohunerin import parse_config_file
+from ohunerin.models.sound import SoundsConfig
+from ohunerin.models.wakeword import WakewordsConfig
 from ohunerin.server import Server
 
 
@@ -33,24 +35,31 @@ def logger():
 @pytest_asyncio.fixture
 async def server(logger):
   base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-  config_file = os.path.join(base_dir, "ohunerin", "config.json")
-  config = parse_config_file(config_file)
-  return Server(config=config, logger=logger)
+  wakewords_file = os.path.join(base_dir, "wakewords.json")
+  sounds_file = os.path.join(base_dir, "sounds.json")
+  model_file = os.path.join(base_dir, "models", "yamnet.tflite")
+
+  with open(wakewords_file, encoding="utf-8") as f:
+    wakewords_config = WakewordsConfig.model_validate_json(f.read())
+  with open(sounds_file, encoding="utf-8") as f:
+    sounds_config = SoundsConfig.model_validate_json(f.read())
+
+  return Server(wakewords_config=wakewords_config, sounds_config=sounds_config, threshold=0.65, model=Path(model_file))
 
 
 @pytest.mark.asyncio
 async def test_server_info_endpoint(server):
   headers = Headers()
-  # Test redirection of / to /info
+  # Test redirection of / to /health
   response = await server.process_http_request("/", headers)
   assert response is not None
   status, resp_headers, body = response
   assert status == http.HTTPStatus.FOUND
   headers_dict = dict(resp_headers)
-  assert headers_dict["Location"] == "/info"
+  assert headers_dict["Location"] == "/health"
 
   # Test info endpoint
-  response = await server.process_http_request("/info", headers)
+  response = await server.process_http_request("/health", headers)
   assert response is not None
   status, resp_headers, body = response
 
@@ -88,6 +97,20 @@ async def test_other_endpoints(server):
   status, _, body = response
   assert status == http.HTTPStatus.OK
   assert b"<!DOCTYPE html>" in body or b"html" in body.lower()
+
+  # Test sounds endpoint
+  response = await server.process_http_request("/api/sounds", Headers())
+  assert response is not None
+  status, resp_headers, body = response
+  assert status == http.HTTPStatus.OK
+  headers_dict = dict(resp_headers)
+  assert headers_dict["Content-Type"] == "application/json; charset=utf-8"
+  assert headers_dict["Access-Control-Allow-Origin"] == "*"
+  sounds = json.loads(body.decode("utf-8"))
+  assert isinstance(sounds, list)
+  assert "Speech" in sounds
+  assert "Laughter" in sounds
+  assert server.supported_sounds == sounds
 
   # Test ws
   response = await server.process_http_request("/ws", Headers())

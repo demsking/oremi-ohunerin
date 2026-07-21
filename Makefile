@@ -41,6 +41,10 @@ down:
 stats:
 	docker compose stats
 
+client:
+	uv add --dev sounddevice
+	devbox run python client.py --port 5023
+
 $(TSLITE_FILE):
 	./scripts/install-model.sh $@
 
@@ -48,7 +52,7 @@ model: $(TSLITE_FILE)
 
 install: model
 	rm -rf .venv
-	devbox run uv venv --python 3.12
+	devbox run uv venv --python 3.11
 	devbox run uv sync
 
 outdated:

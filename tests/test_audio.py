@@ -14,7 +14,7 @@
 # ==============================================================================
 import numpy as np
 
-from ohunerin.audio import to_ndarray
+from ohunerin.audio.processing import to_ndarray
 
 
 def test_to_ndarray_mono():

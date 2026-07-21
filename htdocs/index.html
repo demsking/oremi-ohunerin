@@ -4,39 +4,41 @@
     <meta charset="utf-8" />
     <meta
       name="description"
-      content="Oremi Ohunerin"
+      content="Real-time ambient sound and wake word detection"
     />
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1"
     />
     <title>Oremi Ohunerin Documentation</title>
-    <style>
-      .open-api-client-button {
-        display: none !important;
-      }
-    </style>
   </head>
   <body>
     <div id="app"></div>
     <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
-    <script>
+    <script type="module">
+      const response = await fetch('/openapi.json');
+      const openapi = await response.json();
+      const isGitlabPage = location.origin.includes('gitlab.io');
+
+      if (isGitlabPage) {
+        openapi.servers = [];
+      }
+
       Scalar.createApiReference('#app', {
-        url: '/openapi.json',
         title: 'Oremi Ohunerin Documentation',
-        expandAllModelSections: false,
-        defaultOpenAllTags: true,
-        hideTestRequestButton: window.location.hostname !== 'localhost',
+        agent: {
+          disabled: true,
+        },
+        content: openapi,
         hideClientButton: true,
+        hideTestRequestButton: isGitlabPage,
+        expandAllModelSections: false,
         showSidebar: true,
         showDeveloperTools: 'localhost',
-        showToolbar: 'localhost',
         operationTitleSource: 'summary',
         theme: 'default',
         persistAuth: false,
         telemetry: false,
-        externalUrls: {},
-        default: false,
         layout: 'modern',
         isEditable: false,
         isLoading: false,
@@ -46,15 +48,11 @@
         showOperationId: false,
         hideDarkModeToggle: false,
         withDefaultFonts: true,
-        defaultOpenFirstTag: true,
+        defaultOpenAllTags: false,
         expandAllResponses: false,
         orderSchemaPropertiesBy: 'alpha',
         orderRequiredPropertiesFirst: true,
-        agent: {
-          disabled: true,
-        },
-        modelsSectionLabel: 'Models',
-        slug: 'oremi-ohunerin-openapi',
+        default: false,
       });
     </script>
   </body>

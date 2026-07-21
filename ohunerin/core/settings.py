@@ -1,0 +1,179 @@
+# Copyright 2026 Sébastien Demanou. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+import logging
+import os
+from functools import cached_property
+from pathlib import Path
+from typing import Any
+from typing import Literal
+
+from pydantic import Field
+from pydantic import field_validator
+from pydantic_settings import BaseSettings
+from pydantic_settings import SettingsConfigDict
+
+from ohunerin.core.package import APP_NAME
+from ohunerin.models.sound import SoundsConfig
+from ohunerin.models.wakeword import WakewordsConfig
+
+logger = logging.getLogger(__name__)
+
+
+class Settings(BaseSettings):
+  """Application configuration settings for Oremi Ohunerin using Pydantic Settings."""
+
+  model_config = SettingsConfigDict(
+    env_prefix="OREMI_OHUNERIN_",
+    strict=True,
+    extra="ignore",
+  )
+
+  server_host: str = Field(default="127.0.0.1", description="Host address to listen on.")
+  server_port: int = Field(default=5023, ge=1, le=65535, description="Port number to listen on.")
+
+  cert_file: str | None = Field(default=None, description="Path to SSL certificate file.")
+  key_file: str | None = Field(default=None, description="Path to SSL private key file.")
+  password: str | None = Field(default=None, description="Password to unlock private key.")
+
+  wakewords_config_path: Path = Field(description="Path to wakewords configuration JSON file.")
+  sounds_config_path: Path = Field(description="Path to sounds configuration JSON file.")
+  model_path: Path = Field(description="Path to audio classification model file.")
+  threshold: float = Field(default=0.1, description="Default score threshold for detection.")
+
+  log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = Field(default="INFO", description="Logging level.")
+  log_file: str | None = Field(default=None, description="Path to rotating log file.")
+
+  @cached_property
+  def wakewords_config(self) -> WakewordsConfig:
+    """Load and parse the wakewords JSON configuration file."""
+    return WakewordsConfig.model_validate_json(self.wakewords_config_path.read_text())
+
+  @cached_property
+  def sounds_config(self) -> SoundsConfig:
+    """Load and parse the sounds JSON configuration file."""
+    return SoundsConfig.model_validate_json(self.sounds_config_path.read_text())
+
+  @field_validator("password", mode="before")
+  @classmethod
+  def validate_password(cls, value: Any) -> str | None:
+    if value is None:
+      return None
+
+    value = str(value).strip()
+    return value or None
+
+  @classmethod
+  def _default_data_dir(cls) -> Path:
+    return Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local" / "share")) / APP_NAME
+
+  @field_validator("wakewords_config_path", mode="before")
+  @classmethod
+  def validate_wakewords_config_path(cls, value: Any) -> Path:
+    if value is None:
+      value = cls._default_data_dir() / "wakewords.json"
+
+    path = Path(value).expanduser().resolve()
+
+    if not path.is_file():
+      raise ValueError(f"Wakewords config file does not exist: {path}")
+
+    return path
+
+  @field_validator("sounds_config_path", mode="before")
+  @classmethod
+  def validate_sounds_config_path(cls, value: Any) -> Path:
+    if value is None:
+      value = cls._default_data_dir() / "sounds.json"
+
+    path = Path(value).expanduser().resolve()
+
+    if not path.is_file():
+      raise ValueError(f"Sounds config file does not exist: {path}")
+
+    return path
+
+  @field_validator("model_path", mode="before")
+  @classmethod
+  def validate_model_path(cls, value: Any) -> Path:
+    if value is None:
+      value = cls._default_data_dir() / "yamnet.tflite"
+
+    path = Path(value).expanduser().resolve()
+
+    if not path.is_file():
+      raise ValueError(f"Model file does not exist: {path}")
+
+    return path
+
+  @field_validator("cert_file", "key_file", "log_file", mode="before")
+  @classmethod
+  def validate_optional_paths(cls, value: Any) -> str | None:
+    if value in (None, ""):
+      return None
+
+    return str(Path(value).expanduser().resolve())
+
+
+def _format(value: Any) -> str:
+  if value is None:
+    return "None"
+
+  if isinstance(value, Path):
+    return str(value)
+
+  if isinstance(value, bool):
+    return str(value)
+
+  return str(value)
+
+
+def _password(value: str | None) -> str:
+  return "<set>" if value else "<unset>"
+
+
+def log_group(settings: Settings, name: str, *fields: str) -> None:
+  values: list[str] = []
+
+  for field in fields:
+    value = getattr(settings, field)
+
+    if field == "password":
+      value = _password(value)
+    else:
+      value = _format(value)
+
+    values.append(f"{field}={value}")
+
+  logger.info("App settings [%s]: %s", name, " ".join(values))
+
+
+def log_config_details(wakewords_config: WakewordsConfig, sounds_config: SoundsConfig) -> None:
+  """Log a human-readable summary of the loaded configuration."""
+  if wakewords_config.wakewords:
+    by_lang: dict[str, list[str]] = {}
+
+    for entry in wakewords_config.wakewords:
+      by_lang.setdefault(entry.language, []).append(entry.word)
+    for lang, words in by_lang.items():
+      logger.info(f"Wakewords [{lang}]: {', '.join(words)}")
+  else:
+    logger.info("Wakewords: (none)")
+
+  if sounds_config.whitelist:
+    logger.info(f"Sounds whitelist ({len(sounds_config.whitelist)}): {', '.join(sounds_config.whitelist)}")
+  if sounds_config.blacklist:
+    logger.info(f"Sounds blacklist ({len(sounds_config.blacklist)}): {', '.join(sounds_config.blacklist)}")
+  if not sounds_config.whitelist and not sounds_config.blacklist:
+    logger.info("Sounds: (none — all sounds accepted)")

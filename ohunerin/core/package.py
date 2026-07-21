@@ -12,22 +12,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import logging
 import os
 import tomllib
 
+logger = logging.getLogger(__name__)
+
 __all__ = [
-  'APP_DESCRIPTION',
-  'APP_NAME',
-  'APP_VERSION',
+  "APP_DESCRIPTION",
+  "APP_NAME",
+  "APP_VERSION",
 ]
 
 _current_dir = os.path.dirname(os.path.abspath(__file__))
-_pyproject_path = os.path.join(_current_dir, '..', 'pyproject.toml')
+_pyproject_path = os.path.join(_current_dir, "..", "..", "pyproject.toml")
 
-with open(_pyproject_path, 'rb') as file:
-  project = tomllib.load(file)['project']
-  APP_NAME = project['name']
-  APP_DESCRIPTION = project['description']
-  APP_VERSION = project['version']
+with open(_pyproject_path, "rb") as file:
+  project = tomllib.load(file)["project"]
+  APP_NAME = project["name"]
+  APP_DESCRIPTION = project["description"]
+  APP_VERSION = project["version"]
   del project
   del tomllib

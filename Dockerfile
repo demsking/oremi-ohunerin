@@ -21,12 +21,12 @@ FROM python:3.11-slim
 # Set the shell to /bin/bash and enable pipefail
 SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
 
-RUN addgroup --system --gid 1000 olumulo \
-  && adduser --system --no-create-home --uid 1000 olumulo
+RUN addgroup --system --gid 1000 oremi \
+  && adduser --system --no-create-home --uid 1000 oremi
 
 # Install runtime dependencies
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends tzdata libusb-1.0-0-dev \
+  && apt-get install -y --no-install-recommends tzdata libusb-1.0-0-dev curl \
   && ln -fs /usr/share/zoneinfo/UTC /etc/localtime \
   && echo "UTC" > /etc/timezone \
   && dpkg-reconfigure -f noninteractive tzdata \
@@ -38,22 +38,30 @@ COPY --from=install-dependencies-stage /usr/local/lib/python3.11/site-packages/ 
 COPY --from=install-dependencies-stage /usr/local/bin/ /usr/local/bin/
 
 # Binaries
-COPY bin/* /opt/oremi/bin/
-RUN chmod +x /opt/oremi/bin/*
+COPY bin/* /oremi/bin/
+RUN chmod +x /oremi/bin/*
 
 # Copy application files
-COPY pyproject.toml LICENSE /opt/oremi/
-COPY ohunerin/ /opt/oremi/ohunerin
+COPY models/ /oremi/models/
+COPY pyproject.toml LICENSE DOCUMENTATION.md wakewords.json sounds.json /oremi/
+COPY htdocs/ /oremi/htdocs/
+COPY ohunerin/ /oremi/ohunerin
 
-USER olumulo
+USER oremi
 
-ENV PATH="/opt/oremi/bin:$PATH"
-ENV PYTHONPATH="/opt/oremi"
+ENV PATH="/oremi/bin:$PATH"
+ENV PYTHONPATH="/oremi"
 
-ENV LOG_LEVEL="INFO"
-ENV LOG_FILE=
+ENV OREMI_OHUNERIN_SERVER_HOST="0.0.0.0"
+ENV OREMI_OHUNERIN_SERVER_PORT="5023"
+ENV OREMI_OHUNERIN_LOG_LEVEL="INFO"
+ENV OREMI_OHUNERIN_WAKEWORDS_CONFIG_PATH="/oremi/wakewords.json"
+ENV OREMI_OHUNERIN_SOUNDS_CONFIG_PATH="/oremi/sounds.json"
+ENV OREMI_OHUNERIN_MODEL_PATH="/oremi/models/yamnet.tflite"
 
 EXPOSE 5023
 
-WORKDIR /var/oremi
-ENTRYPOINT ["/opt/oremi/bin/entrypoint.sh"]
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:${OREMI_OHUNERIN_SERVER_PORT}/health || exit 1
+
+ENTRYPOINT ["/oremi/bin/entrypoint.sh"]

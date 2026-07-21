@@ -17,8 +17,8 @@ import os
 
 import pytest
 
-from ohunerin.detector import DetectorConsumer
-from ohunerin.detector import DetectorEngine
+from ohunerin.engines.detector import DetectorConsumer
+from ohunerin.engines.detector import DetectorEngine
 
 
 @pytest.fixture
@@ -27,28 +27,28 @@ def logger():
 
 
 @pytest.fixture
-def model_path():
+def data_path():
   base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-  return os.path.join(base_dir, "ohunerin", "models", "yamnet.tflite")
+  return os.path.join(base_dir, "models", "yamnet.tflite")
 
 
-def test_detector_engine_invalid_threshold(model_path, logger):
+def test_detector_engine_invalid_threshold(data_path):
   with pytest.raises(ValueError, match="Score threshold must be between"):
-    DetectorEngine(model_path, score_threshold=-0.1, logger=logger)
+    DetectorEngine(data_path, score_threshold=-0.1)
 
   with pytest.raises(ValueError, match="Score threshold must be between"):
-    DetectorEngine(model_path, score_threshold=1.1, logger=logger)
+    DetectorEngine(data_path, score_threshold=1.1)
 
 
-def test_detector_engine_init(model_path, logger):
-  engine = DetectorEngine(model_path, score_threshold=0.1, logger=logger)
+def test_detector_engine_init(data_path):
+  engine = DetectorEngine(data_path, score_threshold=0.1)
   assert engine.classifier is not None
   assert engine.tensor_audio is not None
 
 
-def test_detector_consumer_buffer_flow(model_path, logger):
-  engine = DetectorEngine(model_path, score_threshold=0.1, logger=logger)
-  consumer = DetectorConsumer(engine, logger)
+def test_detector_consumer_buffer_flow(data_path):
+  engine = DetectorEngine(data_path, score_threshold=0.1)
+  consumer = DetectorConsumer(engine)
 
   # Check initial buffer state
   assert len(consumer._buffer) == 15600
@@ -66,16 +66,16 @@ def test_detector_consumer_buffer_flow(model_path, logger):
   assert consumer._buffer_index == 0
 
 
-def test_detector_consumer_classify_dummy(model_path, logger):
+def test_detector_consumer_classify_dummy(data_path):
   # Use high threshold to ensure no random noise triggers detections
-  engine = DetectorEngine(model_path, score_threshold=0.8, logger=logger)
-  consumer = DetectorConsumer(engine, logger)
+  engine = DetectorEngine(data_path, score_threshold=0.8)
+  consumer = DetectorConsumer(engine)
 
   # Send 15600 bytes of silent PCM data
   chunk = b"\x00" * 15600
   sound, score = consumer.process_raw(chunk)
 
   # Silent input should trigger 'silence' classification
-  assert sound == 'silence'
+  assert sound == "silence"
   assert score > 0.8
   assert consumer._buffer_index == 0  # Should be reset after processing

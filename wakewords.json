@@ -1,0 +1,38 @@
+[
+  {
+    "language": "fr",
+    "word": "oremi",
+    "phones": [
+      "oo rr ei mm ii"
+    ],
+    "discriminants": [
+      {
+        "word": "remi",
+        "phones": [
+          "rr ei mm ii"
+        ]
+      }
+    ]
+  },
+  {
+    "language": "fr",
+    "word": "dikomlam",
+    "phones": [
+      "dd ii kk oo mm ll aa mm"
+    ]
+  },
+  {
+    "language": "en",
+    "word": "oremi",
+    "phones": [
+      "AO R EY M E"
+    ]
+  },
+  {
+    "language": "en",
+    "word": "dikomlam",
+    "phones": [
+      "TH IH K AA M L AA M"
+    ]
+  }
+]

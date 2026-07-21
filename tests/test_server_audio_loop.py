@@ -21,7 +21,10 @@ from unittest.mock import patch
 import pytest
 import pytest_asyncio
 
-from ohunerin import parse_config_file
+from pathlib import Path
+
+from ohunerin.models.sound import SoundsConfig
+from ohunerin.models.wakeword import WakewordsConfig
 from ohunerin.server import Server
 
 
@@ -62,9 +65,16 @@ def logger():
 @pytest_asyncio.fixture
 async def server(logger):
   base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-  config_file = os.path.join(base_dir, "ohunerin", "config.json")
-  config = parse_config_file(config_file)
-  return Server(config=config, logger=logger)
+  wakewords_file = os.path.join(base_dir, "wakewords.json")
+  sounds_file = os.path.join(base_dir, "sounds.json")
+  model_file = os.path.join(base_dir, "models", "yamnet.tflite")
+
+  with open(wakewords_file, encoding="utf-8") as f:
+    wakewords_config = WakewordsConfig.model_validate_json(f.read())
+  with open(sounds_file, encoding="utf-8") as f:
+    sounds_config = SoundsConfig.model_validate_json(f.read())
+
+  return Server(wakewords_config=wakewords_config, sounds_config=sounds_config, threshold=0.65, model=Path(model_file))
 
 
 @pytest.mark.asyncio
@@ -91,10 +101,7 @@ async def test_handle_audio_data_wakeword_detection(server):
 @pytest.mark.asyncio
 async def test_handle_audio_data_sound_detection(server):
   mock_detector = MagicMock()
-  mock_detector.process_raw.side_effect = [
-    (None, 0.0),
-    ("bark", 0.85)
-  ]
+  mock_detector.process_raw.side_effect = [(None, 0.0), ("bark", 0.85)]
 
   websocket = MockWebSocket(chunks=[b"\x00" * 100, b"\x00" * 100])
 

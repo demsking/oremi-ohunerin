@@ -15,13 +15,14 @@
 import sys
 from unittest.mock import patch
 
-from ohunerin.args import parse_arguments
+from ohunerin.core.args import parse_arguments
 
 
 def test_parse_arguments_defaults():
   with patch.object(sys, 'argv', ['oremi-ohunerin']):
     args = parse_arguments()
-    assert args.config is None
+    assert args.wakewords_config is None
+    assert args.sounds_config is None
     assert args.host == '127.0.0.1'
     assert args.port == 5023
     assert args.cert_file is None
@@ -32,7 +33,8 @@ def test_parse_arguments_defaults():
 def test_parse_arguments_custom():
   with patch.object(sys, 'argv', [
     'oremi-ohunerin',
-    '-c', 'my_config.json',
+    '-w', 'my_wakewords.json',
+    '-s', 'my_sounds.json',
     '--host', '0.0.0.0',
     '-p', '8080',
     '--cert-file', 'cert.pem',
@@ -40,7 +42,8 @@ def test_parse_arguments_custom():
     '--password', 'secret'
   ]):
     args = parse_arguments()
-    assert args.config == 'my_config.json'
+    assert args.wakewords_config == 'my_wakewords.json'
+    assert args.sounds_config == 'my_sounds.json'
     assert args.host == '0.0.0.0'
     assert args.port == 8080
     assert args.cert_file == 'cert.pem'

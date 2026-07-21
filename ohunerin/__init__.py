@@ -13,88 +13,71 @@
 # limitations under the License.
 # ==============================================================================
 import asyncio
-import json
 import logging
-import os
 
-from .args import parse_arguments
-from .logger import logger
-from .models import OhunerinConfig
-from .package import APP_NAME
-from .package import APP_VERSION
-from .server import DetectedSound
-from .server import DetectorConsumer
-from .server import DetectorEngine
-from .server import Server
-from .server import WakewordEngine
-from .server import WakewordSetting
+from ohunerin.core.args import parse_arguments
+from ohunerin.core.logger import configure_logging
+from ohunerin.core.package import APP_NAME
+from ohunerin.core.package import APP_VERSION
+from ohunerin.core.settings import log_config_details
+from ohunerin.core.settings import log_group
+from ohunerin.core.settings import Settings
+from ohunerin.engines.detector import DetectorConsumer
+from ohunerin.engines.detector import DetectorEngine
+from ohunerin.engines.wakeword import WakewordEngine
+from ohunerin.models.sound import DetectedSound
+from ohunerin.models.wakeword import WakewordSetting
+from ohunerin.server import Server
+from ohunerin.server.websocket import BroadcastingWebSocketServer
+from ohunerin.server.websocket import WebSocketServer
+
+logger = logging.getLogger(__name__)
 
 __all__ = [
-  'DetectedSound',
-  'DetectorConsumer',
-  'DetectorEngine',
-  'Server',
-  'WakewordEngine',
-  'WakewordSetting',
-  'main',
-  'start',
+  "BroadcastingWebSocketServer",
+  "DetectedSound",
+  "DetectorConsumer",
+  "DetectorEngine",
+  "Server",
+  "Settings",
+  "WakewordEngine",
+  "WakewordSetting",
+  "WebSocketServer",
+  "main",
+  "start",
 ]
 
 
 async def start() -> None:
-  args = parse_arguments()
+  parse_arguments()
+  settings = Settings()  # pyright: ignore
 
-  package_dir = os.path.dirname(__file__)
-  config_file = args.config or os.path.join(package_dir, 'config.json')
+  configure_logging(settings.log_level, settings.log_file)
 
-  logger.info(f"Starting {APP_NAME} {APP_VERSION}")
-  logger.info(f"Log level: {'DEBUG' if logger.level == logging.DEBUG else 'INFO'}")
-  logger.info(f"Config: {config_file}")
-
-  config = parse_config_file(config_file)
-  log_config_details(config)
+  logger.info(f"{APP_NAME} v{APP_VERSION}")
+  log_group(settings, "server", "server_host", "server_port")
+  log_group(settings, "model", "threshold", "model_path")
+  log_group(settings, "wakewords", "wakewords_config_path")
+  log_group(settings, "sounds", "sounds_config_path")
+  log_group(settings, "tls", "cert_file", "key_file", "password")
+  log_group(settings, "logging", "log_level", "log_file")
+  log_config_details(settings.wakewords_config, settings.sounds_config)
 
   server = Server(
-    logger=logger,
-    config=config,
-    cert_file=args.cert_file,
-    key_file=args.key_file,
-    password=args.password,
+    wakewords_config=settings.wakewords_config,
+    sounds_config=settings.sounds_config,
+    model=settings.model_path,
+    threshold=settings.threshold,
+    cert_file=settings.cert_file,
+    key_file=settings.key_file,
+    password=settings.password,
   )
 
-  logger.info(f"Model: {server.model_path}")
-
-  await server.listen(args.host, args.port)
-  logger.info('E ku ore mi')  # https://translate.google.com/?sl=yo&tl=en&text=E%20ku%20ore%20mi&op=translate
+  await server.listen(settings.server_host, settings.server_port)
+  logger.info("E ku ore mi")
 
 
-def parse_config_file(config_file: str):
-  with open(config_file, encoding='utf-8') as file:
-    raw = json.load(file)
-
-  return OhunerinConfig.model_validate(raw)
-
-
-def log_config_details(config: OhunerinConfig) -> None:
-  """Log a human-readable summary of the loaded configuration."""
-  logger.info(f"Threshold: {config.threshold}")
-
-  if config.wakewords:
-    by_lang: dict[str, list[str]] = {}
-    for entry in config.wakewords:
-      by_lang.setdefault(entry.language, []).append(entry.word)
-    for lang, words in by_lang.items():
-      logger.info(f"Wakewords [{lang}]: {', '.join(words)}")
-  else:
-    logger.info('Wakewords: (none)')
-
-  if config.sounds:
-    logger.info(f"Sounds ({len(config.sounds)}): {', '.join(config.sounds)}")
-  else:
-    logger.info('Sounds: (none — all sounds accepted)')
-
-
-def main():
+def main() -> None:
   try:
     asyncio.run(start())
   except KeyboardInterrupt:

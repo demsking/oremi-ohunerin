@@ -2,7 +2,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Run Server",
+      "name": "Debug",
       "type": "debugpy",
       "request": "launch",
       "module": "ohunerin",
@@ -12,27 +12,16 @@
         "--port",
         "5023"
       ],
-      "envFile": "${workspaceFolder}/.env",
+      "envFile": "${workspaceFolder}/.env.example",
       "cwd": "${workspaceFolder}",
-      "justMyCode": true
-    },
-    {
-      "name": "Run Client",
-      "type": "debugpy",
-      "request": "launch",
-      "module": "client",
-      "args": [],
-      "cwd": "${workspaceFolder}",
-      "justMyCode": true
-    },
-    {
-      "name": "List Devices",
-      "type": "debugpy",
-      "request": "launch",
-      "module": "client",
-      "args": ["--list-devices"],
-      "cwd": "${workspaceFolder}",
-      "justMyCode": true
+      "justMyCode": true,
+      "env": {
+        "OREMI_OHUNERIN_LOG_LEVEL": "DEBUG",
+        "OREMI_OHUNERIN_CONFIG_PATH": "config.json",
+        "OREMI_OHUNERIN_MODEL_PATH": "models/yamnet.tflite",
+        "OREMI_OHUNERIN_SOUNDS_CONFIG_PATH": "sounds.json",
+        "OREMI_OHUNERIN_WAKEWORDS_CONFIG_PATH": "wakewords.json"
+      }
     }
   ]
 }

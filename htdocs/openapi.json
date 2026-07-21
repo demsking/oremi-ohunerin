@@ -52,7 +52,7 @@
         ]
       }
     },
-    "/info": {
+    "/health": {
       "get": {
         "summary": "Get Server Information",
         "description": "Returns details about the server, including name, version, configured detection threshold, and supported wake words by language.",
@@ -63,6 +63,30 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ServerInfo"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Oremi Ohunerin Endpoints"
+        ]
+      }
+    },
+    "/api/sounds": {
+      "get": {
+        "summary": "Get Supported Sounds",
+        "description": "Returns the list of supported ambient sound classes that can be detected by the sound-detection engine.",
+        "responses": {
+          "200": {
+            "description": "Supported sounds retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
                 }
               }
             }
@@ -124,7 +148,7 @@
             "description": "The confidence score of the detection.",
             "example": 0.6677674
           },
-          "date": {
+          "datetime": {
             "type": "string",
             "format": "date-time",
             "description": "The ISO 8601 timestamp of when the sound was detected.",
@@ -135,7 +159,7 @@
           "type",
           "sound",
           "score",
-          "date"
+          "datetime"
         ]
       },
       "WakewordDiscriminant": {
@@ -193,28 +217,37 @@
           }
         }
       },
-      "OhunerinConfig": {
+      "WakewordsConfig": {
         "type": "object",
         "required": [],
-        "description": "Ohunerin configuration for controlling wake word detection and sound detection behavior.",
+        "description": "Configuration model for wakeword definitions.",
         "properties": {
-          "threshold": {
-            "type": "number",
-            "format": "float",
-            "default": 0.65,
-            "description": "Score threshold below which detections are discarded."
-          },
           "wakewords": {
             "type": "array",
-            "description": "List of wake word definitions grouped by language and phonetics.",
+            "description": "All wakeword definitions, grouped by language inside each entry.",
             "items": {
               "$ref": "#/components/schemas/WakewordEntry"
             },
             "default": []
-          },
-          "sounds": {
+          }
+        }
+      },
+      "SoundsConfig": {
+        "type": "object",
+        "required": [],
+        "description": "Configuration for sound label filtering via whitelist or blacklist.",
+        "properties": {
+          "whitelist": {
             "type": "array",
-            "description": "Allowlist of sound labels that the sound-detection feature is permitted to emit.",
+            "description": "Whitelist (allowlist) of sound labels that the sound-detection feature is permitted to emit.",
+            "items": {
+              "type": "string"
+            },
+            "default": []
+          },
+          "blacklist": {
+            "type": "array",
+            "description": "Blacklist (denylist) of sound labels to suppress.",
             "items": {
               "type": "string"
             },

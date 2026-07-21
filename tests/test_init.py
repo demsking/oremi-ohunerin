@@ -37,16 +37,27 @@ async def test_start():
 
   mock_server = MagicMock()
   mock_server.listen = MagicMock(side_effect=dummy_listen)
-  mock_server.model_path = "/mock/model.tflite"
+  mock_server.data_path = "/mock/model.tflite"
 
-  with patch("ohunerin.parse_arguments", return_value=mock_args), \
-       patch("ohunerin.Server", return_value=mock_server):
+  mock_settings = MagicMock()
+  mock_settings.server_host = "127.0.0.1"
+  mock_settings.server_port = 5023
+  mock_settings.log_level = "INFO"
+  mock_settings.log_file = None
+  mock_settings.threshold = 0.15
+  mock_settings.cert_file = None
+  mock_settings.key_file = None
+  mock_settings.password = None
+  mock_settings.model_path = "/mock/model.tflite"
+  mock_settings.config = MagicMock()
+
+  with patch("ohunerin.parse_arguments", return_value=mock_args), patch("ohunerin.Settings", return_value=mock_settings), patch("ohunerin.Server", return_value=mock_server):
     await start()
     mock_server.listen.assert_called_once_with("127.0.0.1", 5023)
 
 
+
 def test_main():
-  with patch("ohunerin.start") as mock_start, \
-       patch("asyncio.run") as mock_run:
+  with patch("ohunerin.start"), patch("asyncio.run") as mock_run:
     main()
     mock_run.assert_called_once()
