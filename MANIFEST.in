@@ -1,0 +1,7 @@
+include DOCUMENTATION.md
+include sounds.json
+include wakewords.json
+
+graft htdocs
+graft models
+

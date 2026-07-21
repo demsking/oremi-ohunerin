@@ -68,7 +68,7 @@ class WakewordEngine:
       entry (DictionaryEntry): The entry to add to the dictionary.
     """
     for index, phone in enumerate(entry.phones):
-      logger.info(f'Adding new word "{entry.word}" to the dictionary')
+      logger.info(f'Adding new word "{entry.word}" ({phone}) to the dictionary')
 
       word = entry.word if index == 0 else f"{entry.word}({index + 1})"
 

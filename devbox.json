@@ -1,18 +1,19 @@
 {
   "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/0.10.5/.schema/devbox.schema.json",
-  "packages": {
-    "uv": "latest",
-    "tmux": "latest",
-    "gitmux": "latest",
-    "tmuxinator": "latest",
-    "gnumake": "latest",
-    "pre-commit": "latest",
-    "hadolint": "latest",
-    "shellcheck": "latest",
-    "ruff": "latest",
-    "skjold": "latest",
-    "yamllint": "latest"
-  },
+  "packages": [
+    "tmux@latest",
+    "gitmux@latest",
+    "tmuxinator@latest",
+    "gnumake@latest",
+    "pre-commit@latest",
+    "hadolint@latest",
+    "shellcheck@latest",
+    "ruff@latest",
+    "skjold@latest",
+    "editorconfig-checker@latest",
+    "uv@latest",
+    "twine@latest"
+  ],
   "env": {
     "UV_MANAGED_PYTHON": "1",
     "PYTHONPATH": ".:.venv/lib/python3.11/site-packages:$PYTHONPATH"

@@ -36,7 +36,7 @@ from ohunerin.models.sound import SoundsConfig
 from ohunerin.models.sound import SoundType
 from ohunerin.models.wakeword import WakewordsConfig
 from ohunerin.models.wakeword import WakewordSetting
-from ohunerin.server.http_handler import HttpHandler
+from ohunerin.server.http import HttpHandler
 from ohunerin.server.websocket import BroadcastingWebSocketServer
 from ohunerin.server.websocket import WebSocketConnection
 from ohunerin.server.websocket import WebSocketServer

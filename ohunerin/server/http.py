@@ -24,11 +24,12 @@ from pathlib import Path
 from typing import Any
 
 import websockets.datastructures
-import websockets.exceptions
-import websockets.legacy.protocol
 
 from ohunerin.core.package import APP_NAME
 from ohunerin.core.package import APP_VERSION
+from ohunerin.core.package import HTDOCS_DIR
+from ohunerin.core.package import MODELS_DIR
+from ohunerin.core.package import PROJECT_DIRECTORY
 from ohunerin.engines.detector import DetectorConsumer
 from ohunerin.engines.detector import DetectorEngine
 from ohunerin.engines.wakeword import WakewordEngine
@@ -41,10 +42,7 @@ from ohunerin.models.wakeword import WakewordSetting
 
 logger = logging.getLogger(__name__)
 
-BASE_DIR = Path(__file__).resolve().parents[2]
-HTDOCS_DIR = BASE_DIR / "htdocs"
-MODELS_DIR = BASE_DIR / "models"
-DOCUMENTATION_PATH = BASE_DIR / "DOCUMENTATION.md"
+DOCUMENTATION_PATH = PROJECT_DIRECTORY / "DOCUMENTATION.md"
 OPENAPI_PATH = HTDOCS_DIR / "openapi.json"
 INDEX_PATH = HTDOCS_DIR / "index.html"
 
