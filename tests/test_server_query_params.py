@@ -33,7 +33,7 @@ def logger():
 @pytest_asyncio.fixture
 async def server(logger):
   base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-  wakewords_file = os.path.join(base_dir, "wakewords.json")
+  wakewords_file = os.path.join(base_dir, "wakeword.json")
   sounds_file = os.path.join(base_dir, "sounds.json")
   model_file = os.path.join(base_dir, "models", "yamnet.tflite")
 

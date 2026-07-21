@@ -1,6 +1,6 @@
 include DOCUMENTATION.md
 include sounds.json
-include wakewords.json
+include wakeword.json
 
 graft htdocs
 graft models

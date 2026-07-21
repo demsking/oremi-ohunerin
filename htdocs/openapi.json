@@ -235,19 +235,19 @@
       "SoundsConfig": {
         "type": "object",
         "required": [],
-        "description": "Configuration for sound label filtering via whitelist or blacklist.",
+        "description": "Configuration for sound label filtering via allowlist or denylist.",
         "properties": {
-          "whitelist": {
+          "allowlist": {
             "type": "array",
-            "description": "Whitelist (allowlist) of sound labels that the sound-detection feature is permitted to emit.",
+            "description": "Allowlist (allowlist) of sound labels that the sound-detection feature is permitted to emit.",
             "items": {
               "type": "string"
             },
             "default": []
           },
-          "blacklist": {
+          "denylist": {
             "type": "array",
-            "description": "Blacklist (denylist) of sound labels to suppress.",
+            "description": "Denylist (denylist) of sound labels to suppress.",
             "items": {
               "type": "string"
             },

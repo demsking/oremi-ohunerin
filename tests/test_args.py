@@ -19,11 +19,11 @@ from ohunerin.core.args import parse_arguments
 
 
 def test_parse_arguments_defaults():
-  with patch.object(sys, 'argv', ['oremi-ohunerin']):
+  with patch.object(sys, "argv", ["oremi-ohunerin"]):
     args = parse_arguments()
     assert args.wakewords_config is None
     assert args.sounds_config is None
-    assert args.host == '127.0.0.1'
+    assert args.host == "127.0.0.1"
     assert args.port == 5023
     assert args.cert_file is None
     assert args.key_file is None
@@ -31,21 +31,32 @@ def test_parse_arguments_defaults():
 
 
 def test_parse_arguments_custom():
-  with patch.object(sys, 'argv', [
-    'oremi-ohunerin',
-    '-w', 'my_wakewords.json',
-    '-s', 'my_sounds.json',
-    '--host', '0.0.0.0',
-    '-p', '8080',
-    '--cert-file', 'cert.pem',
-    '--key-file', 'key.pem',
-    '--password', 'secret'
-  ]):
+  with patch.object(
+    sys,
+    "argv",
+    [
+      "oremi-ohunerin",
+      "-w",
+      "my_wakeword.json",
+      "-s",
+      "my_sounds.json",
+      "--host",
+      "0.0.0.0",
+      "-p",
+      "8080",
+      "--cert-file",
+      "cert.pem",
+      "--key-file",
+      "key.pem",
+      "--password",
+      "secret",
+    ],
+  ):
     args = parse_arguments()
-    assert args.wakewords_config == 'my_wakewords.json'
-    assert args.sounds_config == 'my_sounds.json'
-    assert args.host == '0.0.0.0'
+    assert args.wakewords_config == "my_wakeword.json"
+    assert args.sounds_config == "my_sounds.json"
+    assert args.host == "0.0.0.0"
     assert args.port == 8080
-    assert args.cert_file == 'cert.pem'
-    assert args.key_file == 'key.pem'
-    assert args.password == 'secret'
+    assert args.cert_file == "cert.pem"
+    assert args.key_file == "key.pem"
+    assert args.password == "secret"

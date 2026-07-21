@@ -16,11 +16,7 @@
       "cwd": "${workspaceFolder}",
       "justMyCode": true,
       "env": {
-        "OREMI_OHUNERIN_LOG_LEVEL": "DEBUG",
-        "OREMI_OHUNERIN_CONFIG_PATH": "config.json",
-        "OREMI_OHUNERIN_MODEL_PATH": "models/yamnet.tflite",
-        "OREMI_OHUNERIN_SOUNDS_CONFIG_PATH": "sounds.json",
-        "OREMI_OHUNERIN_WAKEWORDS_CONFIG_PATH": "wakewords.json"
+        "OREMI_OHUNERIN_LOG_LEVEL": "DEBUG"
       }
     }
   ]

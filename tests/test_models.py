@@ -92,17 +92,15 @@ def test_wakewords_config_full():
 
 
 def test_sound_filter_config():
-  # Test with whitelist/blacklist dict input
-  sf2 = SoundsConfig.model_validate({"whitelist": ["Shout"], "blacklist": ["Snoring"]})
-  assert sf2.whitelist == ["Shout"]
-  assert sf2.blacklist == ["Snoring"]
+  # Test with allowlist/denylist dict input
+  sf2 = SoundsConfig.model_validate({"allowlist": ["Shout"], "denylist": ["Snoring"]})
+  assert sf2.allowlist == ["Shout"]
+  assert sf2.denylist == ["Snoring"]
 
   # Test with allowlist/denylist dict input
-  sf3 = SoundsConfig.model_validate({"allowlist": ["Laughter"], "denylist": ["Crying"]})
-  assert sf3.whitelist == ["Laughter"]
-  assert sf3.blacklist == ["Crying"]
-  assert sf3.allowlist == ["Laughter"]
-  assert sf3.denylist == ["Crying"]
+  sf3 = SoundsConfig.model_validate({"allowlist": ["Rain"], "denylist": ["Mosquito"]})
+  assert sf3.allowlist == ["Rain"]
+  assert sf3.denylist == ["Mosquito"]
 
 
 def test_wakeword_detection_feature():

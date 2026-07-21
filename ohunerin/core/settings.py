@@ -25,6 +25,9 @@ from pydantic_settings import BaseSettings
 from pydantic_settings import SettingsConfigDict
 
 from ohunerin.core.package import APP_NAME
+from ohunerin.core.package import DEFAULT_MODEL_PATH
+from ohunerin.core.package import DEFAULT_SOUNDS_CONFIG_FILE
+from ohunerin.core.package import DEFAULT_WAKEWORD_CONFIG_FILE
 from ohunerin.models.sound import SoundsConfig
 from ohunerin.models.wakeword import WakewordsConfig
 
@@ -47,9 +50,11 @@ class Settings(BaseSettings):
   key_file: str | None = Field(default=None, description="Path to SSL private key file.")
   password: str | None = Field(default=None, description="Password to unlock private key.")
 
-  wakewords_config_path: Path = Field(description="Path to wakewords configuration JSON file.")
-  sounds_config_path: Path = Field(description="Path to sounds configuration JSON file.")
-  model_path: Path = Field(description="Path to audio classification model file.")
+  wakeword_config_path: Path = Field(
+    default=DEFAULT_WAKEWORD_CONFIG_FILE, description="Path to wakewords configuration JSON file."
+  )
+  sounds_config_path: Path = Field(default=DEFAULT_SOUNDS_CONFIG_FILE, description="Path to sounds configuration JSON file.")
+  model_path: Path = Field(default=DEFAULT_MODEL_PATH, description="Path to audio classification model file.")
   threshold: float = Field(default=0.1, description="Default score threshold for detection.")
 
   log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = Field(default="INFO", description="Logging level.")
@@ -58,7 +63,7 @@ class Settings(BaseSettings):
   @cached_property
   def wakewords_config(self) -> WakewordsConfig:
     """Load and parse the wakewords JSON configuration file."""
-    return WakewordsConfig.model_validate_json(self.wakewords_config_path.read_text())
+    return WakewordsConfig.model_validate_json(self.wakeword_config_path.read_text())
 
   @cached_property
   def sounds_config(self) -> SoundsConfig:
@@ -78,11 +83,11 @@ class Settings(BaseSettings):
   def _default_data_dir(cls) -> Path:
     return Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local" / "share")) / APP_NAME
 
-  @field_validator("wakewords_config_path", mode="before")
+  @field_validator("wakeword_config_path", mode="before")
   @classmethod
-  def validate_wakewords_config_path(cls, value: Any) -> Path:
+  def validate_wakeword_config_path(cls, value: Any) -> Path:
     if value is None:
-      value = cls._default_data_dir() / "wakewords.json"
+      value = cls._default_data_dir() / "wakeword.json"
 
     path = Path(value).expanduser().resolve()
 
@@ -171,9 +176,11 @@ def log_config_details(wakewords_config: WakewordsConfig, sounds_config: SoundsC
   else:
     logger.info("Wakewords: (none)")
 
-  if sounds_config.whitelist:
-    logger.info(f"Sounds whitelist ({len(sounds_config.whitelist)}): {', '.join(sounds_config.whitelist)}")
-  if sounds_config.blacklist:
-    logger.info(f"Sounds blacklist ({len(sounds_config.blacklist)}): {', '.join(sounds_config.blacklist)}")
-  if not sounds_config.whitelist and not sounds_config.blacklist:
+  if sounds_config.allowlist:
+    logger.info(f"Sounds allowlist ({len(sounds_config.allowlist)}): {', '.join(sounds_config.allowlist)}")
+
+  if sounds_config.denylist:
+    logger.info(f"Sounds denylist ({len(sounds_config.denylist)}): {', '.join(sounds_config.denylist)}")
+
+  if not sounds_config.allowlist and not sounds_config.denylist:
     logger.info("Sounds: (none — all sounds accepted)")

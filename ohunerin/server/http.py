@@ -195,7 +195,7 @@ class HttpHandler:
 
   @property
   def supported_sounds(self) -> list[str]:
-    return self.sounds_config.effective_whitelist
+    return self.sounds_config.effective_allowlist
 
   def get_wakewords_by_language(self, language: str) -> list[WakewordEntry]:
     return [entry for entry in self.wakewords_config.wakewords if entry.language == language]
@@ -228,8 +228,8 @@ class HttpHandler:
       model=self.model,
       score_threshold=self.threshold,
       num_threads=self.num_threads,
-      allowlist=self.sounds_config.whitelist,
-      denylist=self.sounds_config.blacklist,
+      allowlist=self.sounds_config.allowlist,
+      denylist=self.sounds_config.denylist,
     )
 
     return DetectorConsumer(detector)

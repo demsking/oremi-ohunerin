@@ -22,32 +22,32 @@ FROM python:3.11-slim
 SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
 
 RUN addgroup --system --gid 1000 oremi \
-  && adduser --system --no-create-home --uid 1000 oremi
+  && adduser --system --no-create-home --uid 1000 oremi \
+  && mkdir -p /oremi/data
 
 # Install runtime dependencies
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends tzdata libusb-1.0-0-dev curl \
-  && ln -fs /usr/share/zoneinfo/UTC /etc/localtime \
-  && echo "UTC" > /etc/timezone \
-  && dpkg-reconfigure -f noninteractive tzdata \
+  && apt-get install -y --no-install-recommends libusb-1.0-0-dev curl \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
 # Copy built Python dependencies from the install-dependencies-stage stage
-COPY --from=install-dependencies-stage /usr/local/lib/python3.11/site-packages/ /usr/local/lib/python3.11/site-packages/
-COPY --from=install-dependencies-stage /usr/local/bin/ /usr/local/bin/
+COPY --chown=oremi:oremi --from=install-dependencies-stage /usr/local/lib/python3.11/site-packages/ /usr/local/lib/python3.11/site-packages/
+COPY --chown=oremi:oremi --from=install-dependencies-stage /usr/local/bin/ /usr/local/bin/
 
 # Binaries
-COPY bin/* /oremi/bin/
+COPY --chown=oremi:oremi bin/* /oremi/bin/
 RUN chmod +x /oremi/bin/*
 
 # Copy application files
-COPY models/ /oremi/models/
-COPY pyproject.toml LICENSE DOCUMENTATION.md wakewords.json sounds.json /oremi/
-COPY htdocs/ /oremi/htdocs/
-COPY ohunerin/ /oremi/ohunerin
-
-USER oremi
+COPY --chown=oremi:oremi LICENSE /oremi/
+COPY --chown=oremi:oremi models/ /oremi/models/
+COPY --chown=oremi:oremi htdocs/ /oremi/htdocs/
+COPY --chown=oremi:oremi wakeword.json /oremi/data
+COPY --chown=oremi:oremi sounds.json /oremi/data
+COPY --chown=oremi:oremi DOCUMENTATION.md /oremi/
+COPY --chown=oremi:oremi pyproject.toml /oremi/
+COPY --chown=oremi:oremi ohunerin/ /oremi/ohunerin
 
 ENV PATH="/oremi/bin:$PATH"
 ENV PYTHONPATH="/oremi"
@@ -55,9 +55,11 @@ ENV PYTHONPATH="/oremi"
 ENV OREMI_OHUNERIN_SERVER_HOST="0.0.0.0"
 ENV OREMI_OHUNERIN_SERVER_PORT="5023"
 ENV OREMI_OHUNERIN_LOG_LEVEL="INFO"
-ENV OREMI_OHUNERIN_WAKEWORDS_CONFIG_PATH="/oremi/wakewords.json"
-ENV OREMI_OHUNERIN_SOUNDS_CONFIG_PATH="/oremi/sounds.json"
+ENV OREMI_OHUNERIN_WAKEWORD_CONFIG_PATH="/oremi/data/wakeword.json"
+ENV OREMI_OHUNERIN_SOUNDS_CONFIG_PATH="/oremi/data/sounds.json"
 ENV OREMI_OHUNERIN_MODEL_PATH="/oremi/models/yamnet.tflite"
+
+VOLUME /oremi/data
 
 EXPOSE 5023
 

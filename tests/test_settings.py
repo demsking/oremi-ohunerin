@@ -19,14 +19,14 @@ from unittest.mock import patch
 from ohunerin.core.settings import Settings
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-WAKEWORDS_CONFIG_PATH = os.path.join(BASE_DIR, "wakewords.json")
+WAKEWORDS_CONFIG_PATH = os.path.join(BASE_DIR, "wakeword.json")
 SOUNDS_CONFIG_PATH = os.path.join(BASE_DIR, "sounds.json")
 MODEL_PATH = os.path.join(BASE_DIR, "models", "yamnet.tflite")
 
 
 def test_settings_defaults():
   settings = Settings(
-    wakewords_config_path=WAKEWORDS_CONFIG_PATH,
+    wakeword_config_path=WAKEWORDS_CONFIG_PATH,
     sounds_config_path=SOUNDS_CONFIG_PATH,
     model_path=MODEL_PATH,
   )
@@ -44,7 +44,7 @@ def test_settings_env_prefix():
     "OREMI_OHUNERIN_SERVER_PORT": "9090",
     "OREMI_OHUNERIN_LOG_LEVEL": "DEBUG",
     "OREMI_OHUNERIN_THRESHOLD": "0.85",
-    "OREMI_OHUNERIN_WAKEWORDS_CONFIG_PATH": WAKEWORDS_CONFIG_PATH,
+    "OREMI_OHUNERIN_WAKEWORD_CONFIG_PATH": WAKEWORDS_CONFIG_PATH,
     "OREMI_OHUNERIN_SOUNDS_CONFIG_PATH": SOUNDS_CONFIG_PATH,
     "OREMI_OHUNERIN_MODEL_PATH": MODEL_PATH,
   }
@@ -54,5 +54,5 @@ def test_settings_env_prefix():
     assert settings.server_port == 9090
     assert settings.log_level == "DEBUG"
     assert settings.threshold == 0.85
-    assert settings.wakewords_config_path == Path(WAKEWORDS_CONFIG_PATH)
+    assert settings.wakeword_config_path == Path(WAKEWORDS_CONFIG_PATH)
     assert settings.sounds_config_path == Path(SOUNDS_CONFIG_PATH)

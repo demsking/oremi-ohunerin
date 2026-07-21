@@ -16,7 +16,6 @@ import datetime
 from typing import Literal
 from typing import TypedDict
 
-from pydantic import AliasChoices
 from pydantic import BaseModel
 from pydantic import Field
 from pydantic import field_validator
@@ -549,6 +548,8 @@ SUPPORTED_SOUNDS = sorted(
   ]
 )
 
+_SUPPORTED_SOUNDS_SET = frozenset(SUPPORTED_SOUNDS)
+
 
 class DetectedSound(TypedDict):
   type: SoundType
@@ -576,46 +577,39 @@ class SoundDetectionFeature(BaseModel):
 
 
 class SoundsConfig(BaseModel):
-  """Configuration for sound label filtering via whitelist or blacklist."""
+  """Configuration for sound label filtering via allowlist or denylist."""
 
-  whitelist: list[str] = Field(
-    default_factory=list,
-    validation_alias=AliasChoices("whitelist", "allowlist"),
-  )
-  """Explicit whitelist (allowlist) of sound labels that the sound-detection feature may emit."""
-
-  blacklist: list[str] = Field(
-    default_factory=list,
-    validation_alias=AliasChoices("blacklist", "denylist"),
-  )
-  """Blacklist (denylist) of sound labels to suppress."""
-
-  @field_validator("whitelist", mode="after")
-  @classmethod
-  def _deduplicate_whitelist(cls, value: list[str]) -> list[str]:
-    return list(dict.fromkeys(value))
-
-  @field_validator("blacklist", mode="after")
-  @classmethod
-  def _deduplicate_blacklist(cls, value: list[str]) -> list[str]:
-    return list(dict.fromkeys(value))
+  allowlist: list[str] = Field(default_factory=list)
+  denylist: list[str] = Field(default_factory=list)
 
   @property
-  def effective_whitelist(self) -> list[str]:
-    """Compute the effective whitelist from config."""
-    if self.whitelist:
-      return self.whitelist
+  def effective_allowlist(self) -> list[str]:
+    """Compute the effective allowlist from config."""
+    if self.allowlist:
+      return self.allowlist
 
-    if self.blacklist:
-      blacklist_set = set(self.blacklist)
-      return [sound for sound in SUPPORTED_SOUNDS if sound not in blacklist_set]
+    if self.denylist:
+      denylist_set = set(self.denylist)
+      return [sound for sound in SUPPORTED_SOUNDS if sound not in denylist_set]
 
     return list(SUPPORTED_SOUNDS)
 
-  @property
-  def allowlist(self) -> list[str]:
-    return self.whitelist
+  @classmethod
+  def _normalize_sound_list(cls, value: list[str]) -> list[str]:
+    value = list(dict.fromkeys(value))
 
-  @property
-  def denylist(self) -> list[str]:
-    return self.blacklist
+    invalid = [sound for sound in value if sound not in _SUPPORTED_SOUNDS_SET]
+    if invalid:
+      raise ValueError(f"Unknown sound label(s): {', '.join(invalid)}. Supported values are: {', '.join(SUPPORTED_SOUNDS)}.")
+
+    return value
+
+  @field_validator("allowlist", mode="after")
+  @classmethod
+  def _validate_allowlist(cls, value: list[str]) -> list[str]:
+    return cls._normalize_sound_list(value)
+
+  @field_validator("denylist", mode="after")
+  @classmethod
+  def _validate_denylist(cls, value: list[str]) -> list[str]:
+    return cls._normalize_sound_list(value)

@@ -32,8 +32,6 @@ to run Oremi Ohunerin:
 ```sh
 docker run -d \
   --env-file <path_to_env_file> \
-  -v ~/.local/share/oremi-ohunerin/wakewords.json:/oremi/wakewords.json \
-  -v ~/.local/share/oremi-ohunerin/sounds.json:/oremi/sounds.json \
   -p 5023:5023 \
   demsking/oremi-ohunerin
 ```
@@ -53,11 +51,6 @@ services:
     restart: unless-stopped
     ports:
       - 5023:5023
-    volumes:
-      - ./wakewords.json:/oremi/wakewords.json
-      - ./sounds.json:/oremi/sounds.json
-    env_file:
-      - .env
 ```
 
 Run the container using `docker compose`:
@@ -106,8 +99,6 @@ oremi-ohunerin [OPTIONS]
 
 ```sh
 oremi-ohunerin \
-  --wakewords-config ~/.local/share/oremi-ohunerin/wakewords.json \
-  --sounds-config ~/.local/share/oremi-ohunerin/sounds.json \
   --host 0.0.0.0 \
   --port 5023
 ```
@@ -132,25 +123,90 @@ Environment variables are prefixed with `OREMI_OHUNERIN_`:
 - `OREMI_OHUNERIN_MODEL_PATH` — Path to the audio classification model file
 - `OREMI_OHUNERIN_THRESHOLD` — Score threshold below which sound detections are discarded (Default: `0.65`)
 
-### Configuration Files
-
-- `OREMI_OHUNERIN_WAKEWORDS_CONFIG_PATH` — Path to the wakewords configuration JSON file
-- `OREMI_OHUNERIN_SOUNDS_CONFIG_PATH` — Path to the sounds configuration JSON file
-
 ### Logging
 
 - `OREMI_OHUNERIN_LOG_LEVEL` — Logging severity level (`DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`) (Default: `INFO`)
 - `OREMI_OHUNERIN_LOG_FILE` — File path for log output (Default: `None` / stderr)
 
-## Configuration Files
+## Wake Word and Sound Configuration Files
 
-Ohunerin uses two distinct JSON configuration files for configuring wake words (`wakewords.json`) and sound filtering (`sounds.json`), validated against `WakewordsConfig` and `SoundsConfig` schemas.
+Ohunerin uses two JSON configuration files:
 
-### Embedded Default Configurations
+- **`wakeword.json`** defines wake words and their pronunciations.
+- **`sounds.json`** configures sound label filtering.
 
-The official Docker image comes pre-packaged with default configuration files located at `/oremi/wakewords.json` and `/oremi/sounds.json`. By default, container environment variables `OREMI_OHUNERIN_WAKEWORDS_CONFIG_PATH` and `OREMI_OHUNERIN_SOUNDS_CONFIG_PATH` point to these files.
+Default versions of both files are bundled with the official Docker image
+and the Python wheel distribution.
 
-#### `wakewords.json`
+### Default Locations
+
+When using the Docker image, the files are located at:
+
+- `/oremi/data/wakeword.json`
+- `/oremi/data/sounds.json`
+
+### `sounds.json`
+
+The `sounds.json` file controls which sound labels may be emitted by the
+sound detection feature.
+
+```json
+{
+  "allowlist": [],
+  "denylist": []
+}
+```
+
+If both `allowlist` and `denylist` are empty, all supported sound labels
+are enabled.
+
+- **`allowlist`** — Explicitly enables only the listed sound labels.
+  When non-empty, `denylist` is ignored.
+- **`denylist`** — Disables the listed sound labels. It is used only
+  when `allowlist` is empty.
+
+All sound labels must be valid supported labels, and duplicate entries
+are removed automatically.
+
+### `wakeword.json`
+
+The `wakeword.json` file defines the wake words recognized by Ohunerin.
+It also stores phonetic pronunciations and optional discriminants used to
+reduce false positives.
+
+Each wake word entry contains:
+
+- **`language`** — The language of the pronunciation model, such as
+  `fr` or `en`.
+- **`word`** — The wake word as written text.
+- **`phones`** — One or more phonetic transcriptions of the wake word.
+- **`discriminants`** — Optional alternative words that may sound
+  similar and should be distinguished from the wake word.
+
+The `phones` field is especially important. It contains PocketSphinx
+phoneme sequences, not IPA notation. Each string is a space-separated
+list of phonemes in the pronunciation alphabet expected by PocketSphinx
+for the selected language model.
+
+See the for more
+details on supported models and pronunciation formats. In other words,
+each entry describes one possible pronunciation of the wake word.
+
+For example, the French wake word `oremi` includes several pronunciation
+variants:
+
+- `oo rr ei mm ii`
+- `oo rr ai mm ii`
+- `au rr ei mm ii`
+
+These variants help the recognizer match different accents, speaking
+styles, or small pronunciation differences. The same idea applies to the
+English entries, where the phoneme strings use the PocketSphinx English
+phoneme set, such as `OW`, `R`, `EH`, `M`, and `IY`.
+
+Discriminants help reduce false positives. For example, if `oremi`
+could be confused with `remi`, the discriminant entry provides the
+pronunciation of `remi` so the recognizer can better separate the two.
 
 ```json
 [
@@ -198,18 +254,19 @@ The official Docker image comes pre-packaged with default configuration files lo
 ]
 ```
 
-#### `sounds.json`
+### Editing `wakeword.json`
 
-```json
-{
-  "whitelist": [],
-  "blacklist": []
-}
-```
+When editing `wakeword.json`, keep the following in mind:
 
-### Overwriting Default Configurations
-
-To customize wake words or add sound detection filtering, volume mount your custom files or set `OREMI_OHUNERIN_WAKEWORDS_CONFIG_PATH` and `OREMI_OHUNERIN_SOUNDS_CONFIG_PATH`.
+- Use the phoneme symbols expected by PocketSphinx for the selected
+  language.
+- Separate phonemes with spaces.
+- Provide multiple `phones` entries when a wake word may be pronounced
+  in more than one way.
+- Add `discriminants` when a wake word is likely to be confused with
+  another word.
+- Make sure the pronunciations match the language model being used,
+  since phoneme inventories differ between languages.
 
 ## Contributing
 

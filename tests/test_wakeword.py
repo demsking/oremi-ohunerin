@@ -30,9 +30,9 @@ def logger():
 
 @pytest.fixture
 def config_data() -> dict[str, WakewordSetting]:
-  """Parse wakewords.json into a language-keyed dict of WakewordSetting objects."""
+  """Parse wakeword.json into a language-keyed dict of WakewordSetting objects."""
   base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-  wakewords_file = os.path.join(base_dir, "wakewords.json")
+  wakewords_file = os.path.join(base_dir, "wakeword.json")
 
   language_data_paths: dict[str, tuple[str, str]] = {
     "fr": (
