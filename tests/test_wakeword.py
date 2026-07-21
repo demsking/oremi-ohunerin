@@ -32,7 +32,7 @@ def logger():
 def config_data() -> dict[str, WakewordSetting]:
   """Parse wakeword.json into a language-keyed dict of WakewordSetting objects."""
   base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-  wakewords_file = os.path.join(base_dir, "wakeword.json")
+  wakewords_file = os.path.join(base_dir, "data", "wakeword.json")
 
   language_data_paths: dict[str, tuple[str, str]] = {
     "fr": (

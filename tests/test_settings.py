@@ -19,8 +19,8 @@ from unittest.mock import patch
 from ohunerin.core.settings import Settings
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-WAKEWORDS_CONFIG_PATH = os.path.join(BASE_DIR, "wakeword.json")
-SOUNDS_CONFIG_PATH = os.path.join(BASE_DIR, "sounds.json")
+WAKEWORDS_CONFIG_PATH = os.path.join(BASE_DIR, "data", "wakeword.json")
+SOUNDS_CONFIG_PATH = os.path.join(BASE_DIR, "data", "sounds.json")
 MODEL_PATH = os.path.join(BASE_DIR, "models", "yamnet.tflite")
 
 

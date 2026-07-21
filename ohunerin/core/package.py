@@ -18,12 +18,13 @@ from pathlib import Path
 
 PROJECT_DIRECTORY = Path(__file__).resolve().parents[2]
 
+DATA_DIR = PROJECT_DIRECTORY / "data"
 MODELS_DIR = PROJECT_DIRECTORY / "models"
 HTDOCS_DIR = PROJECT_DIRECTORY / "htdocs"
 
 DEFAULT_MODEL_PATH = MODELS_DIR / "yamnet.tflite"
-DEFAULT_SOUNDS_CONFIG_FILE = PROJECT_DIRECTORY / "sounds.json"
-DEFAULT_WAKEWORD_CONFIG_FILE = PROJECT_DIRECTORY / "wakeword.json"
+DEFAULT_SOUNDS_CONFIG_FILE = DATA_DIR / "sounds.json"
+DEFAULT_WAKEWORD_CONFIG_FILE = DATA_DIR / "wakeword.json"
 
 _pyproject_path = PROJECT_DIRECTORY / "pyproject.toml"
 

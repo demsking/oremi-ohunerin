@@ -13,7 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-import os
 from functools import cached_property
 from pathlib import Path
 from typing import Any
@@ -24,7 +23,6 @@ from pydantic import field_validator
 from pydantic_settings import BaseSettings
 from pydantic_settings import SettingsConfigDict
 
-from ohunerin.core.package import APP_NAME
 from ohunerin.core.package import DEFAULT_MODEL_PATH
 from ohunerin.core.package import DEFAULT_SOUNDS_CONFIG_FILE
 from ohunerin.core.package import DEFAULT_WAKEWORD_CONFIG_FILE
@@ -79,15 +77,11 @@ class Settings(BaseSettings):
     value = str(value).strip()
     return value or None
 
-  @classmethod
-  def _default_data_dir(cls) -> Path:
-    return Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local" / "share")) / APP_NAME
-
   @field_validator("wakeword_config_path", mode="before")
   @classmethod
   def validate_wakeword_config_path(cls, value: Any) -> Path:
     if value is None:
-      value = cls._default_data_dir() / "wakeword.json"
+      value = DEFAULT_WAKEWORD_CONFIG_FILE
 
     path = Path(value).expanduser().resolve()
 
@@ -100,7 +94,7 @@ class Settings(BaseSettings):
   @classmethod
   def validate_sounds_config_path(cls, value: Any) -> Path:
     if value is None:
-      value = cls._default_data_dir() / "sounds.json"
+      value = DEFAULT_SOUNDS_CONFIG_FILE
 
     path = Path(value).expanduser().resolve()
 
@@ -113,7 +107,7 @@ class Settings(BaseSettings):
   @classmethod
   def validate_model_path(cls, value: Any) -> Path:
     if value is None:
-      value = cls._default_data_dir() / "yamnet.tflite"
+      value = DEFAULT_MODEL_PATH
 
     path = Path(value).expanduser().resolve()
 
