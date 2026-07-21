@@ -24,6 +24,7 @@ from typing import Any
 
 import websockets.datastructures
 
+from ohunerin.core.logger import LOGGER_DATE_FORMAT
 from ohunerin.core.package import APP_NAME
 from ohunerin.core.package import APP_VERSION
 from ohunerin.core.package import HTDOCS_DIR
@@ -39,6 +40,15 @@ from ohunerin.models.wakeword import WakewordsConfig
 from ohunerin.models.wakeword import WakewordSetting
 
 logger = logging.getLogger(__name__)
+_http_logger = logging.getLogger(__name__)
+
+_handler = logging.StreamHandler()
+_http_fmt = logging.Formatter(f"%(asctime)s - {APP_NAME} - HTTP - %(message)s", datefmt=LOGGER_DATE_FORMAT)
+_handler.setFormatter(_http_fmt)
+
+_http_logger.addHandler(_handler)
+_http_logger.setLevel(logging.INFO)
+_http_logger.propagate = False
 
 DOCUMENTATION_PATH = PROJECT_DIRECTORY / "DOCUMENTATION.md"
 OPENAPI_PATH = HTDOCS_DIR / "openapi.json"
@@ -77,27 +87,36 @@ class HttpHandler:
     self.model = model
     self.num_threads = num_threads or (os.cpu_count() or 1)
 
+  def _send(
+    self,
+    method: str,
+    path: str,
+    version: str,
+    status: http.HTTPStatus,
+    headers: list[tuple[str, str]],
+    body: bytes,
+  ) -> tuple[http.HTTPStatus, list[tuple[str, str]], bytes]:
+    _http_logger.info(f"{method} {path} {version} {status.value} {status.phrase}")
+
+    return status, headers, body
+
   async def process_request(
     self, path: str, request_headers: websockets.datastructures.Headers
   ) -> tuple[http.HTTPStatus, list[tuple[str, str]], bytes] | None:
     """Process incoming HTTP request prior to WebSocket handshake."""
     clean_path = path.split("?")[0]
+    method = request_headers.get("Method", "GET")
+    version = request_headers.get("Version", "HTTP/1.1")
 
     if clean_path == "/":
-      user_agent = request_headers.get("User-Agent", "unknown") if hasattr(request_headers, "get") else "unknown"
-      logger.info(f"Redirecting root path to /health for HTTP request from {user_agent}")
-
       headers = [
         ("Location", "/health"),
         ("Content-Length", "0"),
       ]
 
-      return http.HTTPStatus.FOUND, headers, b""
+      return self._send(method, path, version, http.HTTPStatus.FOUND, headers, b"")
 
     if clean_path == "/health":
-      user_agent = request_headers.get("User-Agent", "unknown") if hasattr(request_headers, "get") else "unknown"
-      logger.info(f"Serving server info for HTTP request from {user_agent}")
-
       body = json.dumps(self.get_server_info(), ensure_ascii=False).encode("utf-8")
       headers = [
         ("Content-Type", "application/json; charset=utf-8"),
@@ -105,24 +124,9 @@ class HttpHandler:
         ("Access-Control-Allow-Origin", "*"),
       ]
 
-      return http.HTTPStatus.OK, headers, body
-
-    if clean_path == "/api/sounds":
-      user_agent = request_headers.get("User-Agent", "unknown") if hasattr(request_headers, "get") else "unknown"
-      logger.info(f"Serving supported sounds for HTTP request from {user_agent}")
-
-      body = json.dumps(self.supported_sounds, ensure_ascii=False).encode("utf-8")
-      headers = [
-        ("Content-Type", "application/json; charset=utf-8"),
-        ("Content-Length", str(len(body))),
-        ("Access-Control-Allow-Origin", "*"),
-      ]
-
-      return http.HTTPStatus.OK, headers, body
+      return self._send(method, path, version, http.HTTPStatus.OK, headers, body)
 
     if clean_path == "/openapi.json":
-      user_agent = request_headers.get("User-Agent", "unknown") if hasattr(request_headers, "get") else "unknown"
-      logger.info(f"Serving OpenAPI JSON for HTTP request from {user_agent}")
       body = json.dumps(self.get_openapi_spec(), ensure_ascii=False).encode("utf-8")
       headers = [
         ("Content-Type", "application/json; charset=utf-8"),
@@ -130,31 +134,37 @@ class HttpHandler:
         ("Access-Control-Allow-Origin", "*"),
       ]
 
-      return http.HTTPStatus.OK, headers, body
+      return self._send(method, path, version, http.HTTPStatus.OK, headers, body)
 
     if clean_path == "/docs":
-      user_agent = request_headers.get("User-Agent", "unknown") if hasattr(request_headers, "get") else "unknown"
-      logger.info(f"Serving API documentation HTML for HTTP request from {user_agent}")
-      html_content = self.get_index_html()
-      body = html_content.encode("utf-8")
+      body = self.get_index_html().encode("utf-8")
       headers = [
         ("Content-Type", "text/html; charset=utf-8"),
         ("Content-Length", str(len(body))),
       ]
 
-      return http.HTTPStatus.OK, headers, body
+      return self._send(method, path, version, http.HTTPStatus.OK, headers, body)
+
+    if clean_path == "/api/sounds":
+      body = json.dumps(self.supported_sounds, ensure_ascii=False).encode("utf-8")
+      headers = [
+        ("Content-Type", "application/json; charset=utf-8"),
+        ("Content-Length", str(len(body))),
+        ("Access-Control-Allow-Origin", "*"),
+      ]
+
+      return self._send(method, path, version, http.HTTPStatus.OK, headers, body)
 
     if clean_path == "/ws":
       return None
 
-    # Reject any other path with 404 Not Found
     body = b"Not Found"
     headers = [
       ("Content-Type", "text/plain; charset=utf-8"),
       ("Content-Length", str(len(body))),
     ]
 
-    return http.HTTPStatus.NOT_FOUND, headers, body
+    return self._send(method, path, version, http.HTTPStatus.NOT_FOUND, headers, body)
 
   def get_server_info(self) -> dict:
     """Return information about the server."""
@@ -168,17 +178,16 @@ class HttpHandler:
 
   def get_openapi_spec(self) -> dict[str, Any]:
     """Generate OpenAPI specification object with updated documentation and version."""
-    with open(OPENAPI_PATH, encoding="utf-8") as f:
-      spec = json.load(f)
+    openapi = json.loads(OPENAPI_PATH.read_text(encoding="utf-8"))
 
-    spec["info"]["description"] = SERVICE_DESCRIPTION
-    spec["info"]["version"] = APP_VERSION
-    return spec
+    openapi["info"]["description"] = SERVICE_DESCRIPTION
+    openapi["info"]["version"] = APP_VERSION
+
+    return openapi
 
   def get_index_html(self) -> str:
     """Read Scalar documentation index.html template."""
-    with open(INDEX_PATH, encoding="utf-8") as index_file:
-      return index_file.read()
+    return INDEX_PATH.read_text()
 
   @property
   def supported_wakewords(self) -> dict[str, list[str]]:

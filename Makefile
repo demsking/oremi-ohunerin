@@ -177,4 +177,3 @@ publish: check-clean image-test
 	$(MAKE) pypi image
 	git push origin main
 	git push origin "v$(shell uv version --short)"
-

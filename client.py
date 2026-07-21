@@ -153,7 +153,7 @@ async def main():
         async for message in websocket:
           logger.info(
             f"Detected: {message}"
-          )  # {"type": "sound", "sound": "snoring", "score": 0.109375, "date": "2023-08-16T14:42:46.424809"}
+          )  # {"type": "sound", "sound": "snoring", "score": 0.109375, "datetime": "2023-08-16T14:42:46.424809"}
       except asyncio.CancelledError:
         logger.info("Recording stopped")
         await websocket.close()

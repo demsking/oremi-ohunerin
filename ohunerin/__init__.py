@@ -55,7 +55,6 @@ async def start() -> None:
   configure_logging(settings.log_level, settings.log_file)
 
   logger.info(f"{APP_NAME} v{APP_VERSION}")
-  log_group(settings, "server", "server_host", "server_port")
   log_group(settings, "model", "threshold", "model_path")
   log_group(settings, "wakewords", "wakeword_config_path")
   log_group(settings, "sounds", "sounds_config_path")
@@ -73,6 +72,7 @@ async def start() -> None:
     password=settings.password,
   )
 
+  logger.info(f"Server listening on {settings.server_host}:{settings.server_port}")
   await server.listen(settings.server_host, settings.server_port)
   logger.info("E ku ore mi")
 
