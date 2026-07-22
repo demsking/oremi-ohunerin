@@ -33,7 +33,7 @@ def logger():
 def config_data() -> dict[str, WakewordSetting]:
   """Parse config.json into a language-keyed dict of WakewordSetting objects."""
   base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-  config_file = os.path.join(base_dir, "data", "config.json")
+  config_file = os.path.join(base_dir, "config.json")
 
   language_data_paths: dict[str, tuple[str, str]] = {
     "fr": (
@@ -66,8 +66,8 @@ def config_data() -> dict[str, WakewordSetting]:
       (f"models/wakeword-{language}/acoustic-model", f"models/wakeword-{language}/pronounciation-dictionary.dict"),
     )
     settings[language] = WakewordSetting(
-      model=os.path.abspath(os.path.join(base_dir, model_rel)),
-      dictionary=os.path.abspath(os.path.join(base_dir, dict_rel)),
+      model=os.path.abspath(os.path.join(model_rel)),
+      dictionary=os.path.abspath(os.path.join(dict_rel)),
       wakewords=wakewords,
       discriminants=language_discriminants.get(language, []),
     )

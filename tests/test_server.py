@@ -35,7 +35,7 @@ def logger():
 @pytest_asyncio.fixture
 async def server(logger):
   base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-  config_file = os.path.join(base_dir, "data", "config.json")
+  config_file = os.path.join(base_dir, "config.json")
   model_file = os.path.join(base_dir, "models", "yamnet.tflite")
 
   with open(config_file, encoding="utf-8") as f:

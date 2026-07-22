@@ -43,7 +43,7 @@ RUN chmod +x /oremi/bin/*
 COPY --chown=oremi:oremi LICENSE /oremi/
 COPY --chown=oremi:oremi models/ /oremi/models/
 COPY --chown=oremi:oremi htdocs/ /oremi/htdocs/
-COPY --chown=oremi:oremi data/ /oremi/data/
+COPY --chown=oremi:oremi config.json /oremi/
 COPY --chown=oremi:oremi DOCUMENTATION.md /oremi/
 COPY --chown=oremi:oremi pyproject.toml /oremi/
 COPY --chown=oremi:oremi ohunerin/ /oremi/ohunerin

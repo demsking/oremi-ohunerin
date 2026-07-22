@@ -1,16 +1,29 @@
-**Oremi Ohunerin** serves as the real-time audio detection component of the Oremi Personal Assistant project. It operates as a high-performance WebSocket server capable of concurrently identifying environmental sounds and detecting specific wake words to activate the Oremi assistant.
+**Oremi Ohunerin** serves as the real-time audio detection component of the
+Oremi Personal Assistant project. It operates as a high-performance WebSocket
+server capable of concurrently identifying environmental sounds and detecting
+specific wake words to activate the Oremi assistant.
 
-Leveraging cutting-edge technologies like TensorFlow YAMNet for comprehensive environmental sound classification and PocketSphinx for precise, localized wake word identification, Ohunerin ensures highly accurate recognition of acoustic events.
+Leveraging cutting-edge technologies like TensorFlow YAMNet for comprehensive
+environmental sound classification and PocketSphinx for precise, localized wake
+word identification, Ohunerin ensures highly accurate recognition of acoustic
+events.
 
-Derived from the Yoruba term _"ohun erin"_, meaning _"sound detection"_, Ohunerin enables seamless, privacy-first integration of auditory cues into the Oremi ecosystem, enhancing user experience and interaction.
+Derived from the Yoruba term _"ohun erin"_, meaning _"sound detection"_, Ohunerin
+enables seamless, privacy-first integration of auditory cues into the Oremi
+ecosystem, enhancing user experience and interaction.
 
 ## Features
 
-- **Real-Time Streaming**: Stream raw PCM audio bytes directly over WebSockets for immediate detection results.
-- **Ambient Sound Detection**: Classifies environmental sounds (such as shouting, laughter, crying, snoring, etc.) using YAMNet.
-- **Wake Word Recognition**: Precise wake word detection utilizing PocketSphinx with support for multiple languages.
-- **Dynamic Session Configuration**: Streamlined selection of features and languages per session.
-- **Structured Application Settings**: Pydantic Settings integration supporting environment variable prefixing (`OREMI_OHUNERIN_`).
+- **Real-Time Streaming**: Stream raw PCM audio bytes directly over WebSockets
+  for immediate detection results.
+- **Ambient Sound Detection**: Classifies environmental sounds (such as shouting,
+  laughter, crying, snoring, etc.) using YAMNet.
+- **Wake Word Recognition**: Precise wake word detection utilizing PocketSphinx
+  with support for multiple languages.
+- **Dynamic Session Configuration**: Streamlined selection of features and
+  languages per session.
+- **Structured Application Settings**: Pydantic Settings integration supporting
+  environment variable prefixing (`OREMI_OHUNERIN_`).
 
 ## Deployment
 
@@ -26,8 +39,9 @@ reference on available endpoints and usage instructions.
 
 ### Deploy with Docker
 
-Use the official Docker image [`demsking/oremi-ohunerin`](https://hub.docker.com/r/demsking/oremi-ohunerin)
-to run Oremi Ohunerin:
+Use the official Docker image
+[`demsking/oremi-ohunerin`](https://hub.docker.com/r/demsking/oremi-ohunerin) to
+run Oremi Ohunerin:
 
 ```sh
 docker run -d \
@@ -37,8 +51,8 @@ docker run -d \
 ```
 
 Replace `<path_to_env_file>` with the path to your
-[environment variables](#environment-variables) file containing the
-necessary configurations.
+[environment variables](#environment-variables) file containing the necessary
+configurations.
 
 ### Deploy with Docker Compose
 
@@ -88,7 +102,8 @@ oremi-ohunerin [OPTIONS]
 - `-c, --config <path>` – Path to the configuration JSON file.
 - `--host <host>` – Host address to listen on (Default: `127.0.0.1`).
 - `-p, --port <port>` – Port number to listen on (Default: `5023`).
-- `--cert-file <path>` – Path to the SSL certificate file for secure TLS connection.
+- `--cert-file <path>` – Path to the SSL certificate file for secure TLS
+  connection.
 - `--key-file <path>` – Path to the SSL private key file.
 - `--password <password>` – Password to unlock the private key.
 - `-v, --version` – Show application version and exit.
@@ -112,139 +127,104 @@ Environment variables are prefixed with `OREMI_OHUNERIN_`:
 - `OREMI_OHUNERIN_SERVER_HOST` — Host address to listen on (Default: `0.0.0.0`)
 - `OREMI_OHUNERIN_SERVER_PORT` — Port number to listen on (Default: `5023`)
 
+### Configuration & Models
+
+- `OREMI_OHUNERIN_CONFIG_PATH` — Path to the JSON configuration file (Default:
+  `/oremi/data/config.json`)
+- `OREMI_OHUNERIN_MODEL_PATH` — Path to the audio classification model file
+  (Default: `/oremi/models/yamnet.tflite`)
+- `OREMI_OHUNERIN_THRESHOLD` — Score threshold below which sound detections are
+  discarded (Default: `0.1`)
+
 ### TLS/SSL
 
 - `OREMI_OHUNERIN_CERT_FILE` — Path to the SSL certificate file
 - `OREMI_OHUNERIN_KEY_FILE` — Path to the SSL private key file
 - `OREMI_OHUNERIN_PASSWORD` — Password to unlock the SSL private key
 
-### Audio Detection
-
-- `OREMI_OHUNERIN_THRESHOLD` — Score threshold below which sound detections are discarded (Default: `0.1`)
-
 ### Logging
 
-- `OREMI_OHUNERIN_LOG_LEVEL` — Logging severity level (`DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`) (Default: `INFO`)
+- `OREMI_OHUNERIN_LOG_LEVEL` — Logging severity level (`DEBUG`, `INFO`, `WARNING`,
+  `ERROR`, `CRITICAL`) (Default: `INFO`)
 - `OREMI_OHUNERIN_LOG_FILE` — File path for log output (Default: `None` / stderr)
 
-## Configuration File (`config.json`)
+## Configuration File
 
 Ohunerin uses a single unified JSON configuration file: **`config.json`**.
 
 It combines wake word definitions and sound label filtering into one structure.
-Default configuration is bundled at `/oremi/data/config.json`.
+Default configuration is bundled at `/oremi/config.json`.
 
-### Default Location
+### Structure Interface
 
-When using the Docker image, the configuration file is located at:
+The structure of the configuration file is defined by the following TypeScript
+interfaces:
 
-- `/oremi/data/config.json` (Volume: `/oremi/data`)
+```typescript
+interface OhunerinConfig {
+  // List of wakewords and their pronunciations grouped by language.
+  wakewords?: WakewordEntry[];
 
-When overriding `config.json`, if `sounds` or `wakewords` is omitted in the
-overwritten file, Ohunerin automatically falls back to the default values for
-the missing section.
+  // Configuration for sound label filtering via allowlist or denylist.
+  sounds?: SoundsConfig;
+}
 
-### Structure of `config.json`
+interface DictionaryEntry {
+  // The word to recognize.
+  word: string;
+  // One or more phonetic transcriptions for the word.
+  phones: string[];
+}
 
-```json
-{
-  "wakewords": [
-    {
-      "language": "fr",
-      "word": "oremi",
-      "phones": ["oo rr ei mm ii", "oo rr ai mm ii", "au rr ei mm ii"],
-      "discriminants": [
-        {
-          "word": "remi",
-          "phones": ["rr ei mm ii", "rr ai mm ii"]
-        }
-      ]
-    },
-    {
-      "language": "fr",
-      "word": "dikomlam",
-      "phones": [
-        "dd ii kk oo mm ll aa mm",
-        "dd ii kk on ll aa mm",
-        "dd ii kk oo mm ll an"
-      ]
-    },
-    {
-      "language": "en",
-      "word": "oremi",
-      "phones": [
-        "OW R EH M IY",
-        "OW R EY M IY",
-        "AO R EH M IY",
-        "AO R EY M IY"
-      ],
-      "discriminants": [
-        {
-          "word": "remi",
-          "phones": ["R EH M IY", "R EY M IY"]
-        }
-      ]
-    },
-    {
-      "language": "en",
-      "word": "dikomlam",
-      "phones": [
-        "D IH K AA M L AA M",
-        "D IH K AH M L AE M",
-        "D IH K AA M L AE M",
-        "D IY K AA M L AE M"
-      ]
-    }
-  ],
-  "sounds": {
-    "allowlist": [],
-    "denylist": []
-  }
+interface WakewordEntry {
+  // BCP-47 language code (e.g. 'fr', 'en').
+  language: string;
+  // The wakeword phrase.
+  word: string;
+  // One or more phonetic transcriptions for the wakeword.
+  phones: string[];
+  // Optional words that must NOT trigger detection (false-positive guards).
+  discriminants?: DictionaryEntry[];
+}
+
+interface SoundsConfig {
+  // Explicitly enables only the listed sound labels.
+  allowlist?: string[];
+  // Disables the listed sound labels (used only when allowlist is empty).
+  denylist?: string[];
 }
 ```
 
-### The `"sounds"` Section
+> [!NOTE]
+> Refer to the default [config.json](https://gitlab.com/demsking/oremi-ohunerin/-/blob/main/config.json)
+> file in the GitLab repository for a complete example.
 
-The `"sounds"` object controls which sound labels may be emitted by the
-sound detection feature.
+### The "sounds" Section
 
-```json
-{
-  "allowlist": [],
-  "denylist": []
-}
-```
+The `"sounds"` object controls which sound labels may be emitted by the sound
+detection feature.
 
-If both `allowlist` and `denylist` are empty, all supported sound labels
-are enabled.
+If both `allowlist` and `denylist` are empty, all supported sound labels are
+enabled.
 
-- **`allowlist`** — Explicitly enables only the listed sound labels.
-  When non-empty, `denylist` is ignored.
-- **`denylist`** — Disables the listed sound labels. It is used only
-  when `allowlist` is empty.
+- **`allowlist`** — Explicitly enables only the listed sound labels. When
+  non-empty, `denylist` is ignored.
+- **`denylist`** — Disables the listed sound labels. It is used only when
+  `allowlist` is empty.
 
-All sound labels must be valid supported labels, and duplicate entries
-are removed automatically.
+All sound labels must be valid supported labels, and duplicate entries are
+removed automatically.
 
-### The `"wakewords"` Section
+### The "wakewords" Section
 
-The `"wakewords"` list defines the wake words recognized by Ohunerin.
-It also stores phonetic pronunciations and optional discriminants used to
-reduce false positives.
+The `"wakewords"` list defines the wake words recognized by Ohunerin. It also
+stores phonetic pronunciations and optional discriminants used to reduce false
+positives.
 
-Each wake word entry contains:
-
-- **`language`** — The language of the pronunciation model, such as
-  `fr` or `en`.
-- **`word`** — The wake word as written text.
-- **`phones`** — One or more phonetic transcriptions of the wake word.
-- **`discriminants`** — Optional alternative words that may sound
-  similar and should be distinguished from the wake word.
-
-The `phones` field is especially important. It contains PocketSphinx
-phoneme sequences, not IPA notation. Each string is a space-separated
-list of phonemes in the pronunciation alphabet expected by PocketSphinx
-for the selected language model.
+The `phones` field is especially important. It contains PocketSphinx phoneme
+sequences, not IPA notation. Each string is a space-separated list of phonemes
+in the pronunciation alphabet expected by PocketSphinx for the selected language
+model.
 
 In other words, each entry describes one possible pronunciation of the wake word.
 
@@ -255,36 +235,35 @@ variants:
 - `oo rr ai mm ii`
 - `au rr ei mm ii`
 
-These variants help the recognizer match different accents, speaking
-styles, or small pronunciation differences. The same idea applies to the
-English entries, where the phoneme strings use the PocketSphinx English
-phoneme set, such as `OW`, `R`, `EH`, `M`, and `IY`.
+These variants help the recognizer match different accents, speaking styles, or
+small pronunciation differences. The same idea applies to the English entries,
+where the phoneme strings use the PocketSphinx English phoneme set, such as
+`OW`, `R`, `EH`, `M`, and `IY`.
 
-Discriminants help reduce false positives. For example, if `oremi`
-could be confused with `remi`, the discriminant entry provides the
-pronunciation of `remi` so the recognizer can better separate the two.
+Discriminants help reduce false positives. For example, if `oremi` could be
+confused with `remi`, the discriminant entry provides the pronunciation of
+`remi` so the recognizer can better separate the two.
 
 ### Editing `config.json`
 
 When editing `config.json`, keep the following in mind:
 
-- Use the phoneme symbols expected by PocketSphinx for the selected
-  language.
+- Use the phoneme symbols expected by PocketSphinx for the selected language.
 - Separate phonemes with spaces.
-- Provide multiple `phones` entries when a wake word may be pronounced
-  in more than one way.
-- Add `discriminants` when a wake word is likely to be confused with
-  another word.
-- Make sure the pronunciations match the language model being used,
-  since phoneme inventories differ between languages.
+- Provide multiple `phones` entries when a wake word may be pronounced in more
+  than one way.
+- Add `discriminants` when a wake word is likely to be confused with another
+  word.
+- Make sure the pronunciations match the language model being used, since
+  phoneme inventories differ between languages.
 - Omitting `"sounds"` or `"wakewords"` will cause Ohunerin to use the default
   settings for the omitted section.
 
 ## Contributing
 
-Oremi Ohunerin is built with Python and uses `uv` for dependency management. The
-project follows standard Python development practices with type hints, linting,
-and automated testing.
+Oremi Ohunerin is built with Python and uses `uv` for dependency management.
+The project follows standard Python development practices with type hints,
+linting, and automated testing.
 
 For detailed information on setting up your development environment, running
 tests, code style guidelines, and the pull request process, please refer to

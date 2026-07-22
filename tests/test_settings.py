@@ -20,9 +20,9 @@ from unittest.mock import patch
 
 from ohunerin.core.settings import Settings
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CONFIG_PATH = os.path.join(BASE_DIR, "data", "config.json")
-MODEL_PATH = os.path.join(BASE_DIR, "models", "yamnet.tflite")
+BASE_DIR = Path(__file__).resolve().parents[1]
+CONFIG_PATH = BASE_DIR / "config.json"
+MODEL_PATH = BASE_DIR / "models" / "yamnet.tflite"
 
 
 def test_settings_defaults():
@@ -44,8 +44,8 @@ def test_settings_env_prefix():
     "OREMI_OHUNERIN_SERVER_PORT": "9090",
     "OREMI_OHUNERIN_LOG_LEVEL": "DEBUG",
     "OREMI_OHUNERIN_THRESHOLD": "0.85",
-    "OREMI_OHUNERIN_CONFIG_PATH": CONFIG_PATH,
-    "OREMI_OHUNERIN_MODEL_PATH": MODEL_PATH,
+    "OREMI_OHUNERIN_CONFIG_PATH": str(CONFIG_PATH),
+    "OREMI_OHUNERIN_MODEL_PATH": str(MODEL_PATH),
   }
   with patch.dict(os.environ, env):
     settings = Settings()
@@ -53,13 +53,13 @@ def test_settings_env_prefix():
     assert settings.server_port == 9090
     assert settings.log_level == "DEBUG"
     assert settings.threshold == 0.85
-    assert settings.config_path == Path(CONFIG_PATH)
+    assert settings.config_path == CONFIG_PATH
 
 
 def test_settings_partial_override_sounds_missing():
   with tempfile.NamedTemporaryFile("w+", suffix=".json", delete=False) as tmp:
     json.dump({"sounds": {"allowlist": ["Speech"]}}, tmp)
-    tmp_path = tmp.name
+    tmp_path = Path(tmp.name)
 
   try:
     settings = Settings(config_path=tmp_path, model_path=MODEL_PATH)
@@ -80,7 +80,7 @@ def test_settings_partial_override_wakewords_missing():
   ]
   with tempfile.NamedTemporaryFile("w+", suffix=".json", delete=False) as tmp:
     json.dump({"wakewords": custom_wakewords}, tmp)
-    tmp_path = tmp.name
+    tmp_path = Path(tmp.name)
 
   try:
     settings = Settings(config_path=tmp_path, model_path=MODEL_PATH)

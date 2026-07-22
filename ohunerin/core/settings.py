@@ -48,7 +48,7 @@ class Settings(BaseSettings):
   key_file: str | None = Field(default=None, description="Path to SSL private key file.")
   password: str | None = Field(default=None, description="Password to unlock private key.")
 
-  config_path: Path = Field(default=DEFAULT_CONFIG_FILE, description="Path to unified configuration JSON file.")
+  config_path: Path | None = Field(default=None, description="Path to unified configuration JSON file.")
   model_path: Path = Field(default=DEFAULT_MODEL_PATH, description="Path to audio classification model file.")
   threshold: float = Field(default=0.1, description="Default score threshold for detection.")
 
@@ -57,35 +57,30 @@ class Settings(BaseSettings):
 
   @cached_property
   def config(self) -> dict[str, Any]:
-    content = self.config_path.read_text().strip()
+    if self.config_path and self.config_path.is_file():
+      content = self.config_path.read_text().strip()
 
-    if not content:
-      raw: Any = {}
-    else:
-      try:
-        raw = json.loads(content)
-      except Exception as err:
-        raise ValueError(f"Invalid JSON in config file {self.config_path}: {err}") from err
-
-    if not isinstance(raw, dict):
-      if isinstance(raw, list):
-        raw = {"wakewords": raw}
+      if not content:
+        raw: Any = {}
       else:
-        raw = {}
+        try:
+          raw = json.loads(content)
+        except Exception as err:
+          raise ValueError(f"Invalid JSON in config file {self.config_path}: {err}") from err
+
+      if not isinstance(raw, dict):
+        if isinstance(raw, list):
+          raw = {"wakewords": raw}
+        else:
+          raw = {}
+    else:
+      raw = {}
 
     default_raw: dict[str, Any] = {}
 
-    if self.config_path != DEFAULT_CONFIG_FILE and DEFAULT_CONFIG_FILE.is_file():
-      try:
-        default_content = DEFAULT_CONFIG_FILE.read_text().strip()
-
-        if default_content:
-          parsed = json.loads(default_content)
-
-          if isinstance(parsed, dict):
-            default_raw = parsed
-      except Exception:
-        pass
+    if self.config_path != DEFAULT_CONFIG_FILE:
+      default_content = DEFAULT_CONFIG_FILE.read_text().strip()
+      default_raw = json.loads(default_content)
 
     if "wakewords" not in raw and "wakewords" in default_raw:
       raw["wakewords"] = default_raw["wakewords"]
@@ -121,15 +116,7 @@ class Settings(BaseSettings):
   @field_validator("config_path", mode="before")
   @classmethod
   def validate_config_path(cls, value: Any) -> Path:
-    if value is None:
-      value = DEFAULT_CONFIG_FILE
-
-    path = Path(value).expanduser().resolve()
-
-    if not path.is_file():
-      raise ValueError(f"Config file does not exist: {path}")
-
-    return path
+    return value if value and Path(value).expanduser().resolve().is_file() else DEFAULT_CONFIG_FILE
 
   @field_validator("model_path", mode="before")
   @classmethod
