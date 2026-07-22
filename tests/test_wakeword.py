@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import json
 import logging
 import os
 
@@ -30,9 +31,9 @@ def logger():
 
 @pytest.fixture
 def config_data() -> dict[str, WakewordSetting]:
-  """Parse wakeword.json into a language-keyed dict of WakewordSetting objects."""
+  """Parse config.json into a language-keyed dict of WakewordSetting objects."""
   base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-  wakewords_file = os.path.join(base_dir, "data", "wakewords", "wakeword.json")
+  config_file = os.path.join(base_dir, "data", "config.json")
 
   language_data_paths: dict[str, tuple[str, str]] = {
     "fr": (
@@ -45,8 +46,9 @@ def config_data() -> dict[str, WakewordSetting]:
     ),
   }
 
-  with open(wakewords_file, encoding="utf-8") as f:
-    wakewords_config = WakewordsConfig.model_validate_json(f.read())
+  with open(config_file, encoding="utf-8") as f:
+    raw = json.load(f)
+    wakewords_config = WakewordsConfig.model_validate(raw.get("wakewords", []))
 
   language_wakewords: dict[str, list[DictionaryEntry]] = {}
   language_discriminants: dict[str, list[DictionaryEntry]] = {}

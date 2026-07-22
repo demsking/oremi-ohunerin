@@ -21,8 +21,7 @@ from ohunerin.core.args import parse_arguments
 def test_parse_arguments_defaults():
   with patch.object(sys, "argv", ["oremi-ohunerin"]):
     args = parse_arguments()
-    assert args.wakewords_config is None
-    assert args.sounds_config is None
+    assert args.config is None
     assert args.host == "127.0.0.1"
     assert args.port == 5023
     assert args.cert_file is None
@@ -36,10 +35,8 @@ def test_parse_arguments_custom():
     "argv",
     [
       "oremi-ohunerin",
-      "-w",
-      "my_wakeword.json",
-      "-s",
-      "my_sounds.json",
+      "-c",
+      "my_config.json",
       "--host",
       "0.0.0.0",
       "-p",
@@ -53,8 +50,7 @@ def test_parse_arguments_custom():
     ],
   ):
     args = parse_arguments()
-    assert args.wakewords_config == "my_wakeword.json"
-    assert args.sounds_config == "my_sounds.json"
+    assert args.config == "my_config.json"
     assert args.host == "0.0.0.0"
     assert args.port == 8080
     assert args.cert_file == "cert.pem"

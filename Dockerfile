@@ -23,7 +23,7 @@ SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
 
 RUN addgroup --system --gid 1000 oremi \
   && adduser --system --no-create-home --uid 1000 oremi \
-  && mkdir -p /oremi/data/wakewords /oremi/data/sounds
+  && mkdir -p /oremi/data
 
 # Install runtime dependencies
 RUN apt-get update \
@@ -54,12 +54,10 @@ ENV PYTHONPATH="/oremi"
 ENV OREMI_OHUNERIN_SERVER_HOST="0.0.0.0"
 ENV OREMI_OHUNERIN_SERVER_PORT="5023"
 ENV OREMI_OHUNERIN_LOG_LEVEL="INFO"
-ENV OREMI_OHUNERIN_WAKEWORD_CONFIG_PATH="/oremi/data/wakewords/wakeword.json"
-ENV OREMI_OHUNERIN_SOUNDS_CONFIG_PATH="/oremi/data/sounds/sounds.json"
+ENV OREMI_OHUNERIN_CONFIG_PATH="/oremi/data/config.json"
 ENV OREMI_OHUNERIN_MODEL_PATH="/oremi/models/yamnet.tflite"
 
-VOLUME /oremi/data/wakewords
-VOLUME /oremi/data/sounds
+VOLUME /oremi/data
 
 EXPOSE 5023
 

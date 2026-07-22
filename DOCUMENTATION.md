@@ -85,8 +85,7 @@ oremi-ohunerin [OPTIONS]
 
 #### CLI Options
 
-- `-w, --wakewords-config <path>` – Path to the wakewords configuration JSON file.
-- `-s, --sounds-config <path>` – Path to the sounds configuration JSON file.
+- `-c, --config <path>` – Path to the configuration JSON file.
 - `--host <host>` – Host address to listen on (Default: `127.0.0.1`).
 - `-p, --port <port>` – Port number to listen on (Default: `5023`).
 - `--cert-file <path>` – Path to the SSL certificate file for secure TLS connection.
@@ -99,6 +98,7 @@ oremi-ohunerin [OPTIONS]
 
 ```sh
 oremi-ohunerin \
+  --config /path/to/config.json \
   --host 0.0.0.0 \
   --port 5023
 ```
@@ -116,38 +116,96 @@ Environment variables are prefixed with `OREMI_OHUNERIN_`:
 
 - `OREMI_OHUNERIN_CERT_FILE` — Path to the SSL certificate file
 - `OREMI_OHUNERIN_KEY_FILE` — Path to the SSL private key file
-- `OREMI_OHUNERIN_KEY_PASSWORD` — Password to unlock the SSL private key
+- `OREMI_OHUNERIN_PASSWORD` — Password to unlock the SSL private key
 
 ### Audio Detection
 
-- `OREMI_OHUNERIN_MODEL_PATH` — Path to the audio classification model file
-- `OREMI_OHUNERIN_THRESHOLD` — Score threshold below which sound detections are discarded (Default: `0.65`)
+- `OREMI_OHUNERIN_THRESHOLD` — Score threshold below which sound detections are discarded (Default: `0.1`)
 
 ### Logging
 
 - `OREMI_OHUNERIN_LOG_LEVEL` — Logging severity level (`DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`) (Default: `INFO`)
 - `OREMI_OHUNERIN_LOG_FILE` — File path for log output (Default: `None` / stderr)
 
-## Wake Word and Sound Configuration Files
+## Configuration File (`config.json`)
 
-Ohunerin uses two JSON configuration files:
+Ohunerin uses a single unified JSON configuration file: **`config.json`**.
 
-- **`wakeword.json`** defines wake words and their pronunciations.
-- **`sounds.json`** configures sound label filtering.
+It combines wake word definitions and sound label filtering into one structure.
+Default configuration is bundled at `/oremi/data/config.json`.
 
-Default versions of both files are bundled with the official Docker image
-and the Python wheel distribution.
+### Default Location
 
-### Default Locations
+When using the Docker image, the configuration file is located at:
 
-When using the Docker image, the files are located in separate subdirectories to allow independent volume mounts:
+- `/oremi/data/config.json` (Volume: `/oremi/data`)
 
-- `/oremi/data/wakewords/wakeword.json` (Volume: `/oremi/data/wakewords`)
-- `/oremi/data/sounds/sounds.json` (Volume: `/oremi/data/sounds`)
+When overriding `config.json`, if `sounds` or `wakewords` is omitted in the
+overwritten file, Ohunerin automatically falls back to the default values for
+the missing section.
 
-### `sounds.json`
+### Structure of `config.json`
 
-The `sounds.json` file controls which sound labels may be emitted by the
+```json
+{
+  "wakewords": [
+    {
+      "language": "fr",
+      "word": "oremi",
+      "phones": ["oo rr ei mm ii", "oo rr ai mm ii", "au rr ei mm ii"],
+      "discriminants": [
+        {
+          "word": "remi",
+          "phones": ["rr ei mm ii", "rr ai mm ii"]
+        }
+      ]
+    },
+    {
+      "language": "fr",
+      "word": "dikomlam",
+      "phones": [
+        "dd ii kk oo mm ll aa mm",
+        "dd ii kk on ll aa mm",
+        "dd ii kk oo mm ll an"
+      ]
+    },
+    {
+      "language": "en",
+      "word": "oremi",
+      "phones": [
+        "OW R EH M IY",
+        "OW R EY M IY",
+        "AO R EH M IY",
+        "AO R EY M IY"
+      ],
+      "discriminants": [
+        {
+          "word": "remi",
+          "phones": ["R EH M IY", "R EY M IY"]
+        }
+      ]
+    },
+    {
+      "language": "en",
+      "word": "dikomlam",
+      "phones": [
+        "D IH K AA M L AA M",
+        "D IH K AH M L AE M",
+        "D IH K AA M L AE M",
+        "D IY K AA M L AE M"
+      ]
+    }
+  ],
+  "sounds": {
+    "allowlist": [],
+    "denylist": []
+  }
+}
+```
+
+### The `"sounds"` Section
+
+The `"sounds"` object controls which sound labels may be emitted by the
 sound detection feature.
 
 ```json
@@ -168,9 +226,9 @@ are enabled.
 All sound labels must be valid supported labels, and duplicate entries
 are removed automatically.
 
-### `wakeword.json`
+### The `"wakewords"` Section
 
-The `wakeword.json` file defines the wake words recognized by Ohunerin.
+The `"wakewords"` list defines the wake words recognized by Ohunerin.
 It also stores phonetic pronunciations and optional discriminants used to
 reduce false positives.
 
@@ -188,9 +246,7 @@ phoneme sequences, not IPA notation. Each string is a space-separated
 list of phonemes in the pronunciation alphabet expected by PocketSphinx
 for the selected language model.
 
-See the for more
-details on supported models and pronunciation formats. In other words,
-each entry describes one possible pronunciation of the wake word.
+In other words, each entry describes one possible pronunciation of the wake word.
 
 For example, the French wake word `oremi` includes several pronunciation
 variants:
@@ -208,55 +264,9 @@ Discriminants help reduce false positives. For example, if `oremi`
 could be confused with `remi`, the discriminant entry provides the
 pronunciation of `remi` so the recognizer can better separate the two.
 
-```json
-[
-  {
-    "language": "fr",
-    "word": "oremi",
-    "phones": ["oo rr ei mm ii", "oo rr ai mm ii", "au rr ei mm ii"],
-    "discriminants": [
-      {
-        "word": "remi",
-        "phones": ["rr ei mm ii", "rr ai mm ii"]
-      }
-    ]
-  },
-  {
-    "language": "fr",
-    "word": "dikomlam",
-    "phones": [
-      "dd ii kk oo mm ll aa mm",
-      "dd ii kk on ll aa mm",
-      "dd ii kk oo mm ll an"
-    ]
-  },
-  {
-    "language": "en",
-    "word": "oremi",
-    "phones": ["OW R EH M IY", "OW R EY M IY", "AO R EH M IY", "AO R EY M IY"],
-    "discriminants": [
-      {
-        "word": "remi",
-        "phones": ["R EH M IY", "R EY M IY"]
-      }
-    ]
-  },
-  {
-    "language": "en",
-    "word": "dikomlam",
-    "phones": [
-      "D IH K AA M L AA M",
-      "D IH K AH M L AE M",
-      "D IH K AA M L AE M",
-      "D IY K AA M L AE M"
-    ]
-  }
-]
-```
+### Editing `config.json`
 
-### Editing `wakeword.json`
-
-When editing `wakeword.json`, keep the following in mind:
+When editing `config.json`, keep the following in mind:
 
 - Use the phoneme symbols expected by PocketSphinx for the selected
   language.
@@ -267,6 +277,8 @@ When editing `wakeword.json`, keep the following in mind:
   another word.
 - Make sure the pronunciations match the language model being used,
   since phoneme inventories differ between languages.
+- Omitting `"sounds"` or `"wakewords"` will cause Ohunerin to use the default
+  settings for the omitted section.
 
 ## Contributing
 

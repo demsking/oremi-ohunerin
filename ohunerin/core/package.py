@@ -23,8 +23,7 @@ MODELS_DIR = PROJECT_DIRECTORY / "models"
 HTDOCS_DIR = PROJECT_DIRECTORY / "htdocs"
 
 DEFAULT_MODEL_PATH = MODELS_DIR / "yamnet.tflite"
-DEFAULT_SOUNDS_CONFIG_FILE = DATA_DIR / "sounds" / "sounds.json"
-DEFAULT_WAKEWORD_CONFIG_FILE = DATA_DIR / "wakewords" / "wakeword.json"
+DEFAULT_CONFIG_FILE = DATA_DIR / "config.json"
 
 _pyproject_path = PROJECT_DIRECTORY / "pyproject.toml"
 

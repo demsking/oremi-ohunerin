@@ -28,19 +28,11 @@ def parse_arguments() -> argparse.Namespace:
   parser = argparse.ArgumentParser(prog=APP_NAME, description=APP_DESCRIPTION)
 
   parser.add_argument(
-    "-w",
-    "--wakewords-config",
+    "-c",
+    "--config",
     type=str,
     default=None,
-    help="Path to the wakewords configuration file.",
-  )
-
-  parser.add_argument(
-    "-s",
-    "--sounds-config",
-    type=str,
-    default=None,
-    help="Path to the sounds configuration file.",
+    help="Path to the JSON configuration file.",
   )
 
   parser.add_argument(

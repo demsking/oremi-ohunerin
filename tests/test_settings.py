@@ -12,22 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import json
 import os
+import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
 from ohunerin.core.settings import Settings
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-WAKEWORDS_CONFIG_PATH = os.path.join(BASE_DIR, "data", "wakewords", "wakeword.json")
-SOUNDS_CONFIG_PATH = os.path.join(BASE_DIR, "data", "sounds", "sounds.json")
+CONFIG_PATH = os.path.join(BASE_DIR, "data", "config.json")
 MODEL_PATH = os.path.join(BASE_DIR, "models", "yamnet.tflite")
 
 
 def test_settings_defaults():
   settings = Settings(
-    wakeword_config_path=WAKEWORDS_CONFIG_PATH,
-    sounds_config_path=SOUNDS_CONFIG_PATH,
+    config_path=CONFIG_PATH,
     model_path=MODEL_PATH,
   )
   assert settings.server_host == "127.0.0.1"
@@ -44,8 +44,7 @@ def test_settings_env_prefix():
     "OREMI_OHUNERIN_SERVER_PORT": "9090",
     "OREMI_OHUNERIN_LOG_LEVEL": "DEBUG",
     "OREMI_OHUNERIN_THRESHOLD": "0.85",
-    "OREMI_OHUNERIN_WAKEWORD_CONFIG_PATH": WAKEWORDS_CONFIG_PATH,
-    "OREMI_OHUNERIN_SOUNDS_CONFIG_PATH": SOUNDS_CONFIG_PATH,
+    "OREMI_OHUNERIN_CONFIG_PATH": CONFIG_PATH,
     "OREMI_OHUNERIN_MODEL_PATH": MODEL_PATH,
   }
   with patch.dict(os.environ, env):
@@ -54,5 +53,40 @@ def test_settings_env_prefix():
     assert settings.server_port == 9090
     assert settings.log_level == "DEBUG"
     assert settings.threshold == 0.85
-    assert settings.wakeword_config_path == Path(WAKEWORDS_CONFIG_PATH)
-    assert settings.sounds_config_path == Path(SOUNDS_CONFIG_PATH)
+    assert settings.config_path == Path(CONFIG_PATH)
+
+
+def test_settings_partial_override_sounds_missing():
+  with tempfile.NamedTemporaryFile("w+", suffix=".json", delete=False) as tmp:
+    json.dump({"sounds": {"allowlist": ["Speech"]}}, tmp)
+    tmp_path = tmp.name
+
+  try:
+    settings = Settings(config_path=tmp_path, model_path=MODEL_PATH)
+    assert settings.sounds_config.allowlist == ["Speech"]
+    # wakewords should fall back to default wakewords
+    assert len(settings.wakewords_config.wakewords) > 0
+  finally:
+    os.unlink(tmp_path)
+
+
+def test_settings_partial_override_wakewords_missing():
+  custom_wakewords = [
+    {
+      "language": "en",
+      "word": "computer",
+      "phones": ["K AH M P Y UW T ER"],
+    }
+  ]
+  with tempfile.NamedTemporaryFile("w+", suffix=".json", delete=False) as tmp:
+    json.dump({"wakewords": custom_wakewords}, tmp)
+    tmp_path = tmp.name
+
+  try:
+    settings = Settings(config_path=tmp_path, model_path=MODEL_PATH)
+    assert len(settings.wakewords_config.wakewords) == 1
+    assert settings.wakewords_config.wakewords[0].word == "computer"
+    # sounds should fall back to default sounds
+    assert settings.sounds_config.allowlist == []
+  finally:
+    os.unlink(tmp_path)

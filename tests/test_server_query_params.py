@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import json
 import logging
 import os
 
@@ -33,14 +34,13 @@ def logger():
 @pytest_asyncio.fixture
 async def server(logger):
   base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-  wakewords_file = os.path.join(base_dir, "data", "wakewords", "wakeword.json")
-  sounds_file = os.path.join(base_dir, "data", "sounds", "sounds.json")
+  config_file = os.path.join(base_dir, "data", "config.json")
   model_file = os.path.join(base_dir, "models", "yamnet.tflite")
 
-  with open(wakewords_file, encoding="utf-8") as f:
-    wakewords_config = WakewordsConfig.model_validate_json(f.read())
-  with open(sounds_file, encoding="utf-8") as f:
-    sounds_config = SoundsConfig.model_validate_json(f.read())
+  with open(config_file, encoding="utf-8") as f:
+    raw = json.load(f)
+  wakewords_config = WakewordsConfig.model_validate(raw.get("wakewords", []))
+  sounds_config = SoundsConfig.model_validate(raw.get("sounds", {}))
 
   return Server(wakewords_config=wakewords_config, sounds_config=sounds_config, threshold=0.65, model=Path(model_file))
 

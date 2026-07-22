@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import json
 import logging
 from functools import cached_property
 from pathlib import Path
@@ -23,9 +24,8 @@ from pydantic import field_validator
 from pydantic_settings import BaseSettings
 from pydantic_settings import SettingsConfigDict
 
+from ohunerin.core.package import DEFAULT_CONFIG_FILE
 from ohunerin.core.package import DEFAULT_MODEL_PATH
-from ohunerin.core.package import DEFAULT_SOUNDS_CONFIG_FILE
-from ohunerin.core.package import DEFAULT_WAKEWORD_CONFIG_FILE
 from ohunerin.models.sound import SoundsConfig
 from ohunerin.models.wakeword import WakewordsConfig
 
@@ -48,10 +48,7 @@ class Settings(BaseSettings):
   key_file: str | None = Field(default=None, description="Path to SSL private key file.")
   password: str | None = Field(default=None, description="Password to unlock private key.")
 
-  wakeword_config_path: Path = Field(
-    default=DEFAULT_WAKEWORD_CONFIG_FILE, description="Path to wakewords configuration JSON file."
-  )
-  sounds_config_path: Path = Field(default=DEFAULT_SOUNDS_CONFIG_FILE, description="Path to sounds configuration JSON file.")
+  config_path: Path = Field(default=DEFAULT_CONFIG_FILE, description="Path to unified configuration JSON file.")
   model_path: Path = Field(default=DEFAULT_MODEL_PATH, description="Path to audio classification model file.")
   threshold: float = Field(default=0.1, description="Default score threshold for detection.")
 
@@ -59,14 +56,58 @@ class Settings(BaseSettings):
   log_file: str | None = Field(default=None, description="Path to rotating log file.")
 
   @cached_property
+  def config(self) -> dict[str, Any]:
+    content = self.config_path.read_text().strip()
+
+    if not content:
+      raw: Any = {}
+    else:
+      try:
+        raw = json.loads(content)
+      except Exception as err:
+        raise ValueError(f"Invalid JSON in config file {self.config_path}: {err}") from err
+
+    if not isinstance(raw, dict):
+      if isinstance(raw, list):
+        raw = {"wakewords": raw}
+      else:
+        raw = {}
+
+    default_raw: dict[str, Any] = {}
+
+    if self.config_path != DEFAULT_CONFIG_FILE and DEFAULT_CONFIG_FILE.is_file():
+      try:
+        default_content = DEFAULT_CONFIG_FILE.read_text().strip()
+
+        if default_content:
+          parsed = json.loads(default_content)
+
+          if isinstance(parsed, dict):
+            default_raw = parsed
+      except Exception:
+        pass
+
+    if "wakewords" not in raw and "wakewords" in default_raw:
+      raw["wakewords"] = default_raw["wakewords"]
+
+    if "sounds" not in raw and "sounds" in default_raw:
+      raw["sounds"] = default_raw["sounds"]
+
+    return raw
+
+  @cached_property
   def wakewords_config(self) -> WakewordsConfig:
-    """Load and parse the wakewords JSON configuration file."""
-    return WakewordsConfig.model_validate_json(self.wakeword_config_path.read_text())
+    """Load and parse the wakewords configuration file."""
+    wakewords_data = self.config.get("wakewords", [])
+
+    return WakewordsConfig.model_validate(wakewords_data)
 
   @cached_property
   def sounds_config(self) -> SoundsConfig:
-    """Load and parse the sounds JSON configuration file."""
-    return SoundsConfig.model_validate_json(self.sounds_config_path.read_text())
+    """Load and parse the sounds configuration file."""
+    sounds_data = self.config.get("sounds", {})
+
+    return SoundsConfig.model_validate(sounds_data)
 
   @field_validator("password", mode="before")
   @classmethod
@@ -77,29 +118,16 @@ class Settings(BaseSettings):
     value = str(value).strip()
     return value or None
 
-  @field_validator("wakeword_config_path", mode="before")
+  @field_validator("config_path", mode="before")
   @classmethod
-  def validate_wakeword_config_path(cls, value: Any) -> Path:
+  def validate_config_path(cls, value: Any) -> Path:
     if value is None:
-      value = DEFAULT_WAKEWORD_CONFIG_FILE
+      value = DEFAULT_CONFIG_FILE
 
     path = Path(value).expanduser().resolve()
 
     if not path.is_file():
-      raise ValueError(f"Wakewords config file does not exist: {path}")
-
-    return path
-
-  @field_validator("sounds_config_path", mode="before")
-  @classmethod
-  def validate_sounds_config_path(cls, value: Any) -> Path:
-    if value is None:
-      value = DEFAULT_SOUNDS_CONFIG_FILE
-
-    path = Path(value).expanduser().resolve()
-
-    if not path.is_file():
-      raise ValueError(f"Sounds config file does not exist: {path}")
+      raise ValueError(f"Config file does not exist: {path}")
 
     return path
 

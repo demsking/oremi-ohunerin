@@ -60,8 +60,7 @@ async def start() -> None:
 
   logger.info(f"{APP_NAME} v{APP_VERSION}")
   log_group(settings, "model", "threshold", "model_path")
-  log_group(settings, "wakewords", "wakeword_config_path")
-  log_group(settings, "sounds", "sounds_config_path")
+  log_group(settings, "config", "config_path")
   log_group(settings, "tls", "cert_file", "key_file", "password")
   log_group(settings, "logging", "log_level", "log_file")
   log_config_details(settings.wakewords_config, settings.sounds_config)
