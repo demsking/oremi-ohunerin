@@ -14,6 +14,8 @@
 # ==============================================================================
 import asyncio
 import logging
+import os
+import sys
 
 from ohunerin.core.args import parse_arguments
 from ohunerin.core.logger import configure_logging
@@ -50,9 +52,11 @@ __all__ = [
 
 async def start() -> None:
   parse_arguments()
-  settings = Settings()  # pyright: ignore
+  log_level = os.environ.get("OREMI_OHUNERIN_LOG_LEVEL", "INFO").upper()
+  log_file = os.environ.get("OREMI_OHUNERIN_LOG_FILE", None)
 
-  configure_logging(settings.log_level, settings.log_file)
+  configure_logging(log_level, log_file)
+  settings = Settings()  # pyright: ignore
 
   logger.info(f"{APP_NAME} v{APP_VERSION}")
   log_group(settings, "model", "threshold", "model_path")
@@ -82,3 +86,10 @@ def main() -> None:
     asyncio.run(start())
   except KeyboardInterrupt:
     pass
+  except Exception as exc:
+    if logger.isEnabledFor(logging.DEBUG):
+      logger.exception(exc)
+    else:
+      logger.error(exc)
+
+    sys.exit(1)

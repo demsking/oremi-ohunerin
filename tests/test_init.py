@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+from unittest.mock import AsyncMock
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
@@ -58,6 +59,38 @@ async def test_start():
 
 
 def test_main():
-  with patch("ohunerin.start"), patch("asyncio.run") as mock_run:
+  with patch("ohunerin.start", new_callable=AsyncMock), patch("asyncio.run") as mock_run:
     main()
     mock_run.assert_called_once()
+
+
+def test_main_keyboard_interrupt():
+  with patch("asyncio.run", side_effect=KeyboardInterrupt):
+    main()  # Should handle KeyboardInterrupt without raising
+
+
+def test_main_exception_info_level():
+  error = ValueError("Wakewords config file does not exist")
+  with (
+    patch("asyncio.run", side_effect=error),
+    patch("ohunerin.logger.isEnabledFor", return_value=False),
+    patch("ohunerin.logger.error") as mock_error,
+    patch("sys.exit") as mock_exit,
+  ):
+    main()
+    mock_error.assert_called_once_with(error)
+    mock_exit.assert_called_once_with(1)
+
+
+def test_main_exception_debug_level():
+  error = ValueError("Wakewords config file does not exist")
+  with (
+    patch("asyncio.run", side_effect=error),
+    patch("ohunerin.logger.isEnabledFor", return_value=True),
+    patch("ohunerin.logger.exception") as mock_exception,
+    patch("sys.exit") as mock_exit,
+  ):
+    main()
+    mock_exception.assert_called_once_with(error)
+    mock_exit.assert_called_once_with(1)
+
