@@ -140,10 +140,10 @@ and the Python wheel distribution.
 
 ### Default Locations
 
-When using the Docker image, the files are located at:
+When using the Docker image, the files are located in separate subdirectories to allow independent volume mounts:
 
-- `/oremi/data/wakeword.json`
-- `/oremi/data/sounds.json`
+- `/oremi/data/wakewords/wakeword.json` (Volume: `/oremi/data/wakewords`)
+- `/oremi/data/sounds/sounds.json` (Volume: `/oremi/data/sounds`)
 
 ### `sounds.json`
 
