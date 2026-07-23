@@ -16,7 +16,7 @@ import logging
 import os
 import tempfile
 
-from pocketsphinx import Config
+from pocketsphinx import Config  # type: ignore[import-untyped]
 from pocketsphinx import Decoder
 
 from ohunerin.core.package import APP_NAME

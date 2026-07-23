@@ -68,14 +68,6 @@ class WakewordSetting(BaseModel):
   wakewords: list[DictionaryEntry]
   """Wakeword phrases that should trigger detection."""
 
-  def copy(self) -> "WakewordSetting":
-    return WakewordSetting(
-      model=self.model,
-      dictionary=self.dictionary,
-      discriminants=[DictionaryEntry(word=entry.word, phones=entry.phones) for entry in self.discriminants],
-      wakewords=[DictionaryEntry(word=entry.word, phones=entry.phones) for entry in self.wakewords],
-    )
-
 
 class WakewordsConfig(BaseModel):
   """Configuration model for wakeword definitions."""

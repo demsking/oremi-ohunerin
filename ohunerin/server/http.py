@@ -166,7 +166,7 @@ class HttpHandler:
 
     return self._send(method, path, version, http.HTTPStatus.NOT_FOUND, headers, body)
 
-  def get_server_info(self) -> dict:
+  def get_server_info(self) -> dict[str, Any]:
     """Return information about the server."""
     return {
       "name": APP_NAME,
@@ -178,7 +178,7 @@ class HttpHandler:
 
   def get_openapi_spec(self) -> dict[str, Any]:
     """Generate OpenAPI specification object with updated documentation and version."""
-    openapi = json.loads(OPENAPI_PATH.read_text(encoding="utf-8"))
+    openapi: dict[str, Any] = json.loads(OPENAPI_PATH.read_text(encoding="utf-8"))
 
     openapi["info"]["description"] = SERVICE_DESCRIPTION
     openapi["info"]["version"] = APP_VERSION

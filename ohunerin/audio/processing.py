@@ -34,8 +34,5 @@ def to_ndarray(data: bytes, num_channels: int) -> np.ndarray:
     np.ndarray: Reshaped, normalized float64 NumPy array.
   """
   audio_array = np.frombuffer(data, dtype=np.int16)
-  audio_array = audio_array.astype(np.float64)
-  audio_array /= 32768.0
-  audio_array = audio_array.reshape(-1, num_channels)
-
-  return audio_array
+  audio_float = audio_array.astype(np.float64) / 32768.0
+  return audio_float.reshape(-1, num_channels)

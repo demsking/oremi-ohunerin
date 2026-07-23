@@ -19,7 +19,7 @@ import signal
 import ssl
 import urllib.parse
 
-import sounddevice as sd
+import sounddevice as sd  # type: ignore[import-untyped]
 import websockets.exceptions
 from websockets.asyncio.client import connect
 
@@ -84,17 +84,18 @@ def parse_arguments() -> argparse.Namespace:
   return parser.parse_args()
 
 
-def list_input_devices():
+def list_input_devices() -> None:
   devices = sd.query_devices()
   print("Available input devices:")
   for i, device in enumerate(devices):
-    if device["max_input_channels"] > 0:  # type: ignore
+    if device["max_input_channels"] > 0:
       print(
-        f"{i + 1}. {device['name']} - {device['max_input_channels']} channel(s) - Sample rate: {device['default_samplerate']} Hz"  # type: ignore
+        f"{i + 1}. {device['name']} - {device['max_input_channels']} channel(s) - Sample rate: {device['default_samplerate']} Hz"
       )
 
 
-async def main():
+async def main() -> None:
+  loop = asyncio.get_running_loop()
   audio_queue = asyncio.Queue[bytes]()
   args = parse_arguments()
 
@@ -132,7 +133,7 @@ async def main():
     ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
     ssl_context.load_verify_locations(args.cert_file)
 
-  def stop_recording():
+  def stop_recording() -> None:
     print("Ctrl+C received, closing stream...")
     if stream_open:
       stream.stop()
@@ -140,19 +141,18 @@ async def main():
       print("Stream closed.")
 
   async with connect(uri, ssl=ssl_context, user_agent_header="sds-client/1.0.0") as websocket:
-    loop = asyncio.get_running_loop()
-
     loop.add_signal_handler(signal.SIGINT, stop_recording)
     loop.add_signal_handler(signal.SIGTERM, stop_recording)
     loop.add_signal_handler(signal.SIGINT, lambda: loop.create_task(websocket.close(), name="SIGINT Signal Task"))
     loop.add_signal_handler(signal.SIGTERM, lambda: loop.create_task(websocket.close(), name="SIGTERM Signal Task"))
 
-    async def listen():
+    async def listen() -> None:
       logger.info("Listening detection messages...")
       try:
         async for message in websocket:
+          formatted_msg = message.decode("utf-8") if isinstance(message, bytes) else message
           logger.info(
-            f"Detected: {message}"
+            f"Detected: {formatted_msg}"
           )  # {"type": "sound", "sound": "snoring", "score": 0.109375, "datetime": "2023-08-16T14:42:46.424809"}
       except asyncio.CancelledError:
         logger.info("Recording stopped")
@@ -162,8 +162,8 @@ async def main():
       except websockets.exceptions.ConnectionClosedError as error:
         logger.info(error)
 
-    async def recording():
-      logger.info(f"Recording from {device_info['name']} device...")  # type: ignore
+    async def recording() -> None:
+      logger.info(f"Recording from {device_info['name']} device...")
       with stream:
         while stream_open:
           try:
@@ -180,7 +180,7 @@ async def main():
             break
       logger.info("Stream closed.")
 
-    def handle_task_done(task: asyncio.Task):
+    def handle_task_done(task: asyncio.Task[None]) -> None:
       if task.done():
         logger.info(f"{task.get_name()} done")
       elif task.cancelled():

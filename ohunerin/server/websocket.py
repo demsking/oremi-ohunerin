@@ -21,6 +21,7 @@ from abc import abstractmethod
 from collections.abc import Callable
 from collections.abc import Coroutine
 from enum import StrEnum
+from typing import Any
 
 import websockets.legacy.server as Websockets
 from websockets.exceptions import ConnectionClosedError
@@ -49,9 +50,9 @@ class WebSocketServer(ABC):
     cert_file: str | None = None,
     key_file: str | None = None,
     password: str | None = None,
-    on_listening: Callable[[], Coroutine] | None = None,
-    on_shutdown: Callable[[], Coroutine] | None = None,
-    **kwargs,
+    on_listening: Callable[[], Coroutine[Any, Any, Any]] | None = None,
+    on_shutdown: Callable[[], Coroutine[Any, Any, Any]] | None = None,
+    **kwargs: Any,
   ) -> None:
     self.verbose: bool = logger.level == logging.DEBUG
     self.kwargs = kwargs
@@ -104,7 +105,7 @@ class WebSocketServer(ABC):
       )
       task.add_done_callback(self._handle_processing_done_task)
 
-  def _handle_processing_done_task(self, task: asyncio.Task) -> None:
+  def _handle_processing_done_task(self, task: asyncio.Task[None]) -> None:
     try:
       task.result()
     except Exception as exception:
@@ -184,9 +185,9 @@ class BroadcastingWebSocketServer(WebSocketServer):
     cert_file: str | None = None,
     key_file: str | None = None,
     password: str | None = None,
-    on_listening: Callable[[], Coroutine] | None = None,
-    on_shutdown: Callable[[], Coroutine] | None = None,
-    **kwargs,
+    on_listening: Callable[[], Coroutine[Any, Any, Any]] | None = None,
+    on_shutdown: Callable[[], Coroutine[Any, Any, Any]] | None = None,
+    **kwargs: Any,
   ) -> None:
     super().__init__(
       server_header=server_header,

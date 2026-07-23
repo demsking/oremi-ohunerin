@@ -73,7 +73,9 @@ def test_main_keyboard_interrupt():
 
 
 def test_main_exception_info_level():
-  error = ValueError("Oremi Ohunerin failed to start: Wakewords config file does not exist")
+  error = ValueError("Wakewords config file does not exist")
+  expected_error = f"Oremi Ohunerin failed to start: {error}"
+
   with (
     patch("asyncio.run", side_effect=error),
     patch("ohunerin.logger.isEnabledFor", return_value=False),
@@ -81,7 +83,7 @@ def test_main_exception_info_level():
     patch("sys.exit") as mock_exit,
   ):
     main()
-    mock_error.assert_called_with(error)
+    mock_error.assert_called_with(expected_error)
     mock_exit.assert_called_with(1)
 
 

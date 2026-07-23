@@ -57,20 +57,23 @@ class Settings(BaseSettings):
 
   @cached_property
   def config(self) -> dict[str, Any]:
+    raw: dict[str, Any]
+
     if self.config_path and self.config_path.is_file():
       content = self.config_path.read_text().strip()
 
       if not content:
-        raw: Any = {}
+        raw = {}
       else:
         try:
-          raw = json.loads(content)
+          parsed = json.loads(content)
         except Exception as err:
           raise ValueError(f"Invalid JSON in config file {self.config_path}: {err}") from err
 
-      if not isinstance(raw, dict):
-        if isinstance(raw, list):
-          raw = {"wakewords": raw}
+        if isinstance(parsed, dict):
+          raw = parsed
+        elif isinstance(parsed, list):
+          raw = {"wakewords": parsed}
         else:
           raw = {}
     else:
@@ -80,7 +83,10 @@ class Settings(BaseSettings):
 
     if self.config_path != DEFAULT_CONFIG_FILE:
       default_content = DEFAULT_CONFIG_FILE.read_text().strip()
-      default_raw = json.loads(default_content)
+      parsed_default = json.loads(default_content)
+
+      if isinstance(parsed_default, dict):
+        default_raw = parsed_default
 
     if "wakewords" not in raw and "wakewords" in default_raw:
       raw["wakewords"] = default_raw["wakewords"]

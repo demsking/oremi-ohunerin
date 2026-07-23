@@ -123,31 +123,3 @@ def test_sound_detection_feature():
 
   feature2 = SoundDetectionFeature(name="sound-detection", allowlist=["dog", "cat"])
   assert feature2.allowlist == ["dog", "cat"]
-
-
-def test_wakeword_setting_and_copy():
-  entry_wake = DictionaryEntry(word="oremi", phones=["O", "R", "E", "M", "I"])
-  entry_disc = DictionaryEntry(word="remi", phones=["R", "E", "M", "I"])
-
-  setting = WakewordSetting(
-    model="/path/to/model", dictionary="/path/to/dict", discriminants=[entry_disc], wakewords=[entry_wake]
-  )
-
-  assert setting.model == "/path/to/model"
-  assert setting.dictionary == "/path/to/dict"
-  assert setting.discriminants == [entry_disc]
-  assert setting.wakewords == [entry_wake]
-
-  # Test copy method
-  copied = setting.copy()
-  assert copied is not setting
-  assert copied.model == setting.model
-  assert copied.dictionary == setting.dictionary
-  assert copied.discriminants == setting.discriminants
-  assert copied.wakewords == setting.wakewords
-
-  # Verify deep copy of entries (independent lists/objects)
-  assert copied.discriminants is not setting.discriminants
-  assert copied.discriminants[0] is not setting.discriminants[0]
-  assert copied.wakewords is not setting.wakewords
-  assert copied.wakewords[0] is not setting.wakewords[0]

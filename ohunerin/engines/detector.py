@@ -15,7 +15,7 @@
 import logging
 from pathlib import Path
 
-from tflite_support.task import audio
+from tflite_support.task import audio  # type: ignore
 from tflite_support.task import core
 from tflite_support.task import processor
 

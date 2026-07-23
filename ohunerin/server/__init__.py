@@ -150,7 +150,7 @@ class Server(WebSocketServer):
     websocket: WebSocketConnection,
     message: bytes | str,
   ) -> None:
-    return await super()._process_request(websocket, message)
+    pass
 
   def _parse_query_params(self, path: str) -> tuple[WakewordEngine | None, DetectorConsumer | None]:
     parsed_url = urlparse(path)
@@ -257,7 +257,7 @@ class Server(WebSocketServer):
 
     if wakeword_engine is None and detector_consumer is None:
       await websocket.close(
-        websockets.legacy.protocol.CloseCode.INVALID_DATA,
+        1003,
         "No feature provided in the query parameters, which is required to start listening",
       )
       return
