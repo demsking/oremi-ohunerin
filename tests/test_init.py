@@ -52,10 +52,13 @@ async def test_start():
   mock_settings.model_path = "/mock/model.tflite"
   mock_settings.config = MagicMock()
 
-  with patch("ohunerin.parse_arguments", return_value=mock_args), patch("ohunerin.Settings", return_value=mock_settings), patch("ohunerin.Server", return_value=mock_server):
+  with (
+    patch("ohunerin.parse_arguments", return_value=mock_args),
+    patch("ohunerin.Settings", return_value=mock_settings),
+    patch("ohunerin.Server", return_value=mock_server),
+  ):
     await start()
     mock_server.listen.assert_called_once_with("127.0.0.1", 5023)
-
 
 
 def test_main():
@@ -70,7 +73,7 @@ def test_main_keyboard_interrupt():
 
 
 def test_main_exception_info_level():
-  error = ValueError("Wakewords config file does not exist")
+  error = ValueError("Oremi Ohunerin failed to start: Wakewords config file does not exist")
   with (
     patch("asyncio.run", side_effect=error),
     patch("ohunerin.logger.isEnabledFor", return_value=False),
@@ -78,8 +81,8 @@ def test_main_exception_info_level():
     patch("sys.exit") as mock_exit,
   ):
     main()
-    mock_error.assert_called_once_with(error)
-    mock_exit.assert_called_once_with(1)
+    mock_error.assert_called_with(error)
+    mock_exit.assert_called_with(1)
 
 
 def test_main_exception_debug_level():
@@ -93,4 +96,3 @@ def test_main_exception_debug_level():
     main()
     mock_exception.assert_called_once_with(error)
     mock_exit.assert_called_once_with(1)
-

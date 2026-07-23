@@ -85,10 +85,9 @@ def main() -> None:
     asyncio.run(start())
   except KeyboardInterrupt:
     pass
-  except Exception as exc:
+  except Exception as exception:
     if logger.isEnabledFor(logging.DEBUG):
-      logger.exception(exc)
-    else:
-      logger.error(exc)
+      logger.exception(exception)
 
+    logger.error(f"Oremi Ohunerin failed to start: {exception}")
     sys.exit(1)
