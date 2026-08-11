@@ -12,15 +12,16 @@
     "skjold@latest",
     "editorconfig-checker@latest",
     "uv@latest",
-    "twine@latest"
+    "twine@latest",
+    "prek@latest"
   ],
   "env": {
     "UV_MANAGED_PYTHON": "1",
-    "PYTHONPATH": ".:.venv/lib/python3.11/site-packages:$PYTHONPATH"
+    "PYTHONPATH":        ".:.venv/lib/python3.11/site-packages:$PYTHONPATH"
   },
   "shell": {
     "init_hook": [
-      "pre-commit install -f",
+      "prek install -f",
       "export PATH=.venv/bin:$PATH"
     ],
     "scripts": {}

@@ -61,7 +61,7 @@ outdated:
 update: pull
 	devbox run uv sync --upgrade
 	devbox update
-	pre-commit autoupdate
+	devbox run prek update
 
 tests:
 	uv run pytest tests/ -v
@@ -73,7 +73,7 @@ coverage-html:
 	uv run pytest --cov=server --cov-report=html
 
 lint:
-	pre-commit run --all-files
+	devbox run prek run --all-files
 
 fix:
 	ruff check . --fix
