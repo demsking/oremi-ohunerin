@@ -15,6 +15,12 @@ production code; it writes everything to `.tmp/wakeword_study` (gitignored).
 | `fecheck.py` | Ports `fe_build_melfilters()` to numpy and shows the 16 kHz and 8 kHz front ends build an identical filterbank for the French model. |
 | `verify_production.py` | Feeds the same PCM through the real `WakewordEngine` and compares verdicts sample by sample. |
 | `run_perf.py` | Decoder init, `process_raw`, utterance lifecycle, resampling CPU and RSS. |
+| `pronunciation.py` | Controlled pronunciation benchmark. Synthesizes exact pronunciations with espeak-ng phoneme input, defines keyphrase/dictionary variants for both languages, and runs production-semantics passes and reset-free margin passes. |
+| `pronunciation_analysis.py` | Tables for the pronunciation benchmark (overall, by spoken pronunciation, by voice, by negative set). |
+| `model_probe.py` | Acoustic-model sanity probe: makes each in-dictionary French word its own keyphrase and measures whether the model fires on its own vocabulary across eight voices. |
+| `human_probe.py` | Real-human equivalent: makes a word that occurs in the African Accented French transcripts its own keyphrase and measures detection on the human utterance that contains it versus human utterances that do not. |
+| `streaming.py` | Chunk-size (10-500 ms) and `kws_delay` (0-40) behaviour with a byte-for-byte `WakewordEngine` mirror. |
+| `HUMAN_RECORDING_PROTOCOL.md` | Collection protocol for real human wake-word recordings, the missing piece. |
 
 ## Reproduce
 
@@ -36,6 +42,20 @@ production code; it writes everything to `.tmp/wakeword_study` (gitignored).
 .venv/bin/python -m benchmarks.wakeword_study.verify_production
 .venv/bin/python -m benchmarks.wakeword_study.fecheck
 .venv/bin/python -m benchmarks.wakeword_study.run_perf
+
+# 5. Pronunciation investigation (second study).
+.venv/bin/python -m benchmarks.wakeword_study.pronunciation --stage build
+.venv/bin/python -m benchmarks.wakeword_study.pronunciation --stage screen --thresholds 1e-15
+.venv/bin/python -m benchmarks.wakeword_study.pronunciation --stage margins \
+  --out .tmp/wakeword_study/pronunciation_margins_fr.json
+.venv/bin/python -m benchmarks.wakeword_study.pronunciation --stage margins --workers 3 \
+  --variants en_current,en_multi,en_multi2 --out .tmp/wakeword_study/pronunciation_margins_en.json
+.venv/bin/python -m benchmarks.wakeword_study.pronunciation_analysis --section all
+
+# 6. Model and human probes, streaming behaviour.
+.venv/bin/python -m benchmarks.wakeword_study.model_probe --stage run
+.venv/bin/python -m benchmarks.wakeword_study.human_probe --stage run
+.venv/bin/python -m benchmarks.wakeword_study.streaming
 ```
 
 ## Key measurement notes
