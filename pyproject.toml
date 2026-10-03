@@ -1,6 +1,6 @@
 [project]
 name = "oremi-ohunerin"
-version = "4.0.0b10"
+version = "4.0.0b11"
 description = "Real-time ambient sound and wake word detection"
 readme = "README.md"
 requires-python = ">=3.11,<3.12"
@@ -59,6 +59,10 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["ohunerin", "htdocs", "models", "LICENSE", "DOCUMENTATION.md", "wakeword.json", "sounds.json"]
+# The devbox twine used by `make package` bundles packaging 25.x, which rejects
+# Metadata-Version 2.5 (the hatchling >= 1.32 default). The project uses no
+# 2.5-only fields, so emit 2.4 until the tooling accepts 2.5.
+core-metadata-version = "2.4"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
