@@ -32,7 +32,8 @@ from ohunerin.core.package import PROJECT_DIRECTORY
 from ohunerin.engines.detector import DetectorConsumer
 from ohunerin.engines.detector import DetectorEngine
 from ohunerin.engines.detector import recommended_num_threads
-from ohunerin.engines.wakeword import WakewordEngine
+from ohunerin.engines.wakeword import DEFAULT_DECODER_POOL_SIZE
+from ohunerin.engines.wakeword import WakewordPool
 from ohunerin.models.sound import SoundsConfig
 from ohunerin.models.wakeword import DictionaryEntry
 from ohunerin.models.wakeword import WakewordEntry
@@ -79,7 +80,9 @@ class HttpHandler:
     sounds_config: SoundsConfig,
     threshold: float,
     model: Path,
+    *,
     detector_threads: int | None = None,
+    wakeword_pool_size: int | None = None,
   ) -> None:
     self.wakewords_config = wakewords_config
     self.sounds_config = sounds_config
@@ -88,6 +91,9 @@ class HttpHandler:
     # Bounded on purpose: TFLite/XNNPACK inference gets dramatically slower when
     # the interpreter spawns more workers than the CPU allocation can run.
     self.detector_threads = detector_threads or recommended_num_threads()
+    # Bounded on purpose: each PocketSphinx decoder costs ~20 MB, and a decoder
+    # owns one connection's utterance, so the pool must not grow without limit.
+    self.wakeword_pool_size = wakeword_pool_size or DEFAULT_DECODER_POOL_SIZE
 
   def _send(
     self,
@@ -224,7 +230,13 @@ class HttpHandler:
     return [entry for entry in self.wakewords_config.wakewords if entry.language == language]
 
   @lru_cache
-  def get_wakeword_engine(self, language: str) -> WakewordEngine:
+  def get_wakeword_pool(self, language: str) -> WakewordPool:
+    """Return the per-language pool of PocketSphinx decoders.
+
+    The pool is cached so decoders survive across connections; each connection
+    checks one decoder out for its whole session so two streams never share an
+    utterance. See :class:`~ohunerin.engines.wakeword.WakewordPool`.
+    """
     model_rel, dict_rel = LANGUAGE_MODEL_PATHS.get(
       language,
       (f"wakeword-{language}/acoustic-model", f"wakeword-{language}/pronounciation-dictionary.dict"),
@@ -243,7 +255,7 @@ class HttpHandler:
       discriminants=list(chain.from_iterable([entry.discriminants for entry in wakewords])),
     )
 
-    return WakewordEngine(setting)
+    return WakewordPool(setting, self.wakeword_pool_size)
 
   @lru_cache
   def get_detector_engine(self) -> DetectorEngine:

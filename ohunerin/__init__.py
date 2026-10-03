@@ -27,6 +27,7 @@ from ohunerin.core.settings import Settings
 from ohunerin.engines.detector import DetectorConsumer
 from ohunerin.engines.detector import DetectorEngine
 from ohunerin.engines.wakeword import WakewordEngine
+from ohunerin.engines.wakeword import WakewordPool
 from ohunerin.models.sound import DetectedSound
 from ohunerin.models.wakeword import WakewordSetting
 from ohunerin.server import Server
@@ -43,6 +44,7 @@ __all__ = [
   "Server",
   "Settings",
   "WakewordEngine",
+  "WakewordPool",
   "WakewordSetting",
   "WebSocketServer",
   "main",

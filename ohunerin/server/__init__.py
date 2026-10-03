@@ -31,6 +31,7 @@ from ohunerin.engines.detector import DetectorConsumer
 from ohunerin.engines.detector import DetectorEngine
 from ohunerin.engines.detector import recommended_num_threads
 from ohunerin.engines.wakeword import WakewordEngine
+from ohunerin.engines.wakeword import WakewordPool
 from ohunerin.models.sound import create_detected_sound_object
 from ohunerin.models.sound import DetectedSound
 from ohunerin.models.sound import SoundsConfig
@@ -51,12 +52,20 @@ __all__ = [
   "DetectorEngine",
   "Server",
   "WakewordEngine",
+  "WakewordPool",
   "WakewordSetting",
   "WebSocketServer",
 ]
 
 SERVER_NAME = f"{APP_NAME}/{APP_VERSION}"
 MAX_REASON_LENGTH = 123
+
+#: How long a connection waits for a wake-word decoder before being rejected.
+#:
+#: Decoders are checked out per connection, so the wait only absorbs the race
+#: between a client connecting and another one releasing its decoder; a longer
+#: wait would just delay the inevitable rejection.
+WAKEWORD_DECODER_ACQUIRE_TIMEOUT = 1.0
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 
@@ -78,6 +87,7 @@ class Server(WebSocketServer):
     threshold: float,
     model: Path,
     *,
+    wakeword_pool_size: int | None = None,
     cert_file: str | None = None,
     key_file: str | None = None,
     password: str | None = None,
@@ -99,6 +109,7 @@ class Server(WebSocketServer):
       threshold=threshold,
       model=model,
       detector_threads=recommended_num_threads(),
+      wakeword_pool_size=wakeword_pool_size,
     )
 
     self.pool = concurrent.futures.ThreadPoolExecutor(
@@ -116,8 +127,8 @@ class Server(WebSocketServer):
   def supported_sounds(self) -> list[str]:
     return self.http_handler.supported_sounds
 
-  def get_wakeword_engine(self, language: str) -> WakewordEngine:
-    return self.http_handler.get_wakeword_engine(language)
+  def get_wakeword_pool(self, language: str) -> WakewordPool:
+    return self.http_handler.get_wakeword_pool(language)
 
   def get_detector_consumer(self) -> DetectorConsumer:
     return self.http_handler.get_detector_consumer()
@@ -153,7 +164,7 @@ class Server(WebSocketServer):
   ) -> None:
     pass
 
-  def _parse_query_params(self, path: str) -> tuple[WakewordEngine | None, DetectorConsumer | None]:
+  def _parse_query_params(self, path: str) -> tuple[WakewordPool | None, DetectorConsumer | None]:
     parsed_url = urlparse(path)
     query_params = parse_qs(parsed_url.query)
 
@@ -169,7 +180,7 @@ class Server(WebSocketServer):
 
     language = query_params.get("language", [""])[0]
 
-    wakeword_engine: WakewordEngine | None = None
+    wakeword_pool: WakewordPool | None = None
     detector_consumer: DetectorConsumer | None = None
 
     for feature_name in features:
@@ -180,11 +191,11 @@ class Server(WebSocketServer):
         if language not in self.supported_languages:
           raise ValueError(f"Unsupported language: {language}")
 
-        wakeword_engine = self.get_wakeword_engine(language)
+        wakeword_pool = self.get_wakeword_pool(language)
       elif feature_name == "sound-detection":
         detector_consumer = self.get_detector_consumer()
 
-    return wakeword_engine, detector_consumer
+    return wakeword_pool, detector_consumer
 
   async def _handle_audio_data(
     self,
@@ -252,23 +263,42 @@ class Server(WebSocketServer):
       return
 
     try:
-      wakeword_engine, detector_consumer = self._parse_query_params(websocket.path)
+      wakeword_pool, detector_consumer = self._parse_query_params(websocket.path)
     except Exception as exception:
       error_message = f"Failed to parse query parameters: {exception}"
       logger.error(error_message)
       await websocket.close(code=1003, reason=Server.truncate_reason(error_message))
       return
 
-    if wakeword_engine is None and detector_consumer is None:
+    if wakeword_pool is None and detector_consumer is None:
       await websocket.close(
         1003,
         "No feature provided in the query parameters, which is required to start listening",
       )
       return
 
+    wakeword_engine: WakewordEngine | None = None
+
     try:
+      if wakeword_pool is not None:
+        # One decoder per connection: PocketSphinx cannot multiplex the open
+        # utterance, so a shared decoder makes concurrent clients collide on
+        # start_utt() and reset each other's audio. Building a decoder costs
+        # ~80-200 ms, hence the thread hop.
+        wakeword_engine = await asyncio.to_thread(wakeword_pool.acquire, WAKEWORD_DECODER_ACQUIRE_TIMEOUT)
+
+        if wakeword_engine is None:
+          error_message = "No wake-word decoder available on this server, try again later"
+          logger.warning(error_message)
+          await websocket.close(code=1013, reason=Server.truncate_reason(error_message))
+          return
+
       await self._handle_audio_data(websocket, wakeword_engine, detector_consumer)
     except Exception as exception:
       error_message = f"Unexpected error: {exception}"
       logger.error(error_message)
       await websocket.close(code=1003, reason=Server.truncate_reason(error_message))
+    finally:
+      if wakeword_pool is not None and wakeword_engine is not None:
+        # Resets the native utterance and hands the decoder back to the pool.
+        wakeword_pool.release(wakeword_engine)

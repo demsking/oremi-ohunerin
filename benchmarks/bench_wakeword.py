@@ -33,6 +33,7 @@ from pathlib import Path
 import numpy as np
 
 from ohunerin.engines.wakeword import WakewordEngine
+from ohunerin.engines.wakeword import WakewordPool
 from ohunerin.models.wakeword import DictionaryEntry
 from ohunerin.models.wakeword import WakewordsConfig
 from ohunerin.models.wakeword import WakewordSetting
@@ -122,6 +123,31 @@ def run(args: argparse.Namespace) -> dict[str, object]:
   noise_stats = measure(lambda: engine.process_raw(noise), args.repeat, 10)
   engine.end_utt()
 
+  # One connection / utterance lifecycle: reinitialize the feature extractor and
+  # open+close an utterance. This is the per-session cost added to keep a reused
+  # decoder from drifting (see WakewordEngine._begin_utterance).
+  def utterance_cycle() -> None:
+    engine.start_utt()
+    engine.end_utt()
+
+  cycle_stats = measure(utterance_cycle, max(args.repeat * 5, 100), 5)
+
+  pool_before = rss_mb()
+  pool = WakewordPool(setting, size=args.pool_size)
+  pool_started = time.perf_counter()
+  leased = [pool.acquire(timeout=0) for _ in range(args.pool_size)]
+  pool_create_s = time.perf_counter() - pool_started
+  pool_rss_mb = rss_mb() - pool_before
+
+  for checked_out in leased:
+    pool.release(checked_out)
+
+  def lease_cycle() -> None:
+    checked_out = pool.acquire(timeout=0)
+    pool.release(checked_out)
+
+  lease_stats = measure(lease_cycle, args.repeat, 5)
+
   return {
     "language": args.language,
     "chunk_bytes": args.chunk_bytes,
@@ -129,6 +155,11 @@ def run(args: argparse.Namespace) -> dict[str, object]:
     "engine_rss_mb": round(created_mb, 2),
     "process_raw_silence": silence_stats,
     "process_raw_noise": noise_stats,
+    "utterance_cycle_ms": round(cycle_stats["median_ms"], 4),
+    "pool_size": args.pool_size,
+    "pool_create_ms": round(pool_create_s * 1e3, 4),
+    "pool_rss_mb": round(pool_rss_mb, 2),
+    "pool_lease": lease_stats,
   }
 
 
@@ -138,6 +169,7 @@ def main() -> None:
   parser.add_argument("--repeat", type=int, default=30, help="Timed repetitions for the noise stage.")
   parser.add_argument("--chunk-bytes", type=int, default=8000, help="Simulated client chunk size in bytes.")
   parser.add_argument("--seed", type=int, default=0, help="PRNG seed for the synthetic noise.")
+  parser.add_argument("--pool-size", type=int, default=4, help="Number of per-connection decoders to pool.")
   parser.add_argument("--json", action="store_true", help="Emit the report as JSON.")
   args = parser.parse_args()
 
@@ -149,10 +181,15 @@ def main() -> None:
 
   print(f"language={report['language']} chunk={report['chunk_bytes']}B")
   print(f"engine_create={report['engine_create_ms']}ms  engine_rss={report['engine_rss_mb']}MB")
+  print(f"pool_size={report['pool_size']}  pool_create={report['pool_create_ms']}ms  pool_rss={report['pool_rss_mb']}MB")
+  print(f"utterance_cycle={report['utterance_cycle_ms']}ms (median)")
 
   for stage in ("process_raw_silence", "process_raw_noise"):
     stats = report[stage]  # type: ignore[assignment]
     print(f"{stage:22s} median={stats['median_ms']:8.4f}ms  p95={stats['p95_ms']:8.4f}ms")
+
+  lease = report["pool_lease"]  # type: ignore[assignment]
+  print(f"{'pool_lease':22s} median={lease['median_ms']:8.4f}ms  p95={lease['p95_ms']:8.4f}ms")
 
 
 if __name__ == "__main__":

@@ -259,6 +259,31 @@ When editing `config.json`, keep the following in mind:
 - Omitting `"sounds"` or `"wakewords"` will cause Ohunerin to use the default
   settings for the omitted section.
 
+### Wake Word Sessions
+
+Wake words are matched by PocketSphinx, whose decoder owns a single native
+utterance. Ohunerin therefore checks out one decoder per wake-word session from a
+small per-language pool instead of sharing one decoder between clients: sessions
+cannot reset or borrow each other's audio, and concurrent clients are detected
+independently. The pool holds at most a few decoders per language, and each decoder
+costs tens of megabytes of resident memory, so a session that cannot get one is
+closed with code `1013` and may be retried once another session ends.
+
+One decoder is kept open across the whole session, so a wake word that straddles a
+WebSocket frame boundary is still recognized. Detections are evaluated against the
+keyword-spotting threshold `1e-15`; that value was measured on 16 kHz speech and
+balances detection in noisy rooms against false positives.
+
+### Connection Closure Codes
+
+| Code   | Meaning                                                                              |
+| ------ | ------------------------------------------------------------------------------------ |
+| `1000` | Normal closure.                                                                      |
+| `1003` | Invalid query parameters, no usable feature requested, or an audio processing error. |
+| `1008` | The path is not `/ws`.                                                               |
+| `1013` | No wake-word decoder was free; retry once another session ends.                      |
+| `4000` | Unexpected error in the socket handler.                                              |
+
 ## Contributing
 
 Oremi Ohunerin is built with Python and uses `uv` for dependency management.

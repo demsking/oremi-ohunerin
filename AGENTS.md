@@ -82,7 +82,7 @@ Two independent ML engines run side by side:
 │   │   └── settings.py           # pydantic-settings Settings + config.json merging
 │   ├── engines/                  # PEP 420 namespace pkg
 │   │   ├── detector.py           # DetectorEngine (YAMNet) + DetectorConsumer (buffering)
-│   │   └── wakeword.py           # WakewordEngine (PocketSphinx KWS)
+│   │   └── wakeword.py           # WakewordEngine + WakewordPool (PocketSphinx KWS)
 │   ├── models/                   # PEP 420 namespace pkg
 │   │   ├── sound.py              # SUPPORTED_SOUNDS (500+ labels), SoundsConfig, DetectedSound
 │   │   └── wakeword.py           # WakewordEntry, WakewordSetting, WakewordsConfig
@@ -90,7 +90,8 @@ Two independent ML engines run side by side:
 │       ├── __init__.py           # Server: HTTP routing, WS session, detection loop
 │       ├── http.py               # HttpHandler: /health, /api/sounds, /openapi.json, /docs
 │       └── websocket.py          # WebSocketServer ABC + BroadcastingWebSocketServer
-├── tests/                        # 12 files, 61 tests, no conftest.py
+├── tests/                        # 14 files, 75 tests, no conftest.py
+├── tests/fixtures/               # fixed 16 kHz PCM wake-word recordings (tracked)
 ├── models/                       # CMU Sphinx models (tracked) + yamnet.tflite (untracked)
 │   ├── wakeword-en/{acoustic-model/,pronounciation-dictionary.dict}
 │   ├── wakeword-fr/{cmusphinx-fr-ptm-8khz-5.2/,pronounciation-dictionary.dict}
@@ -148,7 +149,8 @@ reason — it changes packaging behavior.
                                                                           │
                                              ┌────────────────────────────┴───────────┐
                                              ▼                                        ▼
-                                  WakewordEngine (per language)            DetectorConsumer (per connection)
+                                  WakewordPool (per language)              DetectorConsumer (per connection)
+                                   acquire/release one decoder per session
                                    run_in_executor(ThreadPool)              run_in_executor(ThreadPool)
                                              │                                        │
                                              │                          DetectorEngine (shared, locked)
@@ -203,6 +205,12 @@ Three things worth internalizing before you touch this:
   `DetectorEngine.classify_window()` serializes access with a `threading.Lock`.
   `HttpHandler.get_detector_consumer()` returns a **new** `DetectorConsumer` per
   call, so each connection owns its 15,600-byte window buffer.
+- **The wake-word decoder is per connection, not per language.** A PocketSphinx
+  decoder owns its open utterance and refuses a second `start_utt()`, so
+  `HttpHandler.get_wakeword_pool()` (one `@lru_cache`d `WakewordPool` per
+  language) checks one decoder out per session and returns it on disconnect. A
+  session that cannot get one within `WAKEWORD_DECODER_ACQUIRE_TIMEOUT` is closed
+  with **1013**. See [section 14](#14-concurrency-and-lifecycle-constraints).
 - **When a wake word fires, that chunk is not also classified as a sound.** The
   `continue` is deliberate (the buffer was just reset).
 
@@ -245,6 +253,7 @@ Close codes actually emitted:
 | ---- | ----------------------------------------------------- | --------------------- |
 | 1003 | bad query params, processing error, no usable feature | `server/__init__.py`  |
 | 1008 | path is not `/ws`                                     | `server/__init__.py`  |
+| 1013 | no wake-word decoder free (pool at capacity)          | `server/__init__.py`  |
 | 4000 | unexpected error in the socket handler                | `server/websocket.py` |
 
 Close reasons are truncated by `Server.truncate_reason()` to `MAX_REASON_LENGTH = 123`
@@ -440,7 +449,7 @@ Run everything from the repository root.
 ### Test
 
 ```sh
-.venv/bin/python -m pytest tests/ -q          # → 61 passed in ~1.5 s  ✅ verified
+.venv/bin/python -m pytest tests/ -q          # → 75 passed in ~4 s  ✅ verified
 ```
 
 Alternative when `uv` is on PATH:
@@ -534,7 +543,7 @@ make publish     # pypi + image + push main and tag
 
 ## 10. Testing
 
-**61 tests across 12 files. No `conftest.py` anywhere. No `tests/__init__.py`.**
+**75 tests across 14 files. No `conftest.py` anywhere. No `tests/__init__.py`.**
 
 | File                          | Tests | Needs real models?              |
 | ----------------------------- | ----- | ------------------------------- |
@@ -550,6 +559,8 @@ make publish     # pypi + image + push main and tag
 | `test_server_query_params.py` | 10    | **yes**                         |
 | `test_settings.py`            | 4     | **yes**                         |
 | `test_wakeword.py`            | 3     | **yes**                         |
+| `test_wakeword_pool.py`       | 9     | **yes**                         |
+| `test_wakeword_streaming.py`  | 5     | **yes**                         |
 
 ### Hard prerequisites
 
@@ -559,8 +570,8 @@ directly, but the modules under test do, and the engines load real artifacts:
 
 - `models/yamnet.tflite` — **untracked** (matches `.gitignore *.tflite`). A fresh
   clone must run `./scripts/install-model.sh models/yamnet.tflite` first.
-  Measured: without it the suite goes from `61 passed` to
-  **`14 failed, 46 passed, 1 error`** (`test_detector`,
+  Measured: without it the suite goes from `75 passed` to
+  **`14 failed, 60 passed, 1 error`** (`test_detector`,
   `test_detector_pipeline`, `test_server`, `test_server_query_params`,
   `test_server_audio_loop`, `test_settings`).
 - `models/wakeword-{en,fr}/…` — tracked, present in a normal clone.
@@ -607,7 +618,7 @@ directly, but the modules under test do, and the engines load real artifacts:
 - [ ] New file starts with the license header; 2-space indent.
 - [ ] Paths derived from `Path(__file__).resolve().parents[1]`, never hardcoded.
 - [ ] If it touches a real engine, note the `yamnet.tflite` prerequisite in a comment.
-- [ ] `.venv/bin/python -m pytest tests/ -q` still shows `61 + N passed`.
+- [ ] `.venv/bin/python -m pytest tests/ -q` still shows `75 + N passed`.
 - [ ] No `conftest.py`, no `monkeypatch`, no new mock library.
 
 ---
@@ -800,9 +811,10 @@ Only the `sast` stage is dependable. Do not assume CI validates your change.
   on disk is always stale.
 - `htdocs/openapi.json` documents `/ws`, `/health`, `/api/sounds` but omits
   `/`, `/openapi.json`, and `/docs` — all of which the server implements.
-- It documents close code **1007** for "no valid feature"; the server actually
-  sends **1003** (`server/__init__.py`, the `wakeword_engine is None and
-detector_consumer is None` branch).
+- Its `/ws` description now lists the real close codes (`1003`, `1008`,
+  `1013`, `4000`) instead of the stale `1007`; the server overwrites
+  `info.description` with `DOCUMENTATION.md` at runtime, so that file is the copy
+  users actually see on `/docs` and `/openapi.json`.
 
 ### 13.5 Tests that pass but assert nothing real
 
@@ -846,7 +858,7 @@ rewrite the assertions then.
 - `pyproject.toml` dev group omits `ruff`, `mypy`, `hadolint` — they come from
   devbox only, which is why they are missing from `.venv`, and why `mypy` is
   simply unavailable.
-- 3 warnings on every test run: an un-awaited `start` coroutine from
+- Warnings on every test run: un-awaited `start` coroutines from
   `test_init.py`, plus the `websockets.legacy` deprecation. Pre-existing.
 
 ---
@@ -855,7 +867,7 @@ rewrite the assertions then.
 
 Read this before touching anything connection-scoped.
 
-**The sound path is concurrency-safe; the wake-word path is only partly so.**
+**Both detection paths are concurrency-safe; each isolates its per-connection state.**
 
 `HttpHandler.get_detector_engine` is `@lru_cache`d (`ohunerin/server/http.py`) —
 one TFLite interpreter for the process — and `DetectorEngine.classify_window`
@@ -870,32 +882,43 @@ The cost is that all inference funnels through one engine: measured ceiling
 pool of engines (each ~8-11 MB) — do not raise the TFLite thread count, see
 below.
 
-`HttpHandler.get_wakeword_engine` keeps its `@lru_cache` (one `WakewordEngine`
-per language, one PocketSphinx `Decoder`), and `WakewordEngine` now wraps every
-decoder call in a `threading.Lock`. The lock prevents concurrent native state
-mutation, but it does **not** give per-connection utterance isolation: two
-clients on the same language still share one utterance stream and call
-`end_utt()` on each other's audio, so their transcriptions can mix.
+`HttpHandler.get_wakeword_pool` is `@lru_cache`d (one `WakewordPool` per language)
+and hands each session its own `WakewordEngine` — one PocketSphinx `Decoder` per
+connection, checked out for the session lifetime and returned on disconnect
+(`WakewordPool.acquire` / `release`). Isolation is required because a decoder owns
+its open utterance: a shared decoder makes the second client fail `start_utt()`
+with `RuntimeError: Failed to start utterance processing` (surfaced as close
+1003), and its `end_utt()` aborts the other client's stream. Keep the
+`threading.Lock` inside `WakewordEngine`: it is what keeps a decoder safe if a
+future caller ever touches it from two threads.
 
-A decoder costs ~200 ms and ~22 MB to build, so unconditional per-connection
-decoders are not viable at high fan-out. The realistic fixes, in order of
-preference:
+The pool is bounded at `DEFAULT_DECODER_POOL_SIZE` (4) decoders per language,
+built lazily. A session that cannot get one within
+`WAKEWORD_DECODER_ACQUIRE_TIMEOUT` is closed with **1013** instead of growing the
+pool without limit. Measured here: ~100 ms / ~28 MB (`en`) and ~215 ms / ~22 MB
+(`fr`) per decoder, so a full `en` pool costs ~107 MB. Do not raise the cap
+without a memory budget.
 
-- a bounded per-language decoder pool, one decoder checked out per connection for
-  the session's lifetime (queue or reject beyond the cap), or
-- accept the shared stream, which is what the code does today.
+`WakewordEngine._begin_utterance` calls `decoder.reinit_feat()` before every
+utterance. PocketSphinx accumulates CMN statistics in the feature extractor for
+the life of a decoder and `start_utt` does not reset them; without the reinit a
+reused decoder goes permanently deaf after ~5 detections (measured on the French
+model: 5/30 wake words, versus 100/100 with the reinit, which costs ~0.03 ms per
+utterance). Do not remove it.
 
-Do **not** "fix" this by removing `@lru_cache` without measuring: construction is
-expensive (TFLite ~8 ms / ~8-11 MB, PocketSphinx ~200 ms / ~22 MB), which is why
-caching exists. Do not raise the TFLite `num_threads` either — see
-`DEFAULT_MAX_INFERENCE_THREADS` in `engines/detector.py`.
+Do **not** "fix" concurrency by removing `@lru_cache` without measuring:
+construction is expensive (TFLite ~8 ms / ~8-11 MB, PocketSphinx ~100-215 ms /
+~22-28 MB), which is why caching exists. Do not raise the TFLite `num_threads`
+either — see `DEFAULT_MAX_INFERENCE_THREADS` in `engines/detector.py`.
 
 Consequences:
 
-- Do **not** describe the wake-word path as safely concurrent; the sound path is.
+- Both paths are now connection-isolated: the TFLite window buffer through
+  `DetectorConsumer`, the PocketSphinx utterance through `WakewordPool`.
 - Any concurrency change needs a test. `tests/test_detector_pipeline.py` covers
   per-connection consumer isolation, locked engine access, and the bounded thread
-  count.
+  count; `tests/test_wakeword_pool.py` covers decoder checkout, capacity
+  rejection and concurrent sessions.
 
 Other lifecycle facts:
 
@@ -943,7 +966,7 @@ without renaming the files.
 
 Before you report a change as complete:
 
-1. **Tests:** `.venv/bin/python -m pytest tests/ -q` → all pass (baseline 61).
+1. **Tests:** `.venv/bin/python -m pytest tests/ -q` → all pass (baseline 75).
    Add tests for new behavior; follow section 10's conventions exactly.
 2. **Lint:** `ruff check . --no-fix` introduces no _new_ findings (baseline: 1
    pre-existing `F401` in `tests/test_models.py`). If you run plain `ruff check .`,
@@ -986,8 +1009,12 @@ before building on them:
 - **Real-world throughput.** Measured — see the `benchmarks/` scripts and
   section 14. One engine sustains ~330-435 windows/s with ~1-4 ms event-loop lag.
   Re-measure after any change to the pool, the engine lock, or the executor.
-- **PocketSphinx `kws_threshold`.** Hardcoded to `1e-10` in
-  `engines/wakeword.py`; not configurable and not documented as tunable.
+- **PocketSphinx `kws_threshold` — RESOLVED.** `KWS_THRESHOLD` in
+  `engines/wakeword.py` is `1e-15`, chosen by measurement (the constant carries
+  the full table): the old `1e-10` sat inside the score distribution of
+  correctly-spoken wake words and missed a large share of them at realistic SNR.
+  It is not runtime-configurable; retune only against
+  `tests/test_wakeword_streaming.py` plus a false-positive phrase set.
 - **CI.** The GitLab Pages job is broken (13.2); whether any pipeline actually
   gates merges is unknown from the repo.
 
