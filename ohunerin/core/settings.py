@@ -176,7 +176,7 @@ def log_group(settings: Settings, name: str, *fields: str) -> None:
 
     values.append(f"{field}={value}")
 
-  logger.info("App settings [%s]: %s", name, " ".join(values))
+  logger.info("%s settings: %s", name, " ".join(values))
 
 
 def log_config_details(wakewords_config: WakewordsConfig, sounds_config: SoundsConfig) -> None:

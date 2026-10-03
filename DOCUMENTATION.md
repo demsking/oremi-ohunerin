@@ -34,7 +34,7 @@ Docker image is officially available on Docker Hub, supporting `linux/amd64`
 platform. The image is configured to expose port `5023`, which serves the API
 and documentation endpoints.
 
-The local documentation can be accessed at `http://localhost:5023/docs` for easy
+The local documentation can be accessed at `http://localhost:5023/docs/` for easy
 reference on available endpoints and usage instructions.
 
 ### Deploy with Docker
