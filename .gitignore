@@ -12,3 +12,4 @@ __pycache__/
 .direnv/
 build/
 /public
+.tmp/
