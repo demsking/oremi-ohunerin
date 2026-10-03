@@ -37,16 +37,33 @@ from ohunerin.server import Server
 BASE_DIR = Path(__file__).resolve().parents[1]
 
 
-class MockWebSocket:
-  def __init__(self, path="/ws", chunks=None):
+class MockRequest:
+  """Minimal stand-in for websockets.http11.Request."""
+
+  def __init__(self, path: str):
     self.path = path
+    self.headers = {"User-Agent": "MockClient"}
+
+
+class MockWebSocket:
+  """Minimal stand-in for websockets.asyncio.server.ServerConnection."""
+
+  def __init__(self, path="/ws", chunks=None):
+    self.request = MockRequest(path)
     self.remote_address = ("127.0.0.1", 12345)
-    self.request_headers = {"User-Agent": "MockClient"}
     self.chunks = chunks or []
     self.index = 0
     self.sent_messages = []
     self.closed_code = None
     self.closed_reason = None
+
+  @property
+  def close_code(self):
+    return self.closed_code
+
+  @property
+  def close_reason(self):
+    return self.closed_reason
 
   def __aiter__(self):
     return self

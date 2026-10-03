@@ -23,15 +23,16 @@ from collections.abc import Coroutine
 from enum import StrEnum
 from typing import Any
 
-import websockets.legacy.server as Websockets
+import websockets.asyncio.server as Websockets
 from websockets.exceptions import ConnectionClosedError
 from websockets.exceptions import ConnectionClosedOK
+from websockets.protocol import State
 
 from ohunerin.core.events import EventManager
 
 logger = logging.getLogger(__name__)
 
-WebSocketConnection = Websockets.WebSocketServerProtocol
+WebSocketConnection = Websockets.ServerConnection
 Data = bytes | str
 
 
@@ -84,12 +85,18 @@ class WebSocketServer(ABC):
   async def _handle_connection_close(
     self,
     websocket: WebSocketConnection,
-    exception: ConnectionClosedOK | ConnectionClosedError,
+    exception: ConnectionClosedOK | ConnectionClosedError | None = None,
   ) -> None:
-    if exception.reason:
-      logger.info(f"Connection closed {websocket.remote_address} with code {exception.code}. Reason: {exception.reason}")
+    # ConnectionClosed.code and .reason are deprecated since websockets 13.1;
+    # the connection exposes the same close frame data, and unlike the exception
+    # it is also available when the message iterator ends without raising.
+    code = websocket.close_code
+    reason = websocket.close_reason
+
+    if reason:
+      logger.info(f"Connection closed {websocket.remote_address} with code {code}. Reason: {reason}")
     else:
-      logger.info(f"Connection closed {websocket.remote_address} with code {exception.code}")
+      logger.info(f"Connection closed {websocket.remote_address} with code {code}")
 
     await self.event_manager.trigger(ServerEventType.CONNECTION_CLOSE, (websocket, exception))
 
@@ -105,6 +112,11 @@ class WebSocketServer(ABC):
       )
       task.add_done_callback(self._handle_processing_done_task)
 
+    # Reached only when the peer closed cleanly: the asyncio implementation ends
+    # the iterator instead of raising ConnectionClosedOK the way the legacy
+    # implementation did.
+    await self._handle_connection_close(websocket)
+
   def _handle_processing_done_task(self, task: asyncio.Task[None]) -> None:
     try:
       task.result()
@@ -114,7 +126,7 @@ class WebSocketServer(ABC):
         traceback.print_exc()
 
   async def _handle_new_connection(self, websocket: WebSocketConnection) -> None:
-    user_agent = websocket.request_headers.get("User-Agent", "unknown") if hasattr(websocket, "request_headers") else ""
+    user_agent = websocket.request.headers.get("User-Agent", "unknown") if websocket.request else "unknown"
     logger.info(f"Connection from {websocket.remote_address} {user_agent}")
 
     try:
@@ -207,7 +219,7 @@ class BroadcastingWebSocketServer(WebSocketServer):
   async def _handle_connection_close(
     self,
     websocket: WebSocketConnection,
-    exception: ConnectionClosedOK | ConnectionClosedError,
+    exception: ConnectionClosedOK | ConnectionClosedError | None = None,
   ) -> None:
     if websocket in self._clients:
       self._clients.remove(websocket)
@@ -216,9 +228,8 @@ class BroadcastingWebSocketServer(WebSocketServer):
   async def broadcast(self, message: Data) -> None:
     """Broadcast message to all connected clients."""
     for client in self._clients:
-      if not client.closed:
+      if client.state is State.OPEN:
         try:
           await client.send(message)
         except Exception as exception:
-          client_id = getattr(client, "id", str(client.remote_address))
-          logger.error(f"Unexpected error occurred when broadcasting to {client_id}: {exception}")
+          logger.error(f"Unexpected error occurred when broadcasting to {client.id}: {exception}")

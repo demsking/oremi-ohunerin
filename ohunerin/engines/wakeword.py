@@ -241,6 +241,8 @@ class WakewordEngine:
         self._begin_utterance()
 
         if not is_discriminant:
+          logger.info(f"Wakeword detected: {hypothesis.hypstr}, score {hypothesis.score:.2f}")
+
           return hypothesis.hypstr, hypothesis.score
 
         logger.warning(f"Discriminant wakeword detected: {hypothesis.hypstr}, score {hypothesis.score:.2f}")

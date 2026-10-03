@@ -21,6 +21,7 @@ from pathlib import Path
 import pytest
 import pytest_asyncio
 from websockets.datastructures import Headers
+from websockets.http11 import Request
 
 from ohunerin.models.sound import SoundsConfig
 from ohunerin.models.wakeword import WakewordsConfig
@@ -46,31 +47,30 @@ async def server(logger):
   return Server(wakewords_config=wakewords_config, sounds_config=sounds_config, threshold=0.65, model=Path(model_file))
 
 
+async def process(server, path):
+  """Call the serve() process_request hook the way websockets does."""
+  return await server.process_http_request(None, Request(path, Headers()))
+
+
 @pytest.mark.asyncio
 async def test_server_info_endpoint(server):
-  headers = Headers()
   # Test redirection of / to /health
-  response = await server.process_http_request("/", headers)
+  response = await process(server, "/")
   assert response is not None
-  status, resp_headers, body = response
-  assert status == http.HTTPStatus.FOUND
-  headers_dict = dict(resp_headers)
-  assert headers_dict["Location"] == "/health"
+  assert response.status_code == http.HTTPStatus.FOUND
+  assert response.headers["Location"] == "/health"
 
   # Test info endpoint
-  response = await server.process_http_request("/health", headers)
+  response = await process(server, "/health")
   assert response is not None
-  status, resp_headers, body = response
-
-  assert status == http.HTTPStatus.OK
+  assert response.status_code == http.HTTPStatus.OK
 
   # Check headers
-  headers_dict = dict(resp_headers)
-  assert headers_dict["Content-Type"] == "application/json; charset=utf-8"
-  assert headers_dict["Access-Control-Allow-Origin"] == "*"
+  assert response.headers["Content-Type"] == "application/json; charset=utf-8"
+  assert response.headers["Access-Control-Allow-Origin"] == "*"
 
   # Check body
-  data = json.loads(body.decode("utf-8"))
+  data = json.loads(response.body.decode("utf-8"))
   assert data["name"] == "oremi-ohunerin"
   assert "version" in data
   assert data["threshold"] == 0.65
@@ -83,41 +83,36 @@ async def test_server_info_endpoint(server):
 @pytest.mark.asyncio
 async def test_other_endpoints(server):
   # Test openapi.json
-  response = await server.process_http_request("/openapi.json", Headers())
+  response = await process(server, "/openapi.json")
   assert response is not None
-  status, _, body = response
-  assert status == http.HTTPStatus.OK
-  data = json.loads(body.decode("utf-8"))
+  assert response.status_code == http.HTTPStatus.OK
+  data = json.loads(response.body.decode("utf-8"))
   assert data["openapi"] == "3.0.0"
 
   # Test docs
-  response = await server.process_http_request("/docs", Headers())
+  response = await process(server, "/docs")
   assert response is not None
-  status, _, body = response
-  assert status == http.HTTPStatus.OK
-  assert b"<!DOCTYPE html>" in body or b"html" in body.lower()
+  assert response.status_code == http.HTTPStatus.OK
+  assert b"<!DOCTYPE html>" in response.body or b"html" in response.body.lower()
 
   # Test sounds endpoint
-  response = await server.process_http_request("/api/sounds", Headers())
+  response = await process(server, "/api/sounds")
   assert response is not None
-  status, resp_headers, body = response
-  assert status == http.HTTPStatus.OK
-  headers_dict = dict(resp_headers)
-  assert headers_dict["Content-Type"] == "application/json; charset=utf-8"
-  assert headers_dict["Access-Control-Allow-Origin"] == "*"
-  sounds = json.loads(body.decode("utf-8"))
+  assert response.status_code == http.HTTPStatus.OK
+  assert response.headers["Content-Type"] == "application/json; charset=utf-8"
+  assert response.headers["Access-Control-Allow-Origin"] == "*"
+  sounds = json.loads(response.body.decode("utf-8"))
   assert isinstance(sounds, list)
   assert "Speech" in sounds
   assert "Laughter" in sounds
   assert server.supported_sounds == sounds
 
   # Test ws
-  response = await server.process_http_request("/ws", Headers())
+  response = await process(server, "/ws")
   assert response is None
 
   # Test not found
-  response = await server.process_http_request("/invalid", Headers())
+  response = await process(server, "/invalid")
   assert response is not None
-  status, _, body = response
-  assert status == http.HTTPStatus.NOT_FOUND
-  assert body == b"Not Found"
+  assert response.status_code == http.HTTPStatus.NOT_FOUND
+  assert response.body == b"Not Found"

@@ -21,7 +21,9 @@ from itertools import chain
 from pathlib import Path
 from typing import Any
 
-import websockets.datastructures
+from websockets.datastructures import Headers
+from websockets.http11 import Request
+from websockets.http11 import Response
 
 from ohunerin.core.logger import LOGGER_DATE_FORMAT
 from ohunerin.core.package import APP_NAME
@@ -99,81 +101,92 @@ class HttpHandler:
     self,
     method: str,
     path: str,
-    version: str,
+    protocol: str,
     status: http.HTTPStatus,
-    headers: list[tuple[str, str]],
+    headers: Headers,
     body: bytes,
-  ) -> tuple[http.HTTPStatus, list[tuple[str, str]], bytes]:
+  ) -> Response:
     # Lazy %-formatting: the record is skipped entirely when the level is disabled.
-    _http_logger.info("%s %s %s %s %s", method, path, version, status.value, status.phrase)
+    _http_logger.info("%s %s %s %s %s", method, path, protocol, status.value, status.phrase)
 
-    return status, headers, body
+    return Response(status.value, status.phrase, headers, body)
 
-  async def process_request(
-    self, path: str, request_headers: websockets.datastructures.Headers
-  ) -> tuple[http.HTTPStatus, list[tuple[str, str]], bytes] | None:
+  async def process_request(self, request: Request) -> Response | None:
     """Process incoming HTTP request prior to WebSocket handshake."""
-    clean_path = path.split("?")[0]
-    method = request_headers.get("Method", "GET")
-    version = request_headers.get("Version", "HTTP/1.1")
+    clean_path = request.path.split("?")[0]
+    method = request.method
+    path = request.path
+    protocol = request.protocol
 
     if clean_path == "/":
-      headers = [
-        ("Location", "/health"),
-        ("Content-Length", "0"),
-      ]
+      headers = Headers(
+        [
+          ("Location", "/health"),
+          ("Content-Length", "0"),
+        ]
+      )
 
-      return self._send(method, path, version, http.HTTPStatus.FOUND, headers, b"")
+      return self._send(method, path, protocol, http.HTTPStatus.FOUND, headers, b"")
 
     if clean_path == "/health":
       body = json.dumps(self.get_server_info(), ensure_ascii=False).encode("utf-8")
-      headers = [
-        ("Content-Type", "application/json; charset=utf-8"),
-        ("Content-Length", str(len(body))),
-        ("Access-Control-Allow-Origin", "*"),
-      ]
+      headers = Headers(
+        [
+          ("Content-Type", "application/json; charset=utf-8"),
+          ("Content-Length", str(len(body))),
+          ("Access-Control-Allow-Origin", "*"),
+        ]
+      )
 
-      return self._send(method, path, version, http.HTTPStatus.OK, headers, body)
+      return self._send(method, path, protocol, http.HTTPStatus.OK, headers, body)
 
     if clean_path == "/openapi.json":
       body = self.get_openapi_body()
-      headers = [
-        ("Content-Type", "application/json; charset=utf-8"),
-        ("Content-Length", str(len(body))),
-        ("Access-Control-Allow-Origin", "*"),
-      ]
+      headers = Headers(
+        [
+          ("Content-Type", "application/json; charset=utf-8"),
+          ("Content-Length", str(len(body))),
+          ("Access-Control-Allow-Origin", "*"),
+        ]
+      )
 
-      return self._send(method, path, version, http.HTTPStatus.OK, headers, body)
+      return self._send(method, path, protocol, http.HTTPStatus.OK, headers, body)
 
     if clean_path == "/docs":
       body = self.get_index_html().encode("utf-8")
-      headers = [
-        ("Content-Type", "text/html; charset=utf-8"),
-        ("Content-Length", str(len(body))),
-      ]
+      headers = Headers(
+        [
+          ("Content-Type", "text/html; charset=utf-8"),
+          ("Content-Length", str(len(body))),
+        ]
+      )
 
-      return self._send(method, path, version, http.HTTPStatus.OK, headers, body)
+      return self._send(method, path, protocol, http.HTTPStatus.OK, headers, body)
 
     if clean_path == "/api/sounds":
       body = json.dumps(self.supported_sounds, ensure_ascii=False).encode("utf-8")
-      headers = [
-        ("Content-Type", "application/json; charset=utf-8"),
-        ("Content-Length", str(len(body))),
-        ("Access-Control-Allow-Origin", "*"),
-      ]
+      headers = Headers(
+        [
+          ("Content-Type", "application/json; charset=utf-8"),
+          ("Content-Length", str(len(body))),
+          ("Access-Control-Allow-Origin", "*"),
+        ]
+      )
 
-      return self._send(method, path, version, http.HTTPStatus.OK, headers, body)
+      return self._send(method, path, protocol, http.HTTPStatus.OK, headers, body)
 
     if clean_path == "/ws":
       return None
 
     body = b"Not Found"
-    headers = [
-      ("Content-Type", "text/plain; charset=utf-8"),
-      ("Content-Length", str(len(body))),
-    ]
+    headers = Headers(
+      [
+        ("Content-Type", "text/plain; charset=utf-8"),
+        ("Content-Length", str(len(body))),
+      ]
+    )
 
-    return self._send(method, path, version, http.HTTPStatus.NOT_FOUND, headers, body)
+    return self._send(method, path, protocol, http.HTTPStatus.NOT_FOUND, headers, body)
 
   def get_server_info(self) -> dict[str, Any]:
     """Return information about the server."""

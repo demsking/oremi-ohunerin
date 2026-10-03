@@ -22,6 +22,7 @@ import numpy as np
 import pytest
 import pytest_asyncio
 from websockets.datastructures import Headers
+from websockets.http11 import Request
 
 from ohunerin.audio.processing import to_ndarray
 from ohunerin.core.package import APP_VERSION
@@ -193,9 +194,9 @@ async def test_openapi_body_is_cached(server):
   assert first is second
   assert APP_VERSION.encode() in first
 
-  response = await server.process_http_request("/openapi.json", Headers())
+  response = await server.process_http_request(None, Request("/openapi.json", Headers()))
   assert response is not None
-  assert response[2] == first
+  assert response.body == first
 
 
 def test_wakeword_engine_serializes_decoder_access(data_path):

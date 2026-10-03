@@ -26,18 +26,36 @@ from pathlib import Path
 from ohunerin.models.sound import SoundsConfig
 from ohunerin.models.wakeword import WakewordsConfig
 from ohunerin.server import Server
+from ohunerin.server.websocket import ServerEventType
+
+
+class MockRequest:
+  """Minimal stand-in for websockets.http11.Request."""
+
+  def __init__(self, path: str):
+    self.path = path
+    self.headers = {"User-Agent": "MockClient"}
 
 
 class MockWebSocket:
+  """Minimal stand-in for websockets.asyncio.server.ServerConnection."""
+
   def __init__(self, path="/ws", chunks=None):
-    self.path = path
+    self.request = MockRequest(path)
     self.remote_address = ("127.0.0.1", 12345)
-    self.request_headers = {"User-Agent": "MockClient"}
     self.chunks = chunks or []
     self.index = 0
     self.sent_messages = []
     self.closed_code = None
     self.closed_reason = None
+
+  @property
+  def close_code(self):
+    return self.closed_code
+
+  @property
+  def close_reason(self):
+    return self.closed_reason
 
   def __aiter__(self):
     return self
@@ -194,3 +212,23 @@ async def test_handle_messages_valid_flow(server):
     assert args[0] is websocket
     assert args[1] is None  # no wakeword engine
     assert args[2] is not None  # detector consumer is initialized
+
+
+@pytest.mark.asyncio
+async def test_handle_audio_data_reports_a_clean_close(server):
+  # websockets.asyncio ends the message iterator on a normal closure instead of
+  # raising ConnectionClosedOK the way websockets.legacy did, so the close has
+  # to be reported from the connection state.
+  websocket = MockWebSocket(chunks=[b"\x00" * 100])
+  closes: list[tuple] = []
+
+  async def on_close(connection, exception):
+    closes.append((connection, exception))
+
+  server.event_manager.on(ServerEventType.CONNECTION_CLOSE, on_close)
+
+  await server._handle_audio_data(websocket, None, None)  # type: ignore
+
+  assert len(closes) == 1
+  assert closes[0][0] is websocket
+  assert closes[0][1] is None

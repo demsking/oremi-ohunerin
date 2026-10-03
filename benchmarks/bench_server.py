@@ -48,17 +48,33 @@ DEFAULT_CONFIG = BASE_DIR / "config.json"
 WINDOW_BYTES = 15600
 
 
+class MockRequest:
+  """Minimal stand-in for websockets.http11.Request."""
+
+  def __init__(self, path: str) -> None:
+    self.path = path
+    self.headers = {"User-Agent": "bench"}
+
+
 class MockConnection:
   """Minimal async-iterable WebSocket replacement: no sockets, no network I/O."""
 
   def __init__(self, chunks: list[bytes]) -> None:
-    self.path = "/ws"
+    self.request = MockRequest("/ws")
     self.remote_address = ("127.0.0.1", 0)
-    self.request_headers = {"User-Agent": "bench"}
     self._chunks = chunks
     self._index = 0
     self.sent = 0
     self.closed_code: int | None = None
+    self.closed_reason: str | None = None
+
+  @property
+  def close_code(self) -> int | None:
+    return self.closed_code
+
+  @property
+  def close_reason(self) -> str | None:
+    return self.closed_reason
 
   def __aiter__(self):
     return self

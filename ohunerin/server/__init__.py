@@ -22,8 +22,10 @@ from pathlib import Path
 from urllib.parse import parse_qs
 from urllib.parse import urlparse
 
-import websockets.exceptions
-import websockets.legacy.protocol
+from websockets.exceptions import ConnectionClosedError
+from websockets.exceptions import ConnectionClosedOK
+from websockets.http11 import Request
+from websockets.http11 import Response
 
 from ohunerin.core.package import APP_NAME
 from ohunerin.core.package import APP_VERSION
@@ -133,11 +135,9 @@ class Server(WebSocketServer):
   def get_detector_consumer(self) -> DetectorConsumer:
     return self.http_handler.get_detector_consumer()
 
-  async def process_http_request(
-    self, path: str, request_headers: websockets.datastructures.Headers
-  ) -> tuple[int, list[tuple[str, str]], bytes] | None:
+  async def process_http_request(self, connection: WebSocketConnection, request: Request) -> Response | None:
     """Process incoming HTTP requests before WebSocket handshake."""
-    return await self.http_handler.process_request(path, request_headers)
+    return await self.http_handler.process_request(request)
 
   @staticmethod
   def truncate_reason(reason: str) -> str:
@@ -203,7 +203,7 @@ class Server(WebSocketServer):
     wakeword_engine: WakewordEngine | None,
     detector_consumer: DetectorConsumer | None,
   ) -> None:
-    user_agent = websocket.request_headers.get("User-Agent", "") if hasattr(websocket, "request_headers") else ""
+    user_agent = websocket.request.headers.get("User-Agent", "unknown") if websocket.request else "unknown"
     logger.info(f"Connection from {websocket.remote_address} {user_agent}")
 
     started = False
@@ -234,9 +234,9 @@ class Server(WebSocketServer):
 
           if sound:
             await self._handle_detection_result(websocket, "sound", sound, score)
-    except websockets.exceptions.ConnectionClosedOK as exception:
+    except ConnectionClosedOK as exception:
       await self._handle_connection_close(websocket, exception)
-    except websockets.exceptions.ConnectionClosedError as exception:
+    except ConnectionClosedError as exception:
       await self._handle_connection_close(websocket, exception)
     except Exception as exception:
       error_message = str(exception)
@@ -245,6 +245,11 @@ class Server(WebSocketServer):
 
       if logger.isEnabledFor(logging.DEBUG):
         traceback.print_exc()
+    else:
+      # The asyncio implementation ends the message iterator on a normal closure
+      # (1000, 1001) instead of raising ConnectionClosedOK like the legacy
+      # implementation did, so the close is no longer observed as an exception.
+      await self._handle_connection_close(websocket)
     finally:
       if detector_consumer:
         del detector_consumer
@@ -254,7 +259,8 @@ class Server(WebSocketServer):
         del wakeword_engine
 
   async def _handle_messages(self, websocket: WebSocketConnection) -> None:
-    parsed_url = urlparse(websocket.path)
+    request_path = websocket.request.path if websocket.request else ""
+    parsed_url = urlparse(request_path)
 
     if parsed_url.path != "/ws":
       error_message = f"Only '/ws' endpoint is supported, but received '{parsed_url.path}'"
@@ -263,7 +269,7 @@ class Server(WebSocketServer):
       return
 
     try:
-      wakeword_pool, detector_consumer = self._parse_query_params(websocket.path)
+      wakeword_pool, detector_consumer = self._parse_query_params(request_path)
     except Exception as exception:
       error_message = f"Failed to parse query parameters: {exception}"
       logger.error(error_message)

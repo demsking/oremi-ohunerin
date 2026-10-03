@@ -21,7 +21,7 @@ see [Known traps and stale artifacts](#13-known-traps-and-stale-artifacts).
 | License        | Apache-2.0, © Sébastien Demanou                                                 |
 | Canonical repo | GitLab — `gitlab.com/demsking/oremi-ohunerin` (branch: `main`)                  |
 | Docs           | `README.md`, `DOCUMENTATION.md`, `CONTRIBUTING.md`, and the served `/docs` page |
-| Code size      | ~2,260 lines in `ohunerin/`, ~1,148 lines in `tests/`                           |
+| Code size      | ~2,677 lines in `ohunerin/`, ~2,218 lines in `tests/`                           |
 
 Ohunerin is a **WebSocket server**. Clients stream raw PCM audio; the server
 emits JSON detection events. It has no database, no auth layer, and no
@@ -90,7 +90,7 @@ Two independent ML engines run side by side:
 │       ├── __init__.py           # Server: HTTP routing, WS session, detection loop
 │       ├── http.py               # HttpHandler: /health, /api/sounds, /openapi.json, /docs
 │       └── websocket.py          # WebSocketServer ABC + BroadcastingWebSocketServer
-├── tests/                        # 14 files, 75 tests, no conftest.py
+├── tests/                        # 17 files, 90 tests, no conftest.py
 ├── tests/fixtures/               # fixed 16 kHz PCM wake-word recordings (tracked)
 ├── models/                       # CMU Sphinx models (tracked) + yamnet.tflite (untracked)
 │   ├── wakeword-en/{acoustic-model/,pronounciation-dictionary.dict}
@@ -255,6 +255,11 @@ Close codes actually emitted:
 | 1008 | path is not `/ws`                                     | `server/__init__.py`  |
 | 1013 | no wake-word decoder free (pool at capacity)          | `server/__init__.py`  |
 | 4000 | unexpected error in the socket handler                | `server/websocket.py` |
+
+A non-`/ws` request never upgrades: `HttpHandler.process_request` returns a 404
+before the handshake, so **1008 is unreachable over the network** and only fires
+when `Server._handle_messages` is called directly (as the unit tests do).
+`tests/test_server_socket.py` pins that 404 behavior.
 
 Close reasons are truncated by `Server.truncate_reason()` to `MAX_REASON_LENGTH = 123`
 (120 chars + `"..."`). Keep new reason strings short.
@@ -449,7 +454,7 @@ Run everything from the repository root.
 ### Test
 
 ```sh
-.venv/bin/python -m pytest tests/ -q          # → 75 passed in ~4 s  ✅ verified
+.venv/bin/python -m pytest tests/ -q          # → 90 passed in ~7 s  ✅ verified
 ```
 
 Alternative when `uv` is on PATH:
@@ -473,14 +478,16 @@ ruff check .                            # ⚠ AUTO-FIXES files
 hadolint Dockerfile                     # ✅ clean
 editorconfig-checker                    # ✅ clean
 .venv/bin/python -m bandit -c bandit.yaml -r ohunerin -q   # ✅ clean
-.venv/bin/python -m pylint --rcfile=.pylintrc ohunerin     # 9.85/10
+.venv/bin/python -m pylint --rcfile=.pylintrc ohunerin     # 9.84/10
 ```
 
 Current baseline: ruff reports exactly one issue —
 `tests/test_models.py:22:96: F401 WakewordSetting imported but unused`.
-Leaving it is acceptable; fixing it is a one-line change. pylint's only finding
-is shared `__all__` duplicate-code between `ohunerin/__init__.py` and
-`ohunerin/server/__init__.py`.
+Leaving it is acceptable; fixing it is a one-line change. pylint reports 7
+findings and scores 9.84/10 on a pristine checkout too: `R0801` (shared
+`__all__` block between `ohunerin/__init__.py` and
+`ohunerin/server/__init__.py`), `C0103`, `R0911`, `R0912`, `R0913` and two
+`R0917` — do not treat them as regressions.
 
 ### Benchmark
 
@@ -543,7 +550,7 @@ make publish     # pypi + image + push main and tag
 
 ## 10. Testing
 
-**75 tests across 14 files. No `conftest.py` anywhere. No `tests/__init__.py`.**
+**90 tests across 17 files. No `conftest.py` anywhere. No `tests/__init__.py`.**
 
 | File                          | Tests | Needs real models?              |
 | ----------------------------- | ----- | ------------------------------- |
@@ -555,12 +562,15 @@ make publish     # pypi + image + push main and tag
 | `test_init.py`                | 5     | no (`Server`/`Settings` mocked) |
 | `test_models.py`              | 9     | no                              |
 | `test_server.py`              | 2     | **yes**                         |
-| `test_server_audio_loop.py`   | 9     | **yes**                         |
+| `test_server_audio_loop.py`   | 10    | **yes**                         |
 | `test_server_query_params.py` | 10    | **yes**                         |
+| `test_server_socket.py`       | 5     | **yes** (+ real sockets)        |
 | `test_settings.py`            | 4     | **yes**                         |
 | `test_wakeword.py`            | 3     | **yes**                         |
 | `test_wakeword_pool.py`       | 9     | **yes**                         |
+| `test_wakeword_pronunciation.py` | 6  | **yes**                         |
 | `test_wakeword_streaming.py`  | 5     | **yes**                         |
+| `test_websocket_broadcast.py` | 3     | no                              |
 
 ### Hard prerequisites
 
@@ -570,10 +580,10 @@ directly, but the modules under test do, and the engines load real artifacts:
 
 - `models/yamnet.tflite` — **untracked** (matches `.gitignore *.tflite`). A fresh
   clone must run `./scripts/install-model.sh models/yamnet.tflite` first.
-  Measured: without it the suite goes from `75 passed` to
-  **`14 failed, 60 passed, 1 error`** (`test_detector`,
+  Measured: without it the suite goes from `90 passed` to
+  **`15 failed, 74 passed, 1 error`** (`test_detector`,
   `test_detector_pipeline`, `test_server`, `test_server_query_params`,
-  `test_server_audio_loop`, `test_settings`).
+  `test_server_audio_loop`, `test_server_socket`, `test_settings`).
 - `models/wakeword-{en,fr}/…` — tracked, present in a normal clone.
 - `config.json` — tracked, at the repo root.
 - Tests resolve paths from `__file__` **and** from the current working directory,
@@ -601,10 +611,14 @@ directly, but the modules under test do, and the engines load real artifacts:
      Class-level: `patch("ohunerin.parse_arguments", …)`, `patch("ohunerin.Settings", …)`,
      `patch("ohunerin.Server", …)`. Never patch native libraries.
 7. **A `MockWebSocket` class is the standard fake connection** — see
-   `tests/test_server_audio_loop.py:31-57`. It implements `__aiter__`/`__anext__`,
+   `tests/test_server_audio_loop.py:31-66`. It implements `__aiter__`/`__anext__`,
    `send`, `close`, and records `sent_messages`, `closed_code`, `closed_reason`.
-   `server.path` is set explicitly per test. Reuse this shape; do not invent
-   another fake or spin a real socket.
+   It also fakes the `websockets.asyncio.server.ServerConnection` surface the
+   server reads: a `request` object (`MockRequest`) exposing `path` and
+   `headers`, plus `close_code` / `close_reason` properties backed by the
+   recorded values. `server.request.path` is set explicitly per test. Reuse this
+   shape; `tests/test_server_socket.py` is the only file that opens a real
+   socket.
 8. **Temp config files:** `tempfile.NamedTemporaryFile("w+", delete=False)` plus
    `try/finally: os.unlink(...)`. The `tmp_path` pytest fixture is unused in this
    repo — prefer matching the existing idiom.
@@ -618,7 +632,7 @@ directly, but the modules under test do, and the engines load real artifacts:
 - [ ] New file starts with the license header; 2-space indent.
 - [ ] Paths derived from `Path(__file__).resolve().parents[1]`, never hardcoded.
 - [ ] If it touches a real engine, note the `yamnet.tflite` prerequisite in a comment.
-- [ ] `.venv/bin/python -m pytest tests/ -q` still shows `75 + N passed`.
+- [ ] `.venv/bin/python -m pytest tests/ -q` still shows `90 + N passed`.
 - [ ] No `conftest.py`, no `monkeypatch`, no new mock library.
 
 ---
@@ -852,14 +866,22 @@ rewrite the assertions then.
 - `tests/*` define a `logger` fixture that most tests never use.
 - `ohunerin/engines/detector.py::DetectorEngine.classify_window` logs the raw
   `sound` object at DEBUG (`logger.debug(sound)`).
-- `client.py` uses the modern `websockets.asyncio.client.connect`, while the
-  server uses the deprecated `websockets.legacy.server`. Both work against
-  `websockets` 16.1.1, but `websockets.legacy` emits a `DeprecationWarning`.
+- `client.py` and the server both use the modern asyncio implementation
+  (`websockets.asyncio.client.connect` / `websockets.asyncio.server.serve`) on
+  `websockets` 17.1. Nothing imports `websockets.legacy` anymore, so the
+  `DeprecationWarning` it emitted on every run is gone. A connection is a
+  `websockets.asyncio.server.ServerConnection`: use `connection.request.path`
+  and `connection.request.headers` (not `connection.path` /
+  `connection.request_headers`), `connection.state is State.OPEN` (not
+  `connection.closed`), and `connection.close_code` / `connection.close_reason`
+  (the `ConnectionClosed.code` / `.reason` properties are deprecated since 13.1).
+  `process_request` takes `(connection, request)` and returns a
+  `websockets.http11.Response` or `None`.
 - `pyproject.toml` dev group omits `ruff`, `mypy`, `hadolint` — they come from
   devbox only, which is why they are missing from `.venv`, and why `mypy` is
   simply unavailable.
 - Warnings on every test run: un-awaited `start` coroutines from
-  `test_init.py`, plus the `websockets.legacy` deprecation. Pre-existing.
+  `test_init.py`. Pre-existing.
 
 ---
 
@@ -966,7 +988,7 @@ without renaming the files.
 
 Before you report a change as complete:
 
-1. **Tests:** `.venv/bin/python -m pytest tests/ -q` → all pass (baseline 75).
+1. **Tests:** `.venv/bin/python -m pytest tests/ -q` → all pass (baseline 90).
    Add tests for new behavior; follow section 10's conventions exactly.
 2. **Lint:** `ruff check . --no-fix` introduces no _new_ findings (baseline: 1
    pre-existing `F401` in `tests/test_models.py`). If you run plain `ruff check .`,
