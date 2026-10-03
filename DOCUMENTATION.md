@@ -226,19 +226,21 @@ sequences, not IPA notation. Each string is a space-separated list of phonemes
 in the pronunciation alphabet expected by PocketSphinx for the selected language
 model.
 
-In other words, each entry describes one possible pronunciation of the wake word.
+**Only the first pronunciation of a wake word is searched.** PocketSphinx
+resolves a keyword with its primary dictionary pronunciation, and the primary is
+the first entry of `phones`. The remaining strings are still registered in the
+dictionary and can be read back with `lookup_word`, but they are not activated as
+separate keyword searches, so they do not affect detection. Put the pronunciation
+the decoder should listen for first.
 
-For example, the French wake word `oremi` includes several pronunciation
-variants:
+For example, the French wake word `oremi` declares three pronunciations:
 
+- `oo rr ai mm ii` - first, therefore the one that is searched
 - `oo rr ei mm ii`
-- `oo rr ai mm ii`
 - `au rr ei mm ii`
 
-These variants help the recognizer match different accents, speaking styles, or
-small pronunciation differences. The same idea applies to the English entries,
-where the phoneme strings use the PocketSphinx English phoneme set, such as
-`OW`, `R`, `EH`, `M`, and `IY`.
+and the English entries use the PocketSphinx English phoneme set, such as `OW`,
+`R`, `EH`, `M`, and `IY`, with `OW R EH M IY` first.
 
 Discriminants help reduce false positives. For example, if `oremi` could be
 confused with `remi`, the discriminant entry provides the pronunciation of
@@ -250,8 +252,9 @@ When editing `config.json`, keep the following in mind:
 
 - Use the phoneme symbols expected by PocketSphinx for the selected language.
 - Separate phonemes with spaces.
-- Provide multiple `phones` entries when a wake word may be pronounced in more
-  than one way.
+- List the pronunciation the decoder should search **first**: only the first
+  `phones` entry is activated. Additional entries are kept in the dictionary for
+  reference and future use.
 - Add `discriminants` when a wake word is likely to be confused with another
   word.
 - Make sure the pronunciations match the language model being used, since

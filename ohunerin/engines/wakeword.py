@@ -113,13 +113,28 @@ class WakewordEngine:
     self._configure_keyphrases()
 
   def _configure_keyphrases(self) -> None:
-    """Configures the keyphrases for the wake word detection."""
+    """Configures the keyphrases for the wake word detection.
+
+    Exactly one keyphrase is written per configured word: the bare word. The
+    word(2) / word(3) alternates are deliberately left out of the search.
+    PocketSphinx resolves a keyphrase with dict_wordid() + dict_pron()
+    (src/kws_search.c), which returns the primary dictionary pronunciation, and
+    the primary is the first entry registered by _add_dictionary_entry. So the
+    pronunciation a wake word is actually matched against is phones[0] in
+    config.json; the remaining pronunciations stay available in the dictionary
+    but are never searched.
+
+    Reordering phones therefore changes what the decoder listens for, which is
+    how the French "oremi" entry is tuned (oo rr ai mm ii first). See
+    DOCUMENTATION.md, section "The wakewords Section".
+    """
     temp_dir = tempfile.mkdtemp()
     filename = os.path.join(temp_dir, "keyphrases.list")
 
     logger.debug(f"Creating keyphrases file {filename}")
     with open(filename, "w", encoding="utf-8") as file:
       for entry in self._setting.wakewords + self._setting.discriminants:
+        # Bare word on purpose: this is the only pronunciation KWS searches.
         file.write(f"{entry.word}\n")
         self._add_dictionary_entry(entry)
 
@@ -128,6 +143,12 @@ class WakewordEngine:
 
   def _add_dictionary_entry(self, entry: DictionaryEntry) -> None:
     """Adds a new entry to the wake word dictionary.
+
+    entry.phones[0] is registered under the bare entry.word and becomes the
+    pronunciation the keyphrase is matched against. The remaining entries are
+    registered as word(2), word(3), ... alternates: they can be listed with
+    lookup_word and are kept for future use, but they are not part of the KWS
+    search unless a keyphrase names them explicitly.
 
     Args:
       entry (DictionaryEntry): The entry to add to the dictionary.
