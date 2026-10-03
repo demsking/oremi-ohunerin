@@ -29,6 +29,7 @@ from ohunerin.core.package import APP_NAME
 from ohunerin.core.package import APP_VERSION
 from ohunerin.engines.detector import DetectorConsumer
 from ohunerin.engines.detector import DetectorEngine
+from ohunerin.engines.detector import recommended_num_threads
 from ohunerin.engines.wakeword import WakewordEngine
 from ohunerin.models.sound import create_detected_sound_object
 from ohunerin.models.sound import DetectedSound
@@ -97,7 +98,7 @@ class Server(WebSocketServer):
       sounds_config=sounds_config,
       threshold=threshold,
       model=model,
-      num_threads=self.num_threads,
+      detector_threads=recommended_num_threads(),
     )
 
     self.pool = concurrent.futures.ThreadPoolExecutor(
@@ -215,7 +216,10 @@ class Server(WebSocketServer):
             continue
 
         if detector_consumer:
-          sound, score = detector_consumer.process_raw(chunk)  # type: ignore
+          # TFLite inference takes milliseconds: run it in the executor so a
+          # detection on one connection never stalls the event loop (and every
+          # other connection) for the duration of the inference.
+          sound, score = await self._loop.run_in_executor(self.pool, detector_consumer.process_raw, chunk)  # type: ignore
 
           if sound:
             await self._handle_detection_result(websocket, "sound", sound, score)

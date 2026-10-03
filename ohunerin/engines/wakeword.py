@@ -15,6 +15,7 @@
 import logging
 import os
 import tempfile
+import threading
 
 from pocketsphinx import Config  # type: ignore[import-untyped]
 from pocketsphinx import Decoder
@@ -36,6 +37,10 @@ class WakewordEngine:
 
   def __init__(self, setting: WakewordSetting) -> None:
     self._setting = setting
+    # A PocketSphinx decoder owns mutable native state (the current utterance).
+    # The engine is shared by every connection on the same language, so all
+    # decoder calls are serialized to avoid concurrent native state mutation.
+    self._lock = threading.Lock()
 
     config = Config(
       lm=None,
@@ -99,27 +104,30 @@ class WakewordEngine:
 
   def start_utt(self) -> None:
     """Starts a new utterance for wake word detection."""
-    self._decoder.start_utt()
+    with self._lock:
+      self._decoder.start_utt()
 
   def end_utt(self) -> None:
     """Ends the current utterance for wake word detection."""
-    self._decoder.end_utt()
+    with self._lock:
+      self._decoder.end_utt()
 
   def process_raw(self, chunk: bytes) -> tuple[str | None, float]:
     """Process raw PCM audio bytes for wake word recognition."""
-    self._decoder.process_raw(chunk, False, False)
+    with self._lock:
+      self._decoder.process_raw(chunk, False, False)
 
-    hypothesis = self._decoder.hyp()
+      hypothesis = self._decoder.hyp()
 
-    if hypothesis:
-      is_discriminant = self.is_discriminant(hypothesis.hypstr)
+      if hypothesis:
+        is_discriminant = self.is_discriminant(hypothesis.hypstr)
 
-      self._decoder.end_utt()
-      self._decoder.start_utt()
+        self._decoder.end_utt()
+        self._decoder.start_utt()
 
-      if not is_discriminant:
-        return hypothesis.hypstr, hypothesis.score
+        if not is_discriminant:
+          return hypothesis.hypstr, hypothesis.score
 
-      logger.warning(f"Discriminant wakeword detected: {hypothesis.hypstr}, score {hypothesis.score:.2f}")
+        logger.warning(f"Discriminant wakeword detected: {hypothesis.hypstr}, score {hypothesis.score:.2f}")
 
     return None, 0.0

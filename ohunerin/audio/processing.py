@@ -23,16 +23,19 @@ __all__ = [
 ]
 
 
-def to_ndarray(data: bytes, num_channels: int) -> np.ndarray:
+def to_ndarray(data: bytes | bytearray | memoryview, num_channels: int) -> np.ndarray:
   """Converts audio data from a byte string to a NumPy array of float64 values normalized to [-1.0, 1.0].
 
   Args:
-    data (bytes): Raw PCM audio bytes (int16 format).
+    data (bytes | bytearray | memoryview): Raw PCM audio bytes (int16 format).
     num_channels (int): Number of audio channels.
 
   Returns:
     np.ndarray: Reshaped, normalized float64 NumPy array.
   """
   audio_array = np.frombuffer(data, dtype=np.int16)
-  audio_float = audio_array.astype(np.float64) / 32768.0
+  audio_float = audio_array.astype(np.float64)
+  # In-place division avoids a second 62 KB temporary and is exact: 32768 is a
+  # power of two, so the result is bit-identical to a separate division.
+  audio_float /= 32768.0
   return audio_float.reshape(-1, num_channels)

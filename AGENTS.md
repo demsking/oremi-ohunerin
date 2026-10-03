@@ -90,7 +90,7 @@ Two independent ML engines run side by side:
 │       ├── __init__.py           # Server: HTTP routing, WS session, detection loop
 │       ├── http.py               # HttpHandler: /health, /api/sounds, /openapi.json, /docs
 │       └── websocket.py          # WebSocketServer ABC + BroadcastingWebSocketServer
-├── tests/                        # 11 files, 53 tests, no conftest.py
+├── tests/                        # 12 files, 61 tests, no conftest.py
 ├── models/                       # CMU Sphinx models (tracked) + yamnet.tflite (untracked)
 │   ├── wakeword-en/{acoustic-model/,pronounciation-dictionary.dict}
 │   ├── wakeword-fr/{cmusphinx-fr-ptm-8khz-5.2/,pronounciation-dictionary.dict}
@@ -148,8 +148,10 @@ reason — it changes packaging behavior.
                                                                           │
                                              ┌────────────────────────────┴───────────┐
                                              ▼                                        ▼
-                                  WakewordEngine (per language)            DetectorConsumer (shared)
-                                   run_in_executor(ThreadPool)              called inline on the loop
+                                  WakewordEngine (per language)            DetectorConsumer (per connection)
+                                   run_in_executor(ThreadPool)              run_in_executor(ThreadPool)
+                                             │                                        │
+                                             │                          DetectorEngine (shared, locked)
                                              │                                        │
                                              └────────────► JSON detection events ◄────┘
                                                           websocket.send(...)
@@ -183,17 +185,24 @@ for each binary frame:
             detector_consumer.reset_buffer()
             continue          # ← sound detection is SKIPPED for this chunk
     if detector_consumer:
-        sound, score = detector_consumer.process_raw(chunk)   # inline, blocks the loop
+        sound, score = await run_in_executor(pool, detector_consumer.process_raw, chunk)
         if sound:
             send {"type": "sound", ...}
 ```
 
-Two things worth internalizing before you touch this:
+Three things worth internalizing before you touch this:
 
-- **Wake word runs in the thread pool; sound detection does not.** `DetectorConsumer.process_raw`
-  performs TFLite inference synchronously on the event loop, so it blocks every
-  other connection. Offloading it is a legitimate improvement, but see the
-  shared-instance hazard in [section 14](#14-concurrency-and-lifecycle-constraints).
+- **Both engines run in the thread pool.** Sound detection used to call
+  `DetectorConsumer.process_raw` inline, which blocked the event loop for the
+  whole inference (measured: 185 ms/window with the old default thread count).
+  It now goes through `run_in_executor` like wake word, at the cost of roughly
+  10-35% single-engine throughput. Reverting it re-introduces the stall; see
+  [section 14](#14-concurrency-and-lifecycle-constraints).
+- **The detector engine is shared, the consumer is not.** `HttpHandler.get_detector_engine()`
+  is `@lru_cache`d (one TFLite interpreter for the process) and
+  `DetectorEngine.classify_window()` serializes access with a `threading.Lock`.
+  `HttpHandler.get_detector_consumer()` returns a **new** `DetectorConsumer` per
+  call, so each connection owns its 15,600-byte window buffer.
 - **When a wake word fires, that chunk is not also classified as a sound.** The
   `continue` is deliberate (the buffer was just reset).
 
@@ -431,7 +440,7 @@ Run everything from the repository root.
 ### Test
 
 ```sh
-.venv/bin/python -m pytest tests/ -q          # → 53 passed in ~1.2 s  ✅ verified
+.venv/bin/python -m pytest tests/ -q          # → 61 passed in ~1.5 s  ✅ verified
 ```
 
 Alternative when `uv` is on PATH:
@@ -463,6 +472,23 @@ Current baseline: ruff reports exactly one issue —
 Leaving it is acceptable; fixing it is a one-line change. pylint's only finding
 is shared `__all__` duplicate-code between `ohunerin/__init__.py` and
 `ohunerin/server/__init__.py`.
+
+### Benchmark
+
+`benchmarks/` holds three standalone scripts (no pytest, no conftest). They all
+need `models/yamnet.tflite`:
+
+```sh
+.venv/bin/python benchmarks/bench_pipeline.py --threads 4   # per-stage micro-benchmarks
+.venv/bin/python benchmarks/bench_wakeword.py              # PocketSphinx cost + RSS
+.venv/bin/python benchmarks/bench_server.py --connections 4 --windows 6 --threads 0
+.venv/bin/python benchmarks/bench_server.py --threads 0 --legacy-inline   # pre-optimization path
+```
+
+`bench_server.py` reports throughput and event-loop scheduling lag;
+`--threads 0` uses `recommended_num_threads()`, `--legacy-inline` reproduces the
+old loop that ran inference on the event loop, and `--json` emits machine-readable
+output. Use `--legacy-inline` for controlled before/after comparisons.
 
 ### Run the server locally
 
@@ -508,13 +534,14 @@ make publish     # pypi + image + push main and tag
 
 ## 10. Testing
 
-**53 tests across 11 files. No `conftest.py` anywhere. No `tests/__init__.py`.**
+**61 tests across 12 files. No `conftest.py` anywhere. No `tests/__init__.py`.**
 
 | File                          | Tests | Needs real models?              |
 | ----------------------------- | ----- | ------------------------------- |
 | `test_args.py`                | 2     | no                              |
 | `test_audio.py`               | 3     | no                              |
 | `test_detector.py`            | 4     | **yes**                         |
+| `test_detector_pipeline.py`   | 8     | **yes**                         |
 | `test_event_manager.py`       | 2     | no                              |
 | `test_init.py`                | 5     | no (`Server`/`Settings` mocked) |
 | `test_models.py`              | 9     | no                              |
@@ -532,9 +559,10 @@ directly, but the modules under test do, and the engines load real artifacts:
 
 - `models/yamnet.tflite` — **untracked** (matches `.gitignore *.tflite`). A fresh
   clone must run `./scripts/install-model.sh models/yamnet.tflite` first.
-  Measured: without it the suite goes from `53 passed` to
-  **`13 failed, 40 passed`** (`test_detector`, `test_server`,
-  `test_server_query_params`, `test_server_audio_loop`, `test_settings`).
+  Measured: without it the suite goes from `61 passed` to
+  **`14 failed, 46 passed, 1 error`** (`test_detector`,
+  `test_detector_pipeline`, `test_server`, `test_server_query_params`,
+  `test_server_audio_loop`, `test_settings`).
 - `models/wakeword-{en,fr}/…` — tracked, present in a normal clone.
 - `config.json` — tracked, at the repo root.
 - Tests resolve paths from `__file__` **and** from the current working directory,
@@ -579,7 +607,7 @@ directly, but the modules under test do, and the engines load real artifacts:
 - [ ] New file starts with the license header; 2-space indent.
 - [ ] Paths derived from `Path(__file__).resolve().parents[1]`, never hardcoded.
 - [ ] If it touches a real engine, note the `yamnet.tflite` prerequisite in a comment.
-- [ ] `.venv/bin/python -m pytest tests/ -q` still shows `53 + N passed`.
+- [ ] `.venv/bin/python -m pytest tests/ -q` still shows `61 + N passed`.
 - [ ] No `conftest.py`, no `monkeypatch`, no new mock library.
 
 ---
@@ -810,8 +838,8 @@ rewrite the assertions then.
 - `tests/__pycache__/test_config.cpython-311-pytest-9.0.3.pyc` is an orphan:
   `tests/test_config.py` does not exist and was never tracked.
 - `tests/*` define a `logger` fixture that most tests never use.
-- `ohunerin/engines/detector.py::_classify_audio` logs the raw `sound` object at
-  DEBUG (`logger.debug(sound)`).
+- `ohunerin/engines/detector.py::DetectorEngine.classify_window` logs the raw
+  `sound` object at DEBUG (`logger.debug(sound)`).
 - `client.py` uses the modern `websockets.asyncio.client.connect`, while the
   server uses the deprecated `websockets.legacy.server`. Both work against
   `websockets` 16.1.1, but `websockets.legacy` emits a `DeprecationWarning`.
@@ -827,30 +855,47 @@ rewrite the assertions then.
 
 Read this before touching anything connection-scoped.
 
-**Engine instances are shared across all connections.** `HttpHandler.get_wakeword_engine`
-and `HttpHandler.get_detector_consumer` are decorated with `@lru_cache`
-(`ohunerin/server/http.py`). `HttpHandler` is created once per `Server`, so:
+**The sound path is concurrency-safe; the wake-word path is only partly so.**
 
-- There is exactly **one `DetectorConsumer`** for the whole process, holding a
-  single mutable `bytearray(15600)` buffer and a single `_buffer_index`.
-- There is exactly **one `WakewordEngine` per language**, holding one PocketSphinx
-  `Decoder`.
+`HttpHandler.get_detector_engine` is `@lru_cache`d (`ohunerin/server/http.py`) —
+one TFLite interpreter for the process — and `DetectorEngine.classify_window`
+serializes native access with a `threading.Lock`. `HttpHandler.get_detector_consumer`
+is deliberately **not** cached: each call returns a fresh `DetectorConsumer`, so
+every connection owns its own 15,600-byte window buffer. Concurrent
+`sound-detection` connections are therefore correct.
 
-Meanwhile `Server._handle_audio_data` calls `start_utt()` / `end_utt()` /
-`reset_buffer()` **per connection**. Two simultaneous clients with
-`sound-detection` therefore interleave writes into one buffer and corrupt each
-other's audio windows; two simultaneous clients on the same wake-word language
-share one decoder and call `end_utt()` on each other's utterances.
+The cost is that all inference funnels through one engine: measured ceiling
+~330-435 windows/s per engine, and a 16 kHz connection needs ~2.05 windows/s, so
+~160-210 concurrent sound connections saturate it. Beyond that, use a bounded
+pool of engines (each ~8-11 MB) — do not raise the TFLite thread count, see
+below.
 
-This is a pre-existing design limitation, not a regression. Consequences:
+`HttpHandler.get_wakeword_engine` keeps its `@lru_cache` (one `WakewordEngine`
+per language, one PocketSphinx `Decoder`), and `WakewordEngine` now wraps every
+decoder call in a `threading.Lock`. The lock prevents concurrent native state
+mutation, but it does **not** give per-connection utterance isolation: two
+clients on the same language still share one utterance stream and call
+`end_utt()` on each other's audio, so their transcriptions can mix.
 
-- Do **not** describe the server as safely concurrent.
-- Do **not** "fix" it by removing `@lru_cache` without measuring: engine
-  construction loads a TFLite model / PocketSphinx decoder and is expensive, which
-  is presumably why caching exists. The correct shape is a per-connection
-  consumer plus a bounded pool of reusable engines, or a lock around the shared
-  state.
-- Any such change needs a concurrency test; the current suite has none.
+A decoder costs ~200 ms and ~22 MB to build, so unconditional per-connection
+decoders are not viable at high fan-out. The realistic fixes, in order of
+preference:
+
+- a bounded per-language decoder pool, one decoder checked out per connection for
+  the session's lifetime (queue or reject beyond the cap), or
+- accept the shared stream, which is what the code does today.
+
+Do **not** "fix" this by removing `@lru_cache` without measuring: construction is
+expensive (TFLite ~8 ms / ~8-11 MB, PocketSphinx ~200 ms / ~22 MB), which is why
+caching exists. Do not raise the TFLite `num_threads` either — see
+`DEFAULT_MAX_INFERENCE_THREADS` in `engines/detector.py`.
+
+Consequences:
+
+- Do **not** describe the wake-word path as safely concurrent; the sound path is.
+- Any concurrency change needs a test. `tests/test_detector_pipeline.py` covers
+  per-connection consumer isolation, locked engine access, and the bounded thread
+  count.
 
 Other lifecycle facts:
 
@@ -898,7 +943,7 @@ without renaming the files.
 
 Before you report a change as complete:
 
-1. **Tests:** `.venv/bin/python -m pytest tests/ -q` → all pass (baseline 53).
+1. **Tests:** `.venv/bin/python -m pytest tests/ -q` → all pass (baseline 61).
    Add tests for new behavior; follow section 10's conventions exactly.
 2. **Lint:** `ruff check . --no-fix` introduces no _new_ findings (baseline: 1
    pre-existing `F401` in `tests/test_models.py`). If you run plain `ruff check .`,
@@ -926,16 +971,21 @@ Before you report a change as complete:
 Things this file could not settle from the source alone. Confirm empirically
 before building on them:
 
-- **YAMNet window size.** `DetectorConsumer._buffer` is 15,600 bytes = 7,800
-  int16 samples ≈ 0.49 s at 16 kHz. YAMNet's canonical input is ~0.975 s
-  (15,600 _samples_ = 31,200 bytes). Whether `tflite-support`'
-  `create_input_tensor_audio()` pads or resamples is unverified here. If you are
-  chasing detection quality, measure this first.
+- **YAMNet window size — RESOLVED.** Verified against `tflite-support` 0.4.4:
+  `AudioClassifier.required_input_buffer_size` is **15,600 samples** (31,200
+  bytes) at 16 kHz mono, and `TensorAudio` allocates a persistent `(15600, 1)`
+  float32 buffer. `DetectorConsumer` accumulates only 15,600 *bytes* (7,800
+  samples) per call, and `TensorAudio.load_from_array` *slides* that buffer left
+  by 7,800 samples before appending, so the model always sees
+  `[previous window, current window]` = 0.975 s, half of it one detection cycle
+  old. Do not change the 15,600-byte constant without deciding whether that
+  sliding behaviour is intended.
 - **`is_discriminant` heuristics.** It flags any hypothesis containing a space
   whose two halves are equal (`"hello hello"` → discriminant) _and_ any
   configured discriminant word. Intent beyond that is undocumented.
-- **Real-world throughput.** No benchmark, load test, or concurrency test exists.
-  The event-loop-blocking sound path (section 4) is unmeasured.
+- **Real-world throughput.** Measured — see the `benchmarks/` scripts and
+  section 14. One engine sustains ~330-435 windows/s with ~1-4 ms event-loop lag.
+  Re-measure after any change to the pool, the engine lock, or the executor.
 - **PocketSphinx `kws_threshold`.** Hardcoded to `1e-10` in
   `engines/wakeword.py`; not configurable and not documented as tunable.
 - **CI.** The GitLab Pages job is broken (13.2); whether any pipeline actually

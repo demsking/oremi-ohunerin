@@ -71,6 +71,7 @@ repos:
       - id: mypy
         name: 'mypy (strict type checking)'
         description: 'Run mypy in strict mode to perform static type checking.'
+        exclude: ^benchmarks/.*$
         args:
           - --strict
         additional_dependencies:

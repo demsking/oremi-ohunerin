@@ -15,7 +15,6 @@
 import http
 import json
 import logging
-import os
 from collections import defaultdict
 from functools import lru_cache
 from itertools import chain
@@ -32,6 +31,7 @@ from ohunerin.core.package import MODELS_DIR
 from ohunerin.core.package import PROJECT_DIRECTORY
 from ohunerin.engines.detector import DetectorConsumer
 from ohunerin.engines.detector import DetectorEngine
+from ohunerin.engines.detector import recommended_num_threads
 from ohunerin.engines.wakeword import WakewordEngine
 from ohunerin.models.sound import SoundsConfig
 from ohunerin.models.wakeword import DictionaryEntry
@@ -79,13 +79,15 @@ class HttpHandler:
     sounds_config: SoundsConfig,
     threshold: float,
     model: Path,
-    num_threads: int | None = None,
+    detector_threads: int | None = None,
   ) -> None:
     self.wakewords_config = wakewords_config
     self.sounds_config = sounds_config
     self.threshold = threshold
     self.model = model
-    self.num_threads = num_threads or (os.cpu_count() or 1)
+    # Bounded on purpose: TFLite/XNNPACK inference gets dramatically slower when
+    # the interpreter spawns more workers than the CPU allocation can run.
+    self.detector_threads = detector_threads or recommended_num_threads()
 
   def _send(
     self,
@@ -96,7 +98,8 @@ class HttpHandler:
     headers: list[tuple[str, str]],
     body: bytes,
   ) -> tuple[http.HTTPStatus, list[tuple[str, str]], bytes]:
-    _http_logger.info(f"{method} {path} {version} {status.value} {status.phrase}")
+    # Lazy %-formatting: the record is skipped entirely when the level is disabled.
+    _http_logger.info("%s %s %s %s %s", method, path, version, status.value, status.phrase)
 
     return status, headers, body
 
@@ -127,7 +130,7 @@ class HttpHandler:
       return self._send(method, path, version, http.HTTPStatus.OK, headers, body)
 
     if clean_path == "/openapi.json":
-      body = json.dumps(self.get_openapi_spec(), ensure_ascii=False).encode("utf-8")
+      body = self.get_openapi_body()
       headers = [
         ("Content-Type", "application/json; charset=utf-8"),
         ("Content-Length", str(len(body))),
@@ -176,8 +179,13 @@ class HttpHandler:
       "sounds": self.sounds_config.model_dump(),
     }
 
+  @lru_cache
   def get_openapi_spec(self) -> dict[str, Any]:
-    """Generate OpenAPI specification object with updated documentation and version."""
+    """Generate OpenAPI specification object with updated documentation and version.
+
+    The 23 KB document is parsed once per process instead of once per request.
+    The returned mapping is shared: callers must treat it as read-only.
+    """
     openapi: dict[str, Any] = json.loads(OPENAPI_PATH.read_text(encoding="utf-8"))
 
     openapi["info"]["description"] = SERVICE_DESCRIPTION
@@ -185,9 +193,15 @@ class HttpHandler:
 
     return openapi
 
+  @lru_cache
+  def get_openapi_body(self) -> bytes:
+    """Return the fully serialized OpenAPI response body, computed once per process."""
+    return json.dumps(self.get_openapi_spec(), ensure_ascii=False).encode("utf-8")
+
+  @lru_cache
   def get_index_html(self) -> str:
-    """Read Scalar documentation index.html template."""
-    return INDEX_PATH.read_text()
+    """Read and cache the Scalar documentation index.html template."""
+    return INDEX_PATH.read_text(encoding="utf-8")
 
   @property
   def supported_wakewords(self) -> dict[str, list[str]]:
@@ -232,13 +246,28 @@ class HttpHandler:
     return WakewordEngine(setting)
 
   @lru_cache
-  def get_detector_consumer(self) -> DetectorConsumer:
-    detector = DetectorEngine(
+  def get_detector_engine(self) -> DetectorEngine:
+    """Return the process-wide detector engine.
+
+    The engine holds one TFLite interpreter and all of the associated native
+    memory, so it is created lazily and shared by every connection. It is safe
+    to share thanks to the lock inside :meth:`DetectorEngine.classify_window`.
+    """
+    logger.info(f"Loading sound detection model {self.model} ({self.detector_threads} threads)")
+
+    return DetectorEngine(
       model=self.model,
       score_threshold=self.threshold,
-      num_threads=self.num_threads,
+      num_threads=self.detector_threads,
       allowlist=self.sounds_config.allowlist,
       denylist=self.sounds_config.denylist,
     )
 
-    return DetectorConsumer(detector)
+  def get_detector_consumer(self) -> DetectorConsumer:
+    """Return a fresh per-connection consumer over the shared detector engine.
+
+    A consumer only owns a :data:`~ohunerin.engines.detector.WINDOW_BYTES`
+    bytearray, so allocating one per connection is cheap and keeps audio
+    windows from different connections from interleaving in a shared buffer.
+    """
+    return DetectorConsumer(self.get_detector_engine())
