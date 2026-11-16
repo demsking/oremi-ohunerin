@@ -536,8 +536,8 @@ python client.py --host localhost --port 5023 --language fr
 
 ```sh
 make package     # uv build --wheel + twine check   (reads dist/)
-make image       # docker buildx → demsking/oremi-ohunerin (linux/amd64, --push)
-make image-test  # local docker build only
+make image       # docker --context default buildx → demsking/oremi-ohunerin (linux/amd64, --push)
+make image-test  # local docker --context default build only
 make beta | patch | minor | major   # version bump helpers (require clean tree)
 make release     # commit + annotated tag
 make publish     # pypi + image + push main and tag
