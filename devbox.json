@@ -16,8 +16,7 @@
     "prek@latest"
   ],
   "env": {
-    "UV_MANAGED_PYTHON": "1",
-    "PYTHONPATH":        ".:.venv/lib/python3.11/site-packages:$PYTHONPATH"
+    "UV_MANAGED_PYTHON": "1"
   },
   "shell": {
     "init_hook": [

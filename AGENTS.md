@@ -440,6 +440,16 @@ Notes:
   UV_CACHE_DIR="$PWD/.tmp/uvcache" uv run pytest tests/ -q
   ```
 
+- **Never put `.venv` on `PYTHONPATH`** (devbox.json used to do exactly that:
+  `PYTHONPATH=".:.venv/lib/python3.11/site-packages:$PYTHONPATH"`). That variable
+  is inherited by every Python interpreter started from the shell, including the
+  CPython 3.13 environments `uvx` / `uv tool` create. They then import the
+  project's 3.11 `pydantic` / `pydantic_core`, the compiled extension fails to
+  load with `ModuleNotFoundError: No module named 'pydantic_core._pydantic_core'`,
+  and every `uvx` command that touches Typer dies. The editable install already
+  makes `import ohunerin` work from the repo root, so no `PYTHONPATH` is needed.
+  In a shell that still has it exported, clear it with `unset PYTHONPATH` (or
+  `direnv reload` after changing `devbox.json`).
 - **`mypy` is not installed anywhere** (not in `.venv`, not in devbox), even
   though `.pre-commit-config.yaml` runs `mypy --strict`. That gate cannot be
   executed locally as configured.
