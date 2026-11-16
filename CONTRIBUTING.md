@@ -153,8 +153,8 @@ contribute:
 
 1. [Submit bugs or a feature request](https://gitlab.com/demsking/oremi-ohunerin/issues)
    and help us verify fixes as they are checked in
-2. Create your working branch from the `dev` branch:
-   `git checkout dev -b feature/my-awesome-feature`
+2. Create your working branch from `main`:
+   `git checkout main && git checkout -b feature/my-awesome-feature`
 3. Write code for a bug fix or for your new awesome feature
 4. Write test cases for your changes
 5. [Submit merge requests](https://gitlab.com/demsking/oremi-ohunerin/merge_requests)

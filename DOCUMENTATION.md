@@ -97,26 +97,12 @@ Run the server directly using the `oremi-ohunerin` CLI command:
 oremi-ohunerin [OPTIONS]
 ```
 
-#### CLI Options
+#### Command options
 
-- `-c, --config <path>` – Path to the configuration JSON file.
-- `--host <host>` – Host address to listen on (Default: `127.0.0.1`).
-- `-p, --port <port>` – Port number to listen on (Default: `5023`).
-- `--cert-file <path>` – Path to the SSL certificate file for secure TLS
-  connection.
-- `--key-file <path>` – Path to the SSL private key file.
-- `--password <password>` – Password to unlock the private key.
-- `-v, --version` – Show application version and exit.
-- `-h, --help` – Show help message and exit.
-
-#### Example Command
-
-```sh
-oremi-ohunerin \
-  --config /path/to/config.json \
-  --host 0.0.0.0 \
-  --port 5023
-```
+`oremi-ohunerin --version` and `oremi-ohunerin --help` report information and
+exit. Configure the running server exclusively with the environment variables
+below: its parsed host, port, TLS, and configuration-file command-line options
+are not applied at runtime.
 
 ## Environment Variables
 
@@ -124,15 +110,15 @@ Environment variables are prefixed with `OREMI_OHUNERIN_`:
 
 ### Server
 
-- `OREMI_OHUNERIN_SERVER_HOST` — Host address to listen on (Default: `0.0.0.0`)
+- `OREMI_OHUNERIN_SERVER_HOST` — Host address to listen on (Default: `127.0.0.1`; the Docker image sets `0.0.0.0`).
 - `OREMI_OHUNERIN_SERVER_PORT` — Port number to listen on (Default: `5023`)
 
 ### Configuration & Models
 
 - `OREMI_OHUNERIN_CONFIG_PATH` — Path to the JSON configuration file (Default:
-  `/oremi/data/config.json`)
+  the bundled `config.json`; the Docker image sets `/oremi/data/config.json`)
 - `OREMI_OHUNERIN_MODEL_PATH` — Path to the audio classification model file
-  (Default: `/oremi/models/yamnet.tflite`)
+  (Default: the bundled `models/yamnet.tflite`; the Docker image sets `/oremi/models/yamnet.tflite`)
 - `OREMI_OHUNERIN_THRESHOLD` — Score threshold below which sound detections are
   discarded (Default: `0.1`)
 
@@ -287,7 +273,7 @@ balances detection in noisy rooms against false positives.
 | `1013` | No wake-word decoder was free; retry once another session ends.                      |
 | `4000` | Unexpected error in the socket handler.                                              |
 
-## Contributing
+## Development
 
 Oremi Ohunerin is built with Python and uses `uv` for dependency management.
 The project follows standard Python development practices with type hints,
